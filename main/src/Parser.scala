@@ -73,5 +73,7 @@ object Parser:
           case ' ' | '\t' | '\r' | '\n' => clean(st)
           case _                        => pcmd(st, c)
 
-  def pline(s: String) = s.foldLeft(PST(List[ANY](), "", PT.UN))(choice).pipe(clean).xs
+  def pline(s: String) =
+    s.foldLeft(PST(List[ANY](), "", PT.UN))(choice).pipe(clean).xs
+
   def parse(s: String) = s.split("\n").headOption.getOrElse("").pipe(pline)

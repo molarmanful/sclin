@@ -3,7 +3,11 @@ import mainargs._
 
 object Main:
 
-  implicit object PathRead extends TokensReader[os.Path]("path", strs => Right(os.Path(strs.head, os.pwd)))
+  implicit object PathRead
+      extends TokensReader[os.Path](
+        "path",
+        strs => Right(os.Path(strs.head, os.pwd))
+      )
 
   @main
   def run(
@@ -26,4 +30,5 @@ object Main:
       case e: NoSuchFileException => err(s"no file ${e.getFile()}")
       case e                      => err(e)
 
-  def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args, allowPositional = true)
+  def main(args: Array[String]): Unit =
+    ParserForMethods(this).runOrExit(args, allowPositional = true)
