@@ -19,5 +19,11 @@ case class ENV(
 
 object ENV:
 
+  def exec(env: ENV) = env.code match
+    case ANY.FN(_, List()) => env
+    case ANY.FN(p, c :: cs) =>
+      if env.eS || env.eI then println(ENV.toString)
+      env.copy(code = ANY.FN(p, cs))
+
   def run(o: (Boolean, Boolean, Boolean), f: FILE, l: String) =
     ENV(l.lines.zipWithIndex.map { case (x, i) => ((f, i), ANY.STR(x)) }.pipe(HashMap.from))

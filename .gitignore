@@ -31,4 +31,7 @@ metals.sbt
 .idea_modules
 /.worksheet/
 
+# Mill
+out
+
 *.sclin
