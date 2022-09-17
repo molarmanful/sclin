@@ -1,5 +1,6 @@
 import java.nio.file._
 import mainargs._
+import scala.util.chaining._
 
 object Main:
 
@@ -21,10 +22,10 @@ object Main:
     val flags       = (step.value, verb.value, impl.value)
     try
       file match
-        case Some(f) => ENV.run(flags, Some(f), os.read(f))
+        case Some(f) => ENV.run(flags, file, os.read(f))
         case _ =>
           eval match
-            case Some(s) => ENV.run(flags, None, s)
+            case Some(s) => ENV.run(flags, file, s)
             case _       => ()
     catch
       case e: NoSuchFileException => err(s"no file ${e.getFile()}")

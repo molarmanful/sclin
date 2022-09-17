@@ -3,7 +3,8 @@ import scalalib._
 
 object main extends ScalaModule {
 
-  def scalaVersion = "3.2.0"
+  def scalaVersion  = "3.2.0"
+  def scalacOptions = Seq("-deprecation")
   def ivyDeps = Agg(
     ivy"org.typelevel::cats-core:2.8.0",
     ivy"org.typelevel::spire:0.18.0",

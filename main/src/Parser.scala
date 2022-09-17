@@ -1,79 +1,78 @@
 import scala.util.chaining._
 import spire.math._
 
-object Parser:
+object PT:
 
-  object PT:
+  val UN  = 0
+  val STR = 1
+  val NUM = 2
+  val CMD = 3
+  val ESC = 4
+  val DEC = 5
 
-    val UN  = 0
-    val STR = 1
-    val NUM = 2
-    val CMD = 3
-    val ESC = 4
-    val DEC = 5
+case class Parser(xs: List[ANY], x: String, t: Int):
 
-  case class PST(xs: List[ANY], x: String, t: Int)
-
-  def isPar(s: String) = s.forall("()[]{}".contains(_))
-
-  def clean(st: PST) = st.t match
-    case PT.UN => st
+  def clean = t match
+    case PT.UN => this
     case _ =>
-      val xs = st.t match
-        case PT.CMD if isPar(st.x) =>
-          st.xs ++ st.x.map(c => ANY.CMD(c.toString)).toList
+      val xs1 = t match
+        case PT.CMD if Parser.isPar(x) =>
+          xs ++ x.map(c => ANY.CMD(c.toString)).toList
         case _ =>
-          st.xs :+ (
-            if st.x == "." then ANY.CMD(".")
+          xs :+ (
+            if x == "." then ANY.CMD(".")
             else
-              st.t match
-                case PT.STR          => ANY.STR(st.x)
-                case PT.CMD          => ANY.CMD(st.x)
-                case PT.DEC | PT.NUM => ANY.NUM(Rational(st.x))
+              t match
+                case PT.STR          => ANY.STR(x)
+                case PT.CMD          => ANY.CMD(x)
+                case PT.DEC | PT.NUM => ANY.NUM(Rational(x))
           )
-      PST(xs, "", PT.UN)
+      Parser(xs1, "", PT.UN)
 
-  def addc(c: String | Char, st: PST) = st.copy(x = st.x + c)
-  def addt(t: Int, st: PST)           = st.copy(t = t)
-  def newc(c: String | Char, st: PST) = clean(st).copy(x = c.toString)
+  def addc(c: String | Char) = copy(x = x + c)
+  def addt(t: Int)           = copy(t = t)
+  def newc(c: String | Char) = clean.copy(x = c.toString)
 
-  def pstr(st: PST, c: Char) = st.t match
+  def pstr(c: Char) = t match
     case PT.ESC =>
       val s = c match
         case '"' => "\""
         case _   => "\\" + c
-      addc(s, st).pipe(addt(PT.STR, _))
+      addc(s).addt(PT.STR)
     case PT.STR =>
       c match
-        case '\\' => addt(PT.ESC, st)
-        case '"'  => clean(st)
-        case _    => addc(c, st)
+        case '\\' => addt(PT.ESC)
+        case '"'  => clean
+        case _    => addc(c)
 
-  def pnum(st: PST, c: Char) = st.t match
-    case PT.DEC | PT.NUM => addc(c, st)
-    case _               => newc(c, st).pipe(addt(PT.NUM, _))
+  def pnum(c: Char) = t match
+    case PT.DEC | PT.NUM => addc(c)
+    case _               => newc(c).addt(PT.NUM)
 
-  def pdot(st: PST) = (st.t match
+  def pdot = (t match
     case PT.NUM => addc
     case _      => newc
-  )('.', st).pipe(addt(PT.DEC, _))
+  )('.').addt(PT.DEC)
 
-  def pcmd(st: PST, c: Char) = st.t match
-    case PT.CMD => addc(c, st)
-    case _      => newc(c, st).pipe(addt(PT.CMD, _))
+  def pcmd(c: Char) = t match
+    case PT.CMD => addc(c)
+    case _      => newc(c).addt(PT.CMD)
 
-  def choice(st: PST, c: Char) = st.t match
-    case PT.STR | PT.ESC => st
+  def choice(c: Char) = t match
+    case PT.STR | PT.ESC => pstr(c)
     case _ =>
-      if c.isDigit then pnum(st, c)
-      else
-        c match
-          case '"'                      => clean(st).pipe(addt(PT.STR, _))
-          case '.'                      => pdot(st)
-          case ' ' | '\t' | '\r' | '\n' => clean(st)
-          case _                        => pcmd(st, c)
+      c match
+        case '"'                      => clean.addt(PT.STR)
+        case '.'                      => pdot
+        case c if c.isDigit           => pnum(c)
+        case ' ' | '\t' | '\r' | '\n' => clean
+        case _                        => pcmd(c)
+
+object Parser:
+
+  def isPar(s: String) = s.forall("()[]{}".contains(_))
 
   def pline(s: String) =
-    s.foldLeft(PST(List[ANY](), "", PT.UN))(choice).pipe(clean).xs
+    s.foldLeft(Parser(List(), "", PT.UN))((st, c) => st.choice(c)).clean.xs
 
   def parse(s: String) = s.split("\n").headOption.getOrElse("").pipe(pline)
