@@ -32,4 +32,4 @@ object Main:
       case e                      => err(e)
 
   def main(args: Array[String]): Unit =
-    ParserForMethods(this).runOrExit(args, allowPositional = true)
+    ParserForMethods(this).runOrExit(args.toIndexedSeq, allowPositional = true)
