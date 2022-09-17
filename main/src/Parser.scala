@@ -15,19 +15,23 @@ case class Parser(xs: List[ANY], x: String, t: Int):
   def clean = t match
     case PT.UN => this
     case _ =>
-      val xs1 = t match
-        case PT.CMD if Parser.isPar(x) =>
-          xs ++ x.map(c => ANY.CMD(c.toString)).toList
-        case _ =>
-          xs :+ (
-            if x == "." then ANY.CMD(".")
-            else
-              t match
-                case PT.STR          => ANY.STR(x)
-                case PT.CMD          => ANY.CMD(x)
-                case PT.DEC | PT.NUM => ANY.NUM(Rational(x))
-          )
-      Parser(xs1, "", PT.UN)
+      Parser(
+        t match
+          case PT.CMD if Parser.isPar(x) =>
+            xs ++ x.map(c => ANY.CMD(c.toString)).toList
+          case _ =>
+            xs :+ (
+              if x == "." then ANY.CMD(".")
+              else
+                t match
+                  case PT.STR          => ANY.STR(x)
+                  case PT.CMD          => ANY.CMD(x)
+                  case PT.DEC | PT.NUM => ANY.NUM(Rational(x))
+            )
+        ,
+        "",
+        PT.UN
+      )
 
   def addc(c: String | Char) = copy(x = x + c)
   def addt(t: Int)           = copy(t = t)
@@ -35,10 +39,10 @@ case class Parser(xs: List[ANY], x: String, t: Int):
 
   def pstr(c: Char) = t match
     case PT.ESC =>
-      val s = c match
+      addc(c match
         case '"' => "\""
         case _   => "\\" + c
-      addc(s).addt(PT.STR)
+      ).addt(PT.STR)
     case PT.STR =>
       c match
         case '\\' => addt(PT.ESC)
