@@ -54,7 +54,7 @@ enum ANY:
     case _  => toString
 
   /** Converts `ANY` to `SEQ`. */
-  def toSEQ: SEQ = this match
+  def toSEQ: ANY = this match
     case SEQ(_) => this
     case ARR(x) => SEQ(LazyList.from(x))
     case MAP(x) =>
@@ -65,10 +65,10 @@ enum ANY:
     case _        => SEQ(LazyList(this))
 
   /** Converts `ANY` to `ARR`. */
-  def toARR: ARR = this match
+  def toARR: ANY = this match
     case ARR(_) => this
     case SEQ(x) => ARR(x.toVector)
-    case _      => ARR(toSEQ)
+    case _      => toSEQ.toARR
 
   /** Converts `ANY` to `FN` body. */
   def toFNx: List[ANY] = this match

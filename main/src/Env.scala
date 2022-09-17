@@ -164,7 +164,7 @@ case class ENV(
     case List() => this
     case c :: cs =>
       if eS || eV then trace1
-      modCode(_ => cs).execA(c).tap(if eS || eV then _.trace2).exec
+      modCode(_ => cs).execA(c).tap(e => if eS || eV then e.trace2).exec
 
 /** Frontend for `ENV`. */
 object ENV:
