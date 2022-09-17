@@ -1,18 +1,29 @@
 import scala.util.chaining._
 import spire.math._
 
+/** Placeholders for parser primitives. */
 object PT:
 
-  val UN  = 0
-  val STR = 1
-  val NUM = 2
-  val CMD = 3
-  val ESC = 4
-  val DEC = 5
+  val UN: Int  = 0
+  val STR: Int = 1
+  val NUM: Int = 2
+  val CMD: Int = 3
+  val ESC: Int = 4
+  val DEC: Int = 5
 
+/** Parser state.
+  *
+  * @param xs
+  *   parsed atoms
+  * @param x
+  *   currently parsing atom
+  * @param t
+  *   type of `x`
+  */
 case class Parser(xs: List[ANY], x: String, t: Int):
 
-  def clean = t match
+  /** Pushes `t` with type `t` to `xs`; resets `x` and `t`. */
+  def clean: Parser = t match
     case PT.UN => this
     case _ =>
       Parser(
@@ -33,50 +44,98 @@ case class Parser(xs: List[ANY], x: String, t: Int):
         PT.UN
       )
 
-  def addc(c: String | Char) = copy(x = x + c)
-  def addt(t: Int)           = copy(t = t)
-  def newc(c: String | Char) = clean.copy(x = c.toString)
+  /** Adds string/char to `x`.
+    *
+    * @param c
+    *   string/char to add
+    */
+  def addc(c: String | Char): Parser = copy(x = x + c)
 
-  def pstr(c: Char) = t match
+  /** Sets `t`.
+    *
+    * @param t
+    *   type to set
+    */
+  def sett(t: Int): Parser = copy(t = t)
+
+  /** Parses to STR.
+    *
+    * @param c
+    *   char to add
+    */
+  def pstr(c: Char): Parser = t match
     case PT.ESC =>
       addc(c match
         case '"' => "\""
         case _   => "\\" + c
-      ).addt(PT.STR)
+      ).sett(PT.STR)
     case PT.STR =>
       c match
-        case '\\' => addt(PT.ESC)
+        case '\\' => sett(PT.ESC)
         case '"'  => clean
         case _    => addc(c)
 
-  def pnum(c: Char) = t match
+  /** Parses to NUM.
+    *
+    * @param c
+    *   char to add
+    */
+  def pnum(c: Char): Parser = t match
     case PT.DEC | PT.NUM => addc(c)
-    case _               => newc(c).addt(PT.NUM)
+    case _               => clean.addc(c).sett(PT.NUM)
 
-  def pdot = (t match
+  /** Handles dot special case. */
+  def pdot: Parser = (t match
     case PT.NUM => addc
-    case _      => newc
-  )('.').addt(PT.DEC)
+    case _      => clean.addc
+  )('.').sett(PT.DEC)
 
-  def pcmd(c: Char) = t match
+  /** Parses to CMD.
+    *
+    * @param c
+    *   char to add
+    */
+  def pcmd(c: Char): Parser = t match
     case PT.CMD => addc(c)
-    case _      => newc(c).addt(PT.CMD)
+    case _      => clean.addc(c).sett(PT.CMD)
 
-  def choice(c: Char) = t match
+  /** Determines parse approach from `c` and `t`.
+    *
+    * @param c
+    *   char to add
+    */
+  def choice(c: Char): Parser = t match
     case PT.STR | PT.ESC => pstr(c)
     case _ =>
       c match
-        case '"'                      => clean.addt(PT.STR)
+        case '"'                      => clean.sett(PT.STR)
         case '.'                      => pdot
         case c if c.isDigit           => pnum(c)
         case ' ' | '\t' | '\r' | '\n' => clean
         case _                        => pcmd(c)
 
+/** Frontend for `Parser`. */
 object Parser:
 
-  def isPar(s: String) = s.forall("()[]{}".contains(_))
+  /** Checks if CMD is brackets only.
+    *
+    * @param s
+    *   string to check
+    */
+  def isPar(s: String): Boolean = s.forall("()[]{}".contains(_))
 
-  def pline(s: String) =
+  /** Parses a single line.
+    *
+    * @param s
+    *   string to parse
+    */
+  def pline(s: String): List[ANY] =
     s.foldLeft(Parser(List(), "", PT.UN))((st, c) => st.choice(c)).clean.xs
 
-  def parse(s: String) = s.split("\n").headOption.getOrElse("").pipe(pline)
+  /** Parses an arbitrary string.
+    *
+    * @param s
+    *   string to parse
+    */
+  def parse(s: String): List[ANY] =
+    s.split("\n").headOption.getOrElse("").pipe(pline)
