@@ -80,7 +80,7 @@ case class ENV(
     case ANY.CMD(x) =>
       if x.startsWith("\\") && x.length > 1 then
         ANY.CMD(x.drop(1)).toFN(this).pipe(push)
-      else sys.error("CMD ERR")
+      else ???
     case _ => push(c)
 
   def exec: ENV = code.x match
