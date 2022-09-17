@@ -92,11 +92,16 @@ case class ENV(
 object ENV:
 
   def run(o: (Boolean, Boolean, Boolean), f: FILE, l: String) =
-    val l1 = l.linesIterator.zipWithIndex.map { case (x, i) =>
-      (PATH(f, i), ANY.STR(x))
-    }.toMap
     val (s, v, i) = o
-    ENV(l1, ANY.FN(PATH(f, 0), List()), eS = s, eV = v, eI = i)
+    ENV(
+      l.linesIterator.zipWithIndex.map { case (x, i) =>
+        (PATH(f, i), ANY.STR(x))
+      }.toMap,
+      ANY.FN(PATH(f, 0), List()),
+      eS = s,
+      eV = v,
+      eI = i
+    )
       .loadLine(0)
       .exec
       .tap(env => if env.eS || env.eV || env.eI then env.trace)
