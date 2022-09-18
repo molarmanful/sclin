@@ -4,9 +4,6 @@ import spire.implicits._
 import spire.math._
 import util.chaining._
 
-type FILE = Option[os.Path]
-case class PATH(f: FILE, l: Int)
-
 /** ADT for lin types. */
 enum ANY:
 
@@ -17,10 +14,14 @@ enum ANY:
   case NUM(x: Rational)
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
+  case ERR(x: LinERR)
   case UN
 
   type Itr = SEQ | ARR | MAP
   type It  = SEQ | ARR
+
+  /** Gets type name of `ANY`. */
+  def getType: String = getClass.getSimpleName
 
   /** `toString` override for `ANY`. */
   override def toString: String = this match
@@ -33,6 +34,7 @@ enum ANY:
     case NUM(x)   => x.toString
     case CMD(x)   => x
     case FN(_, x) => x.mkString(" ")
+    case ERR(x)   => x.toString
     case UN       => ""
 
   /** Converts `ANY` to formatted string. */
@@ -44,14 +46,20 @@ enum ANY:
           .mkString(" ")}}"
     case STR(x) =>
       s"\"${x.map {
-          case '"' => "\\\""
-          case c   => c
+          case '\n' => "\\n"
+          case '\r' => "\\r"
+          case '"'  => "\\\""
+          case c    => c
         }.mkString}\""
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.mkString(" ")})$n"
-    case UN => "UN"
-    case _  => toString
+    case ERR(x) => s"ERR(${x.t})"
+    case UN     => "UN"
+    case _      => toString
+
+  /** Converts `ANY` to boolean. */
+  def toBool: Boolean = ???
 
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: ANY = this match

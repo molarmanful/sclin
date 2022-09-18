@@ -18,8 +18,8 @@ object Main:
       @arg(short = 'v', doc = "Verbose mode.") verb: Flag,
       @arg(short = 'i', doc = "Implicit mode.") impl: Flag
   ) =
-    def err(e: Any) = println(fansi.Color.Red(s"ERR: $e"))
-    val flags       = (step.value, verb.value, impl.value)
+    def err(e: String) = println(fansi.Color.Red(e))
+    val flags          = (step.value, verb.value, impl.value)
     try
       file match
         case Some(f) => ENV.run(flags, file, os.read(f))
@@ -29,7 +29,8 @@ object Main:
             case _       => ()
     catch
       case e: NoSuchFileException => err(s"no file ${e.getFile()}")
-      case e                      => err(e)
+      case e: LinERR              => err(e.toString)
+      case e                      => err(s"ERR: $e")
 
   def main(args: Array[String]): Unit =
     ParserForMethods(this).runOrExit(args.toIndexedSeq, allowPositional = true)

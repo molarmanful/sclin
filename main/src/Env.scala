@@ -13,7 +13,7 @@ import spire.random._
   * @param stack
   *   current data stack
   * @param scope
-  *   variables
+  *   current scope
   * @param arr
   *   queue of strucures being constructed
   * @param eS
@@ -36,7 +36,7 @@ case class ENV(
 ):
 
   /** Prints debug trace header. */
-  def trace1: Unit =
+  def trace1: ENV =
     println(fansi.Color.DarkGray("———>"))
     println(code.x match
       case List() => fansi.Color.Green("(EMPTY)")
@@ -52,16 +52,16 @@ case class ENV(
           " "
         )
     )
-    val PATH(f, l) = code.p
-    println(fansi.Color.DarkGray(s"———(${f.getOrElse("?")}:$l)"))
+    println(fansi.Color.DarkGray(s"———(${code.p})"))
+    this
 
   /** Prints debug trace stack. */
-  def trace2: Unit = println(stack.map(_.toForm).mkString("\n"))
+  def trace2: ENV =
+    println(stack.map(_.toForm).mkString("\n"))
+    this
 
   /** Prints debug trace. */
-  def trace: Unit =
-    trace1
-    trace2
+  def trace: ENV = trace1.trace2
 
   /** Modifies `code` with function.
     *
@@ -147,6 +147,66 @@ case class ENV(
     */
   def pushs(xs: Vector[ANY]): ENV = modStack(_ ++ xs)
 
+  /** Pops top `n` `ANY`s and modifies `ENV` accordingly.
+    *
+    * @param n
+    *   number of `ANY`s to pop
+    * @param f
+    *   function to modify `ENV` with
+    */
+  def arg(n: Int, f: (Vector[ANY], ENV) => ENV) =
+    if stack.length < n then
+      throw LinERR(code.p, "ST_LEN", s"stack length < $n")
+    else
+      val (xs, ys) = stack.splitAt(stack.length - 1)
+      f(ys, modStack(_ => xs))
+
+  /** Modifies top `n` `ANY`s purely.
+    *
+    * @param n
+    *   number of `ANY`s to pop
+    * @param f
+    *   function to modify top `ANY` with
+    */
+  def mods(n: Int, f: Vector[ANY] => Vector[ANY]): ENV =
+    arg(n, (xs, env) => env.pushs(f(xs)))
+
+  /** Modifies top `n` `ANY`s purely into one `ANY`.
+    *
+    * @param n
+    *   number of `ANY`s to pop
+    * @param f
+    *   function to modify top `ANY` with
+    */
+  def mod(n: Int, f: Vector[ANY] => ANY): ENV = mods(n, xs => Vector(f(xs)))
+
+  def arg1(f: (ANY, ENV) => ENV): ENV =
+    arg(1, { case (Vector(x), env) => f(x, env); case _ => ??? })
+
+  def arg2(f: (ANY, ANY, ENV) => ENV): ENV =
+    arg(2, { case (Vector(x, y), env) => f(x, y, env); case _ => ??? })
+
+  def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
+    arg(3, { case (Vector(x, y, z), env) => f(x, y, z, env); case _ => ??? })
+
+  def mods1(f: ANY => Vector[ANY]): ENV =
+    mods(1, { case Vector(x) => f(x); case _ => ??? })
+
+  def mods2(f: (ANY, ANY) => Vector[ANY]): ENV =
+    mods(2, { case Vector(x, y) => f(x, y); case _ => ??? })
+
+  def mods3(f: (ANY, ANY, ANY) => Vector[ANY]): ENV =
+    mods(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
+
+  def mod1(f: ANY => ANY): ENV =
+    mod(1, { case Vector(x) => f(x); case _ => ??? })
+
+  def mod2(f: (ANY, ANY) => ANY): ENV =
+    mod(2, { case Vector(x, y) => f(x, y); case _ => ??? })
+
+  def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
+    mod(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
+
   /** Executes `CMD`s and pushes other `ANY`s.
     *
     * @param c
@@ -156,7 +216,7 @@ case class ENV(
     case ANY.CMD(x) =>
       if x.startsWith("\\") && x.length > 1 then
         ANY.CMD(x.drop(1)).toFN(this).pipe(push)
-      else ???
+      else this.cmd(x)
     case _ => push(c)
 
   /** Executes an `ENV`. */
