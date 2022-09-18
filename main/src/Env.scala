@@ -78,16 +78,6 @@ case class ENV(
     */
   def loadCode(x: List[ANY]): ENV = modCode(x ++ _)
 
-  /** Modifies line at path in `lines`.
-    *
-    * @param p
-    *   line path to modify
-    * @param x
-    *   new line
-    */
-  def modLine(p: PATH, x: ANY): ENV =
-    copy(lines = lines + (p -> x))
-
   /** Modifies `stack` with function.
     *
     * @param f
@@ -95,6 +85,23 @@ case class ENV(
     */
   def modStack(f: Vector[ANY] => Vector[ANY]): ENV =
     copy(stack = f(stack))
+
+  /** Sets `arr`.
+    *
+    * @param x
+    *   new value of `arr`
+    */
+  def setArr(x: List[Vector[ANY]]): ENV = copy(arr = x)
+
+  /** Modifies line at path in `lines`.
+    *
+    * @param p
+    *   line path to modify
+    * @param x
+    *   new line
+    */
+  def setLine(p: PATH, x: ANY): ENV =
+    copy(lines = lines + (p -> x))
 
   /** Gets line at number in `lines`.
     *
@@ -113,7 +120,7 @@ case class ENV(
     val p = PATH(code.p.f, i)
     lines.get(p) match
       case Some(x) =>
-        modLine(
+        setLine(
           p,
           x match
             case ANY.STR(_) => x.iFN(i, this)

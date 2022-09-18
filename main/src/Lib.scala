@@ -1,4 +1,46 @@
+import scala.util.chaining._
+
 implicit class LIB(env: ENV):
+
+  def startFN: ENV =
+    def loop(
+        code: List[ANY],
+        d: Int = 1,
+        res: List[ANY] = List()
+    ): (List[ANY], List[ANY]) =
+      if d > 0 then
+        code match
+          case List() => (code, res)
+          case c :: cs =>
+            loop(
+              cs,
+              c match
+                case ANY.CMD(x) if x.contains('(') => d + 1
+                case ANY.CMD(x) if x.contains(')') => d - 1
+                case _                             => d
+              ,
+              res :+ c
+            )
+      else
+        (
+          code,
+          res.lastOption
+            .getOrElse(ANY.CMD(")"))
+            .toString
+            .split("\\)")
+            .lastOption match
+            case Some(c) =>
+              (ANY.CMD("(") :: res.dropRight(1)) :+ ANY.CMD(")") :+ ANY.CMD(c)
+            case _ => res
+        )
+    val (code, res) = loop(env.code.x)
+    env.modCode(_ => code).push(ANY.FN(env.code.p, res))
+
+  def startARR = env.setArr(env.stack :: env.arr).clr
+
+  def endARR = env.arr match
+    case List()  => env
+    case x :: xs => env.setArr(xs).modStack(_ => x).push(ANY.ARR(env.stack))
 
   def out: ENV = env.arg1((x, env) =>
     print(x); env
@@ -31,6 +73,10 @@ implicit class LIB(env: ENV):
   def cmd(x: String): ENV = x match
 
     // TYPES
+    case "("    => startFN
+    case ")"    => env // TODO: ?
+    case "["    => startARR
+    case "]"    => endARR
     case "form" => form
 
     // I/O
@@ -55,6 +101,15 @@ implicit class LIB(env: ENV):
     case "roll"  => rotu
     case "roll_" => ???
     case "dip"   => ???
+
+    // MATH
+    case "+"  => ???
+    case "-"  => ???
+    case "*"  => ???
+    case "/"  => ???
+    case "%"  => ???
+    case "/%" => ???
+    case "^"  => ???
 
     // MAGIC DOT
     case "." => dot

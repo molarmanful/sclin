@@ -1,4 +1,3 @@
-import pprint.Tree.Lazy
 import spire.algebra._
 import spire.implicits._
 import spire.math._
@@ -53,7 +52,7 @@ enum ANY:
         }.mkString}\""
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
-      s"(${x.mkString(" ")})$n"
+      s"(${x.map(_.toForm).mkString(" ")})$n"
     case ERR(x) => s"ERR(${x.t})"
     case UN     => "UN"
     case _      => toString
