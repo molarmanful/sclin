@@ -165,7 +165,7 @@ case class ENV(
     if stack.length < n then
       throw LinERR(code.p, "ST_LEN", s"stack length < $n")
     else
-      val (xs, ys) = stack.splitAt(stack.length - 1)
+      val (xs, ys) = stack.splitAt(stack.length - n)
       f(ys, modStack(_ => xs))
 
   /** Modifies top `n` `ANY`s purely.
@@ -221,9 +221,12 @@ case class ENV(
     */
   def execA(c: ANY): ENV = c match
     case ANY.CMD(x) =>
-      if x.startsWith("\\") && x.length > 1 then
-        ANY.CMD(x.drop(1)).toFN(this).pipe(push)
-      else this.cmd(x)
+      x match
+        case s"\\$y" if y != ""  => ANY.CMD(y.drop(1)).toFN(this).pipe(push)
+        case s"#$y" if y != ""   => this
+        case s"$$$y" if y != ""  => ???
+        case s"=$$$y" if y != "" => ???
+        case _                   => this.cmd(x)
     case _ => push(c)
 
   /** Executes an `ENV`. */

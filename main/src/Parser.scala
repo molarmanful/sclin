@@ -1,15 +1,10 @@
 import scala.util.chaining._
 import spire.math._
 
-/** Placeholders for parser primitives. */
-object PT:
+/** Parser primitive tags. */
+enum PT:
 
-  val UN: Int  = 0
-  val STR: Int = 1
-  val NUM: Int = 2
-  val CMD: Int = 3
-  val ESC: Int = 4
-  val DEC: Int = 5
+  case UN, STR, NUM, CMD, ESC, DEC
 
 /** Parser state.
   *
@@ -20,7 +15,7 @@ object PT:
   * @param t
   *   type of `x`
   */
-case class Parser(xs: List[ANY], x: String, t: Int):
+case class Parser(xs: List[ANY], x: String, t: PT):
 
   /** Pushes `t` with type `t` to `xs`; resets `x` and `t`. */
   def clean: Parser = t match
@@ -38,6 +33,7 @@ case class Parser(xs: List[ANY], x: String, t: Int):
                   case PT.STR          => ANY.STR(x)
                   case PT.CMD          => ANY.CMD(x)
                   case PT.DEC | PT.NUM => ANY.NUM(Rational(x))
+                  case _               => ???
             )
         ,
         "",
@@ -56,7 +52,7 @@ case class Parser(xs: List[ANY], x: String, t: Int):
     * @param t
     *   type to set
     */
-  def sett(t: Int): Parser = copy(t = t)
+  def sett(t: PT): Parser = copy(t = t)
 
   /** Parses to STR.
     *
@@ -74,6 +70,7 @@ case class Parser(xs: List[ANY], x: String, t: Int):
         case '\\' => sett(PT.ESC)
         case '"'  => clean
         case _    => addc(c)
+    case _ => ???
 
   /** Parses to NUM.
     *

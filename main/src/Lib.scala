@@ -42,6 +42,15 @@ implicit class LIB(env: ENV):
     case List()  => env
     case x :: xs => env.setArr(xs).modStack(_ => x).push(ANY.ARR(env.stack))
 
+  def endMAP = endARR.toMAP
+
+  def toSEQ = env.mod1(_.toSEQ)
+  def toARR = env.mod1(_.toARR)
+  def toMAP = env.mod1(_.toMAP)
+  def toSTR = env.mod1(_.toSTR)
+  def toNUM = env.mod1(_.toNUM)
+  def toFN  = env.mod1(_.toFN(env))
+
   def out: ENV = env.arg1((x, env) =>
     print(x); env
   )
@@ -77,6 +86,13 @@ implicit class LIB(env: ENV):
     case ")"    => env // TODO: ?
     case "["    => startARR
     case "]"    => endARR
+    case ">Q"   => toSEQ
+    case ">A"   => toARR
+    case ">M"   => toMAP
+    case ">S"   => toSTR
+    case ">N"   => toNUM
+    case ">F"   => toFN
+    case ">E"   => ???
     case "form" => form
 
     // I/O
@@ -110,6 +126,11 @@ implicit class LIB(env: ENV):
     case "%"  => ???
     case "/%" => ???
     case "^"  => ???
+
+    // CONSTANTS
+    case "UN" => env.push(ANY.UN)
+    case "()" => env.push(ANY.UN)
+    case "[]" => env.push(ANY.UN)
 
     // MAGIC DOT
     case "." => dot
