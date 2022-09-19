@@ -1,6 +1,23 @@
 import scala.util.chaining._
+import ANY._
 
 implicit class LIB(env: ENV):
+
+  def eval: ENV =
+    env.arg1((x, env) =>
+      x match
+        case f: FN =>
+          val env1 = env.copy(code = f)
+          env.code.x match
+            case List() => env1.exec
+            case _      => env.modStack(_ => env1.exec.stack)
+        case f: CMD => env.execA(f)
+        case _      => env.push(x).toFN.eval
+    )
+
+  def evalA(x: STACK, f: ANY): ANY = env.modStack(_ => x :+ f).eval.getStack(0)
+
+  def quar: ENV = env.push(env.eval.getStack(0))
 
   def startFN: ENV =
     def loop(
@@ -15,55 +32,55 @@ implicit class LIB(env: ENV):
             loop(
               cs,
               c match
-                case ANY.CMD(x) if x.contains('(') => d + 1
-                case ANY.CMD(x) if x.contains(')') => d - 1
-                case _                             => d
+                case CMD(x) if x.contains('(') => d + 1
+                case CMD(x) if x.contains(')') => d - 1
+                case _                         => d
               ,
               res :+ c
             )
       else
-        (
-          code,
-          res.lastOption
-            .getOrElse(ANY.CMD(")"))
-            .toString
-            .split("\\)")
-            .lastOption match
-            case Some(c) =>
-              (ANY.CMD("(") :: res.dropRight(1)) :+ ANY.CMD(")") :+ ANY.CMD(c)
-            case _ => res
-        )
+        val res1 = res.dropRight(1)
+        res.last.toString match
+          case s"$c)$d" =>
+            (
+              CMD(s")$d") :: code,
+              c match
+                case "" => res1
+                case _  => List(FN(env.code.p, res1)) :+ CMD(c)
+            )
     val (code, res) = loop(env.code.x)
-    env.modCode(_ => code).push(ANY.FN(env.code.p, res))
+    env.modCode(_ => code).push(FN(env.code.p, res))
 
-  def startARR = env.setArr(env.stack :: env.arr).clr
+  def evalLine: ENV = ???
 
-  def endARR = env.arr match
+  def startARR: ENV = env.setArr(env.stack :: env.arr).clr
+
+  def endARR: ENV = env.arr match
     case List()  => env
-    case x :: xs => env.setArr(xs).modStack(_ => x).push(ANY.ARR(env.stack))
+    case x :: xs => env.setArr(xs).modStack(_ => x).push(ARR(env.stack))
 
-  def endMAP = endARR.toMAP
+  def endMAP: ENV = endARR.toMAP
 
-  def toSEQ = env.mod1(_.toSEQ)
-  def toARR = env.mod1(_.toARR)
-  def toMAP = env.mod1(_.toMAP)
-  def toSTR = env.mod1(_.toSTR)
-  def toNUM = env.mod1(_.toNUM)
-  def toFN  = env.mod1(_.toFN(env))
+  def toSEQ: ENV = env.mod1(_.toSEQ)
+  def toARR: ENV = env.mod1(_.toARR)
+  def toMAP: ENV = env.mod1(_.toMAP)
+  def toSTR: ENV = env.mod1(_.toSTR)
+  def toNUM: ENV = env.mod1(_.toNUM)
+  def toFN: ENV  = env.mod1(_.toFN(env))
 
-  def out: ENV = env.arg1((x, env) =>
-    print(x); env
-  )
+  def toERR: ENV =
+    env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
 
-  def outn: ENV = env.arg1((x, env) =>
-    println(x); env
-  )
+  def toBool: ENV = env.mod1(_.toBool.toNUM)
 
-  def form: ENV = env.mod1(x => ANY.STR(x.toForm))
+  def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
+  def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
+
+  def form: ENV = env.mod1(x => STR(x.toForm))
   def outf: ENV = env.form.outn
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
-  def dups: ENV = env.push(ANY.ARR(env.stack))
+  def dups: ENV = env.push(ARR(env.stack))
   def over: ENV = env.mods2((x, y) => Vector(x, y, x))
 
   def pop: ENV = env.mods1(_ => Vector())
@@ -77,6 +94,21 @@ implicit class LIB(env: ENV):
   def rot: ENV  = env.mods3((x, y, z) => Vector(y, z, x))
   def rotu: ENV = env.mods3((x, y, z) => Vector(z, x, y))
 
+  def dip: ENV = env.arg1((x, env) => env.eval.push(x))
+
+  def get: ENV = env.mod2((x, y) => x.get(y))
+  def len: ENV = env.mod1(x => NUM(x.length))
+
+  def wrap$ : ENV   = env.mod(2, ARR.apply)
+  def wrap: ENV     = env.mod(1, ARR.apply)
+  def unwrap: ENV   = env.mods1(_.toARR.x)
+  def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
+  def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
+  def wrapFN$ : ENV = env.wrap$.mod1(_.toFN(env))
+
+  def map: ENV =
+    env.mod2((x, y) => y.vec1(f => x.map(a => env.evalA(Vector(a), f))))
+
   def dot: ENV = ???
 
   def cmd(x: String): ENV = x match
@@ -86,13 +118,15 @@ implicit class LIB(env: ENV):
     case ")"    => env // TODO: ?
     case "["    => startARR
     case "]"    => endARR
+    case "{"    => startARR
+    case "}"    => endMAP
     case ">Q"   => toSEQ
     case ">A"   => toARR
     case ">M"   => toMAP
     case ">S"   => toSTR
     case ">N"   => toNUM
     case ">F"   => toFN
-    case ">E"   => ???
+    case ">E"   => toERR
     case "form" => form
 
     // I/O
@@ -116,9 +150,16 @@ implicit class LIB(env: ENV):
     case "rot"   => rot
     case "roll"  => rotu
     case "roll_" => ???
-    case "dip"   => ???
+    case "dip"   => dip
 
-    // MATH
+    // FN/EXEC
+    case "#"   => eval
+    case "Q"   => quar
+    case "\\"  => wrapFN
+    case ",\\" => wrapFN$
+
+    // NUM/MATH
+    case "_"  => ???
     case "+"  => ???
     case "-"  => ???
     case "*"  => ???
@@ -127,10 +168,19 @@ implicit class LIB(env: ENV):
     case "/%" => ???
     case "^"  => ???
 
+    // ITR
+    case "len" => len
+    case ","   => wrap$
+    case ",,"  => wrap
+    case ",_"  => unwrap
+    case ",,_" => unwrap$
+    case "map" => map
+
     // CONSTANTS
-    case "UN" => env.push(ANY.UN)
-    case "()" => env.push(ANY.UN)
-    case "[]" => env.push(ANY.UN)
+    case "UN" => env.push(UN)
+    case "()" => env.push(UN.toFN(env))
+    case "[]" => env.push(UN.toARR)
+    case "{}" => env.push(UN.toMAP)
 
     // MAGIC DOT
     case "." => dot

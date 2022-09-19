@@ -1,4 +1,3 @@
-import cats._
 import spire.algebra._
 import spire.implicits._
 import spire.math._
@@ -8,7 +7,7 @@ import util.chaining._
 enum ANY:
 
   case SEQ(x: LazyList[ANY])
-  case ARR(x: Vector[ANY])
+  case ARR(x: STACK)
   case MAP(x: Map[ANY, ANY])
   case STR(x: String)
   case NUM(x: Rational)
@@ -21,22 +20,22 @@ enum ANY:
   object Itr:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case SEQ(_) | ARR(_) | MAP(_) => Some(a)
+      case _: SEQ | _: ARR | _: MAP => Some(a)
       case _                        => None
 
   /** Pattern for strict `SEQ`-like. */
   object It:
 
     def unapply(a: ANY): Option[Any] = a match
-      case SEQ(_) | ARR(_) => Some(a)
+      case _: SEQ | _: ARR => Some(a)
       case _               => None
 
   /** Pattern for loose `SEQ`-like. */
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case SEQ(_) | ARR(_) | STR(_) | FN(_, _) => Some(a)
-      case _                                   => None
+      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
+      case _                                => None
 
   /** Gets type name of `ANY`. */
   def getType: String = getClass.getSimpleName
@@ -57,7 +56,7 @@ enum ANY:
 
   /** Converts `ANY` to formatted string. */
   def toForm: String = this match
-    case SEQ(_) => s"[…]"
+    case _: SEQ => s"[…]"
     case ARR(x) => s"[${x.map(_.toForm).mkString(" ")}]"
     case MAP(x) =>
       s"{${x.iterator.map { case (i, a) => i.toForm + "=>" + a.toForm }
@@ -85,7 +84,7 @@ enum ANY:
     case NUM(x)   => x != 0
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
-    case ERR(_)   => false
+    case _: ERR   => false
     case UN       => false
 
   /** Gets length of `ANY`. */
@@ -115,7 +114,7 @@ enum ANY:
       case _ =>
         this match
           case MAP(x) => x.applyOrElse(i, _ => UN)
-          case CMD(_) => toSTR.get(i)
+          case _: CMD => toSTR.get(i)
           case _      => UN
 
   /** Converts `ANY` to `SEQ`. */
@@ -188,3 +187,29 @@ enum ANY:
     *   context `ENV` to wrap `FN`
     */
   def iFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), toFNx)
+
+  /** Maps function over `ANY`.
+    *
+    * @param f
+    *   function to map with
+    */
+  def map(f: ANY => ANY): ANY = this match
+    case SEQ(x) => SEQ(x.map(f))
+    case ARR(x) => ARR(x.map(f))
+    case MAP(x) => MAP(x.map { case (a, b) => (a, f(b)) })
+    case _      => toSEQ.map(f)
+
+  /** Recursively maps over `ANY`.
+    *
+    * @param f
+    *   function to map with
+    */
+  def vec1(f: ANY => ANY): ANY = this match
+    case Itr(_) => map(_.vec1(f))
+    case _      => f(this)
+
+object ANY:
+
+  import scala.language.implicitConversions
+
+  implicit def toNUM(b: Boolean): NUM = NUM(if b then 1 else 0)

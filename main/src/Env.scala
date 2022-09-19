@@ -3,6 +3,7 @@ import spire.algebra._
 import spire.implicits._
 import spire.math._
 import spire.random._
+import ANY._
 
 /** A single step in the execution of a lin program.
   *
@@ -25,10 +26,10 @@ import spire.random._
   */
 case class ENV(
     lines: Map[PATH, ANY] = Map(),
-    code: ANY.FN,
-    stack: Vector[ANY] = Vector(),
+    code: FN,
+    stack: STACK = Vector(),
     scope: Map[ANY, ANY] = Map(),
-    arr: List[Vector[ANY]] = List(),
+    arr: List[STACK] = List(),
     // rng: Uniform[Long],
     eS: Boolean = false,
     eV: Boolean = false,
@@ -45,8 +46,9 @@ case class ENV(
           Seq(
             fansi.Bold.On(fansi.Color.Yellow(c.toString)),
             fansi.Color.DarkGray(
-              if cs.length > 5 then s"${cs.take(5).mkString(" ")} …"
-              else cs.mkString(" ")
+              if cs.length > 5 then
+                s"${cs.take(5).map(_.toForm).mkString(" ")} …"
+              else cs.map(_.toForm).mkString(" ")
             )
           ),
           " "
@@ -69,7 +71,7 @@ case class ENV(
     *   function that modifies `code`
     */
   def modCode(f: List[ANY] => List[ANY]): ENV =
-    copy(code = ANY.FN(code.p, f(code.x)))
+    copy(code = FN(code.p, f(code.x)))
 
   /** Prepends list to `code`.
     *
@@ -83,15 +85,22 @@ case class ENV(
     * @param f
     *   function that modifies `stack`
     */
-  def modStack(f: Vector[ANY] => Vector[ANY]): ENV =
+  def modStack(f: STACK => STACK): ENV =
     copy(stack = f(stack))
+
+  /** Indexes stack starting from top.
+    *
+    * @param i
+    *   index of item to retrieve
+    */
+  def getStack(i: Int): ANY = stack.applyOrElse(stack.length - 1 - i, _ => UN)
 
   /** Sets `arr`.
     *
     * @param x
     *   new value of `arr`
     */
-  def setArr(x: List[Vector[ANY]]): ENV = copy(arr = x)
+  def setArr(x: List[STACK]): ENV = copy(arr = x)
 
   /** Modifies line at path in `lines`.
     *
@@ -123,8 +132,8 @@ case class ENV(
         setLine(
           p,
           x match
-            case ANY.STR(_) => x.iFN(i, this)
-            case _          => x
+            case _: STR => x.iFN(i, this)
+            case _      => x
         )
       case _ => this
 
@@ -136,8 +145,8 @@ case class ENV(
   def loadLine(i: Int): ENV =
     val env = fnLine(i)
     env.loadCode(env.getLine(i) match
-      case Some(ANY.FN(_, x)) => x
-      case _                  => List()
+      case Some(FN(_, x)) => x
+      case _              => List()
     )
 
   /** Pushes `ANY` to `stack`.
@@ -152,7 +161,7 @@ case class ENV(
     * @param xs
     *   vector of `ANY`s to push
     */
-  def pushs(xs: Vector[ANY]): ENV = modStack(_ ++ xs)
+  def pushs(xs: STACK): ENV = modStack(_ ++ xs)
 
   /** Pops top `n` `ANY`s and modifies `ENV` accordingly.
     *
@@ -161,7 +170,7 @@ case class ENV(
     * @param f
     *   function to modify `ENV` with
     */
-  def arg(n: Int, f: (Vector[ANY], ENV) => ENV) =
+  def arg(n: Int, f: (STACK, ENV) => ENV) =
     if stack.length < n then
       throw LinERR(code.p, "ST_LEN", s"stack length < $n")
     else
@@ -175,7 +184,7 @@ case class ENV(
     * @param f
     *   function to modify top `ANY` with
     */
-  def mods(n: Int, f: Vector[ANY] => Vector[ANY]): ENV =
+  def mods(n: Int, f: STACK => STACK): ENV =
     arg(n, (xs, env) => env.pushs(f(xs)))
 
   /** Modifies top `n` `ANY`s purely into one `ANY`.
@@ -185,7 +194,7 @@ case class ENV(
     * @param f
     *   function to modify top `ANY` with
     */
-  def mod(n: Int, f: Vector[ANY] => ANY): ENV = mods(n, xs => Vector(f(xs)))
+  def mod(n: Int, f: STACK => ANY): ENV = mods(n, xs => Vector(f(xs)))
 
   def arg1(f: (ANY, ENV) => ENV): ENV =
     arg(1, { case (Vector(x), env) => f(x, env); case _ => ??? })
@@ -196,13 +205,13 @@ case class ENV(
   def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
     arg(3, { case (Vector(x, y, z), env) => f(x, y, z, env); case _ => ??? })
 
-  def mods1(f: ANY => Vector[ANY]): ENV =
+  def mods1(f: ANY => STACK): ENV =
     mods(1, { case Vector(x) => f(x); case _ => ??? })
 
-  def mods2(f: (ANY, ANY) => Vector[ANY]): ENV =
+  def mods2(f: (ANY, ANY) => STACK): ENV =
     mods(2, { case Vector(x, y) => f(x, y); case _ => ??? })
 
-  def mods3(f: (ANY, ANY, ANY) => Vector[ANY]): ENV =
+  def mods3(f: (ANY, ANY, ANY) => STACK): ENV =
     mods(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
   def mod1(f: ANY => ANY): ENV =
@@ -217,12 +226,12 @@ case class ENV(
   /** Executes `CMD`s and pushes other `ANY`s.
     *
     * @param c
-    *   item to evaluate
+    *   `ANY` to evaluate
     */
   def execA(c: ANY): ENV = c match
-    case ANY.CMD(x) =>
+    case CMD(x) =>
       x match
-        case s"\\$y" if y != ""  => ANY.CMD(y.drop(1)).toFN(this).pipe(push)
+        case s"\$y" if y != ""  => push(CMD(y).toFN(this))
         case s"#$y" if y != ""   => this
         case s"$$$y" if y != ""  => ???
         case s"=$$$y" if y != "" => ???
@@ -252,9 +261,9 @@ object ENV:
     val (s, v, i) = o
     ENV(
       l.linesIterator.zipWithIndex.map { case (x, i) =>
-        (PATH(f, i), ANY.STR(x))
+        (PATH(f, i), STR(x))
       }.toMap,
-      ANY.FN(PATH(f, 0), List()),
+      FN(PATH(f, 0), List()),
       eS = s,
       eV = v,
       eI = i
