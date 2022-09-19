@@ -1,7 +1,7 @@
 import scala.util.chaining._
 import ANY._
 
-implicit class LIB(env: ENV):
+extension (env: ENV)
 
   def eval: ENV =
     env.arg1((x, env) =>
@@ -71,7 +71,7 @@ implicit class LIB(env: ENV):
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
 
-  def toBool: ENV = env.mod1(_.toBool.toNUM)
+  def toBool: ENV = env.mod1(_.toBool.boolNUM)
 
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
@@ -127,6 +127,7 @@ implicit class LIB(env: ENV):
     case ">N"   => toNUM
     case ">F"   => toFN
     case ">E"   => toERR
+    case ">!"   => toBool
     case "form" => form
 
     // I/O

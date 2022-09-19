@@ -210,6 +210,4 @@ enum ANY:
 
 object ANY:
 
-  import scala.language.implicitConversions
-
-  implicit def toNUM(b: Boolean): NUM = NUM(if b then 1 else 0)
+  extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)
