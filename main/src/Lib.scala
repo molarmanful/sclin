@@ -148,6 +148,7 @@ extension (env: ENV)
     )
   def pow: ENV  = env.num2(env.fixp.pow)
   def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
+  def exp: ENV  = env.num1(env.fixp.exp(_))
   def abs: ENV  = env.num1(Ap.abs)
 
   def sin: ENV   = env.num1(env.fixp.sin)
@@ -163,6 +164,10 @@ extension (env: ENV)
   def asinh: ENV = env.num1(env.fixp.asinh)
   def acosh: ENV = env.num1(env.fixp.acosh)
   def atanh: ENV = env.num1(env.fixp.atanh)
+
+  def log: ENV   = env.num2(env.fixp.log(_, _))
+  def ln: ENV    = env.num1(env.fixp.log(_))
+  def log10: ENV = env.num1(env.fixp.log(_, 10))
 
   def map: ENV =
     env.mod2((x, y) => y.vec1(f => x.map(a => env.evalA(Vector(a), f))))
@@ -244,8 +249,8 @@ extension (env: ENV)
     case "/%"   => divmod
     case "^"    => pow
     case "^~"   => powi
+    case "e^"   => exp
     case "abs"  => abs
-    case "pi"   => ???
 
     // NUM/TRIG
     case "sin"    => sin
@@ -263,9 +268,9 @@ extension (env: ENV)
     case "tanh_"  => atanh
 
     // NUM/LOG
-    case "log" => ???
-    case "ln"  => ???
-    case "lXg" => ???
+    case "log"  => log
+    case "ln"   => ln
+    case "logX" => log10
 
     // ITR
     case "len" => len
@@ -277,10 +282,12 @@ extension (env: ENV)
     case "zip" => zip
 
     // CONSTANTS
-    case "UN" => env.push(UN)
-    case "()" => env.push(UN.toFN(env))
-    case "[]" => env.push(UN.toARR)
-    case "{}" => env.push(UN.toMAP)
+    case "UN"  => env.push(UN)
+    case "()"  => env.push(UN.toFN(env))
+    case "[]"  => env.push(UN.toARR)
+    case "{}"  => env.push(UN.toMAP)
+    case "$PI" => env.push(NUM(env.fixp.pi))
+    case "$E"  => env.push(NUM(env.fixp.exp(1)))
 
     // MAGIC DOT
     case "." => dot

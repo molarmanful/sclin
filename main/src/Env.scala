@@ -25,7 +25,7 @@ case class ENV(
     lines: LINESW = Map(),
     code: FN,
     stack: ARRW = Vector(),
-    scope: MAPW = Map(),
+    scope: Map[String, ANY] = Map(),
     arr: List[ARRW] = List(),
     fixp: Afp = Afp(100),
     // rng: Uniform[Long],
@@ -249,9 +249,11 @@ case class ENV(
   def execA(c: ANY): ENV = c match
     case CMD(x) =>
       x match
-        case s"\$y" if y != ""   => push(CMD(y).toFN(this))
-        case s"#$y" if y != ""   => this
-        case s"$$$y" if y != ""  => ???
+        case s"\$y" if y != "" => push(CMD(y).toFN(this))
+        case s"#$y" if y != "" => this
+        case s"$$$y" if y != "" =>
+          if scope.contains(y) then push(scope(y))
+          else this.cmd(x)
         case s"=$$$y" if y != "" => ???
         case _                   => this.cmd(x)
     case _ => push(c)
