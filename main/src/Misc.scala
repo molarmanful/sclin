@@ -1,5 +1,22 @@
-type FILE  = Option[os.Path]
-type STACK = Vector[ANY]
+import java.math.MathContext
+import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
+import scala.language.implicitConversions
+import util.chaining._
+
+type FILE = Option[os.Path]
+
+type ARRW = Vector[ANY]
+type SEQW = LazyList[ANY]
+type MAPW = Map[ANY, ANY]
+
+type NUMF = Apfloat
+
+object NUMF:
+
+  implicit def IntAp(n: Int): NUMF       = Apfloat(n)
+  implicit def StringAp(s: String): NUMF = Apfloat(s)
+
+type LINESW = Map[PATH, ANY]
 
 case class PATH(f: FILE, l: Int):
 

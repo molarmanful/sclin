@@ -1,8 +1,5 @@
+import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
 import scala.util.chaining._
-import spire.algebra._
-import spire.implicits._
-import spire.math._
-import spire.random._
 import ANY._
 
 /** A single step in the execution of a lin program.
@@ -25,11 +22,12 @@ import ANY._
   *   implicit mode
   */
 case class ENV(
-    lines: Map[PATH, ANY] = Map(),
+    lines: LINESW = Map(),
     code: FN,
-    stack: STACK = Vector(),
-    scope: Map[ANY, ANY] = Map(),
-    arr: List[STACK] = List(),
+    stack: ARRW = Vector(),
+    scope: MAPW = Map(),
+    arr: List[ARRW] = List(),
+    fixp: Afp = Afp(100),
     // rng: Uniform[Long],
     eS: Boolean = false,
     eV: Boolean = false,
@@ -85,7 +83,7 @@ case class ENV(
     * @param f
     *   function that modifies `stack`
     */
-  def modStack(f: STACK => STACK): ENV =
+  def modStack(f: ARRW => ARRW): ENV =
     copy(stack = f(stack))
 
   /** Indexes stack starting from top.
@@ -100,7 +98,7 @@ case class ENV(
     * @param x
     *   new value of `arr`
     */
-  def setArr(x: List[STACK]): ENV = copy(arr = x)
+  def setArr(x: List[ARRW]): ENV = copy(arr = x)
 
   /** Modifies line at path in `lines`.
     *
@@ -161,7 +159,7 @@ case class ENV(
     * @param xs
     *   vector of `ANY`s to push
     */
-  def pushs(xs: STACK): ENV = modStack(_ ++ xs)
+  def pushs(xs: ARRW): ENV = modStack(_ ++ xs)
 
   /** Pops top `n` `ANY`s and modifies `ENV` accordingly.
     *
@@ -170,7 +168,7 @@ case class ENV(
     * @param f
     *   function to modify `ENV` with
     */
-  def arg(n: Int, f: (STACK, ENV) => ENV) =
+  def arg(n: Int, f: (ARRW, ENV) => ENV) =
     if stack.length < n then
       throw LinERR(code.p, "ST_LEN", s"stack length < $n")
     else
@@ -184,7 +182,7 @@ case class ENV(
     * @param f
     *   function to modify top `ANY` with
     */
-  def mods(n: Int, f: STACK => STACK): ENV =
+  def mods(n: Int, f: ARRW => ARRW): ENV =
     arg(n, (xs, env) => env.pushs(f(xs)))
 
   /** Modifies top `n` `ANY`s purely into one `ANY`.
@@ -194,7 +192,7 @@ case class ENV(
     * @param f
     *   function to modify top `ANY` with
     */
-  def mod(n: Int, f: STACK => ANY): ENV = mods(n, xs => Vector(f(xs)))
+  def modx(n: Int, f: ARRW => ANY): ENV = mods(n, xs => Vector(f(xs)))
 
   def arg1(f: (ANY, ENV) => ENV): ENV =
     arg(1, { case (Vector(x), env) => f(x, env); case _ => ??? })
@@ -205,23 +203,43 @@ case class ENV(
   def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
     arg(3, { case (Vector(x, y, z), env) => f(x, y, z, env); case _ => ??? })
 
-  def mods1(f: ANY => STACK): ENV =
+  def mods1(f: ANY => ARRW): ENV =
     mods(1, { case Vector(x) => f(x); case _ => ??? })
 
-  def mods2(f: (ANY, ANY) => STACK): ENV =
+  def mods2(f: (ANY, ANY) => ARRW): ENV =
     mods(2, { case Vector(x, y) => f(x, y); case _ => ??? })
 
-  def mods3(f: (ANY, ANY, ANY) => STACK): ENV =
+  def mods3(f: (ANY, ANY, ANY) => ARRW): ENV =
     mods(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
   def mod1(f: ANY => ANY): ENV =
-    mod(1, { case Vector(x) => f(x); case _ => ??? })
+    modx(1, { case Vector(x) => f(x); case _ => ??? })
 
   def mod2(f: (ANY, ANY) => ANY): ENV =
-    mod(2, { case Vector(x, y) => f(x, y); case _ => ??? })
+    modx(2, { case Vector(x, y) => f(x, y); case _ => ??? })
 
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
-    mod(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
+    modx(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
+
+  def num1(f: NUMF => NUMF): ENV =
+    mod1(
+      _.vec1(x =>
+        try NUM(f(x.toNUM.x))
+        catch
+          case _: ArithmeticException => UN
+          case e                      => throw LinERR(code.p, "MATH", e.getMessage)
+      )
+    )
+
+  def num2(f: (NUMF, NUMF) => NUMF): ENV =
+    mod2(
+      _.vec2(_)((x, y) =>
+        try NUM(f(x.toNUM.x, y.toNUM.x))
+        catch
+          case _: ArithmeticException => UN
+          case e                      => throw LinERR(code.p, "MATH", e.getMessage)
+      )
+    )
 
   /** Executes `CMD`s and pushes other `ANY`s.
     *
@@ -231,7 +249,7 @@ case class ENV(
   def execA(c: ANY): ENV = c match
     case CMD(x) =>
       x match
-        case s"\$y" if y != ""  => push(CMD(y).toFN(this))
+        case s"\$y" if y != ""   => push(CMD(y).toFN(this))
         case s"#$y" if y != ""   => this
         case s"$$$y" if y != ""  => ???
         case s"=$$$y" if y != "" => ???

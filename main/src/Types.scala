@@ -1,16 +1,16 @@
-import spire.algebra._
-import spire.implicits._
-import spire.math._
+import java.util.Formatter
+import org.apfloat._
 import util.chaining._
+import NUMF._
 
 /** ADT for lin types. */
 enum ANY:
 
-  case SEQ(x: LazyList[ANY])
-  case ARR(x: STACK)
-  case MAP(x: Map[ANY, ANY])
+  case SEQ(x: SEQW)
+  case ARR(x: ARRW)
+  case MAP(x: MAPW)
   case STR(x: String)
-  case NUM(x: Rational)
+  case NUM(x: NUMF)
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
   case ERR(x: LinERR)
@@ -26,7 +26,7 @@ enum ANY:
   /** Pattern for strict `SEQ`-like. */
   object It:
 
-    def unapply(a: ANY): Option[Any] = a match
+    def unapply(a: ANY): Option[ANY] = a match
       case _: SEQ | _: ARR => Some(a)
       case _               => None
 
@@ -48,7 +48,7 @@ enum ANY:
       x.iterator.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
     case STR(x)   => x
-    case NUM(x)   => x.toString
+    case NUM(x)   => x.toString(true)
     case CMD(x)   => x
     case FN(_, x) => x.mkString(" ")
     case ERR(x)   => x.toString
@@ -119,29 +119,29 @@ enum ANY:
 
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
-    case SEQ(x) => SEQ(x)
-    case ARR(x) => SEQ(LazyList.from(x))
+    case SEQ(x) => x.toSEQ
+    case ARR(x) => LazyList.from(x).toSEQ
     case MAP(x) =>
-      SEQ(LazyList.from(x).map { case (i, a) => ARR(Vector(i, a)) })
-    case STR(x)   => SEQ(LazyList.from(x).map(c => STR(c.toString)))
-    case FN(_, x) => SEQ(LazyList.from(x))
-    case UN       => SEQ(LazyList())
-    case _        => SEQ(LazyList(this))
+      LazyList.from(x).map { case (i, a) => Vector(i, a).toARR }.toSEQ
+    case STR(x)   => LazyList.from(x).map(c => STR(c.toString)).toSEQ
+    case FN(_, x) => LazyList.from(x).toSEQ
+    case UN       => LazyList[ANY]().toSEQ
+    case _        => LazyList(this).toSEQ
 
   /** Converts `ANY` to `ARR`. */
   def toARR: ARR = this match
-    case ARR(x) => ARR(x)
-    case SEQ(x) => ARR(x.toVector)
+    case ARR(x) => x.toARR
+    case SEQ(x) => x.toVector.toARR
     case _      => toSEQ.toARR
 
   /** Converts `ANY` to `MAP`. */
   def toMAP: MAP = this match
-    case MAP(x) => MAP(x)
+    case MAP(x) => x.toMAP
     case SEQ(x) =>
-      MAP(x.flatMap {
+      x.flatMap {
         case Itr(a) if a.length > 0 => Some((a.get(NUM(0)), a.get(NUM(1))))
         case _                      => None
-      }.toMap)
+      }.toMap.toMAP
     case _ => toSEQ.toMAP
 
   /** Converts `ANY` to `STR`. */
@@ -150,7 +150,7 @@ enum ANY:
   /** Converts `ANY` to `NUM`. */
   def toNUM: NUM = this match
     case NUM(x) => NUM(x)
-    case STR(x) => NUM(Rational(x))
+    case STR(x) => NUM(x)
     case UN     => NUM(0)
     case _      => toSTR.toNUM
 
@@ -160,10 +160,10 @@ enum ANY:
     catch _ => None
 
   /** Converts `ANY` to int. */
-  def toI: Int = toNUM.x.toInt
+  def toI: Int = toNUM.x.intValue
 
   /** Converts `ANY` to int without failing. */
-  def optI: Option[Int] = optNUM.map(_.x.toInt)
+  def optI: Option[Int] = optNUM.map(_.x.intValue)
 
   /** Converts `ANY` to `FN` body. */
   def toFNx: List[ANY] = this match
@@ -194,10 +194,33 @@ enum ANY:
     *   function to map with
     */
   def map(f: ANY => ANY): ANY = this match
-    case SEQ(x) => SEQ(x.map(f))
-    case ARR(x) => ARR(x.map(f))
-    case MAP(x) => MAP(x.map { case (a, b) => (a, f(b)) })
+    case SEQ(x) => x.map(f).toSEQ
+    case ARR(x) => x.map(f).toARR
+    case MAP(x) => x.map { case (a, b) => (a, f(b)) }.toMAP
     case _      => toSEQ.map(f)
+
+  /** Zips 2 `ANY`s using function.
+    *
+    * @param t
+    *   second `ANY` to zip with
+    * @param f
+    *   function to zip with
+    * @return
+    */
+  def zip(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
+    case (MAP(x), Itr(_)) =>
+      x.foldLeft(Map[ANY, ANY]())((a, b) =>
+        val (k, v) = b
+        t.get(k) match
+          case UN => a
+          case w  => a + (k -> f(v, w))
+      ).toMAP
+    case (Itr(_), _: MAP) => t.zip(this)((x, y) => f(y, x))
+    case (_: MAP, _)      => zip(t.toSEQ)(f)
+    case (_, _: MAP)      => toSEQ.zip(t)(f)
+    case (ARR(x), _)      => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toARR
+    case (_, _: ARR)      => t.zip(this)((x, y) => f(y, x))
+    case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
 
   /** Recursively maps over `ANY`.
     *
@@ -208,6 +231,18 @@ enum ANY:
     case Itr(_) => map(_.vec1(f))
     case _      => f(this)
 
+  def vec2(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
+    case (Itr(_), Itr(_)) => zip(t)(_.vec2(_)(f))
+    case (Itr(_), _)      => map(f(_, t))
+    case (_, Itr(_))      => map(f(t, _))
+    case _                => f(this, t)
+
 object ANY:
+
+  extension (x: SEQW) def toSEQ: SEQ = SEQ(x)
+
+  extension (x: ARRW) def toARR: ARR = ARR(x)
+
+  extension (x: MAPW) def toMAP: MAP = MAP(x)
 
   extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)

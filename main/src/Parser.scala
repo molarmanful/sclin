@@ -1,5 +1,6 @@
 import scala.util.chaining._
-import spire.math._
+import ANY._
+import NUMF._
 
 /** Parser primitive tags. */
 enum PT:
@@ -24,15 +25,15 @@ case class Parser(xs: List[ANY], x: String, t: PT):
       Parser(
         t match
           case PT.CMD if Parser.isPar(x) =>
-            xs ++ x.map(c => ANY.CMD(c.toString)).toList
+            xs ++ x.map(c => CMD(c.toString)).toList
           case _ =>
             xs :+ (
-              if x == "." then ANY.CMD(".")
+              if x == "." then CMD(".")
               else
                 t match
-                  case PT.STR          => ANY.STR(x)
-                  case PT.CMD          => ANY.CMD(x)
-                  case PT.DEC | PT.NUM => ANY.NUM(Rational(x))
+                  case PT.STR          => STR(x)
+                  case PT.CMD          => CMD(x)
+                  case PT.DEC | PT.NUM => NUM(x)
                   case _               => ???
             )
         ,
