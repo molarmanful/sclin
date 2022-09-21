@@ -1,4 +1,5 @@
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
+import scala.annotation._
 import scala.util.chaining._
 import ANY._
 
@@ -142,9 +143,9 @@ case class ENV(
     */
   def loadLine(i: Int): ENV =
     val env = fnLine(i)
-    env.loadCode(env.getLine(i) match
-      case Some(FN(_, x)) => x
-      case _              => List()
+    env.copy(code = env.getLine(i) match
+      case Some(x: FN) => x
+      case _           => FN(env.code.p, List())
     )
 
   /** Pushes `ANY` to `stack`.
@@ -259,7 +260,8 @@ case class ENV(
     case _ => push(c)
 
   /** Executes an `ENV`. */
-  def exec: ENV = code.x match
+  @tailrec
+  final def exec: ENV = code.x match
     case List() => this
     case c :: cs =>
       if eS || eV then trace1

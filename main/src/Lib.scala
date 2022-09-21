@@ -1,4 +1,5 @@
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
+import scala.io.StdIn._
 import scala.util.chaining._
 import ANY._
 import NUMF._
@@ -11,16 +12,15 @@ extension (env: ENV)
         case f: FN =>
           val env1 = env.copy(code = f)
           env.code.x match
-            case List() => env1.exec
+            case List() => env1
             case _      => env.modStack(_ => env1.exec.stack)
         case f: CMD => env.execA(f)
         case _      => env.push(x).toFN.eval
     )
-
-  def evalA(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).eval.getStack(0)
-
+  def evale: ENV                  = eval.exec
+  def evalA(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).evale.getStack(0)
   def quar: ENV =
-    env.arg1((x, env) => x.vec1(env.push(_).eval.getStack(0)).pipe(env.push))
+    env.arg1((x, env) => x.vec1(env.push(_).evale.getStack(0)).pipe(env.push))
 
   def startFN: ENV =
     def loop(
@@ -55,40 +55,33 @@ extension (env: ENV)
     env.modCode(_ => code).push(FN(env.code.p, res))
 
   def evalLine: ENV = env.arg1((x, env) =>
-    var env1 = env
-    x.vec1(n =>
-      env1 = env1.loadLine(n.toI)
-      UN
-    )
-    env1
+    val i    = x.toI
+    val env1 = env.fnLine(i)
+    env1.push(env1.getLine(i).getOrElse(UN)).eval
   )
-
   def evalLRel: ENV  = env.push(NUM(env.code.p.l)).add.evalLine
-  def evalLHere: ENV = env.push(NUM(0)).evalLine
-  def evalLNext: ENV = env.push(NUM(env.code.p.l + 1)).evalLine
-  def evalLPrev: ENV = env.push(NUM(env.code.p.l - 1)).evalLine
+  def evalLHere: ENV = env.push(NUM(0)).evalLRel
+  def evalLNext: ENV = env.push(NUM(1)).evalLRel
+  def evalLPrev: ENV = env.push(NUM(-1)).evalLRel
 
   def startARR: ENV = env.setArr(env.stack :: env.arr).clr
-
   def endARR: ENV = env.arr match
     case List()  => env
     case x :: xs => env.setArr(xs).modStack(_ => x).push(env.stack.toARR)
-
   def endMAP: ENV = endARR.toMAP
 
   def getType: ENV = env.mod1(_.getType.pipe(STR.apply))
-
-  def toSEQ: ENV = env.mod1(_.toSEQ)
-  def toARR: ENV = env.mod1(_.toARR)
-  def toMAP: ENV = env.mod1(_.toMAP)
-  def toSTR: ENV = env.mod1(_.toSTR)
-  def toNUM: ENV = env.mod1(_.toNUM)
-  def toFN: ENV  = env.mod1(_.toFN(env))
+  def toSEQ: ENV   = env.mod1(_.toSEQ)
+  def toARR: ENV   = env.mod1(_.toARR)
+  def toMAP: ENV   = env.mod1(_.toMAP)
+  def toSTR: ENV   = env.mod1(_.toSTR)
+  def toNUM: ENV   = env.mod1(_.toNUM)
+  def toFN: ENV    = env.mod1(_.toFN(env))
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-
   def toBool: ENV = env.mod1(_.toBool.boolNUM)
 
+  def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
 
@@ -110,7 +103,7 @@ extension (env: ENV)
   def rot: ENV  = env.mods3((x, y, z) => Vector(y, z, x))
   def rotu: ENV = env.mods3((x, y, z) => Vector(z, x, y))
 
-  def dip: ENV = env.arg1((x, env) => env.eval.push(x))
+  def dip: ENV = env.arg1((x, env) => env.evale.push(x))
 
   def get: ENV = env.mod2((x, y) => x.get(y))
   def len: ENV = env.mod1(x => NUM(x.length))
@@ -125,6 +118,7 @@ extension (env: ENV)
   def prec: ENV =
     env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
   def infprec: ENV = env.copy(fixp = Afp(Long.MaxValue))
+  def scale: ENV   = env.num2((x, y) => Ap.scale(x, y.longValue))
   def trunc: ENV   = env.num1(_.truncate)
   def floor: ENV   = env.num1(_.floor)
   def round: ENV =
@@ -138,9 +132,8 @@ extension (env: ENV)
   def div: ENV  = env.num2(env.fixp.divide)
   def divi: ENV = env.num2((x, y) => x.truncate.divide(y.truncate))
   def mod: ENV = env.num2((x, y) =>
-    val a = x.truncate
-    val b = y.truncate
-    a.mod(b).add(b).mod(b)
+    val a = y.truncate
+    x.truncate.mod(a).add(a).mod(a)
   )
   def divmod: ENV =
     env.arg2((x, y, env) =>
@@ -149,7 +142,8 @@ extension (env: ENV)
   def pow: ENV  = env.num2(env.fixp.pow)
   def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
   def exp: ENV  = env.num1(env.fixp.exp(_))
-  def abs: ENV  = env.num1(Ap.abs)
+  def rng: ENV  = env.num1(_.longValue.pipe(Ap.random))
+  def abs: ENV  = env.num1(env.fixp.abs)
 
   def sin: ENV   = env.num1(env.fixp.sin)
   def cos: ENV   = env.num1(env.fixp.cos)
@@ -168,6 +162,24 @@ extension (env: ENV)
   def log: ENV   = env.num2(env.fixp.log(_, _))
   def ln: ENV    = env.num1(env.fixp.log(_))
   def log10: ENV = env.num1(env.fixp.log(_, 10))
+
+  def not: ENV    = env.mod1(_.vec1(_.toBool.unary_!.boolNUM))
+  def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
+  def min: ENV    = env.mod2(_.vec2(_)((x, y) => if x.cmp(y) < 0 then x else y))
+  def and: ENV    = env.mod2(_.vec2(_)((x, y) => (x.toBool && y.toBool).boolNUM))
+  def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolNUM)
+  def max: ENV    = env.mod2(_.vec2(_)((x, y) => if x.cmp(y) > 0 then x else y))
+  def or: ENV     = env.mod2(_.vec2(_)((x, y) => (x.toBool || y.toBool).boolNUM))
+  def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
+  def cmp: ENV    = env.mod2(_.vec2(_)((x, y) => NUM(x.cmp(y))))
+  def lt: ENV     = cmp.push(NUM(-1)).eql
+  def gt: ENV     = cmp.push(NUM(1)).eql
+  def lteq: ENV   = ???
+  def gteq: ENV   = ???
+  def eql: ENV    = env.mod2(_.vec2(_)(_.eql(_).boolNUM))
+  def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
+  def neq: ENV    = eql.not
+  def neq$$ : ENV = eql$$.not
 
   def map: ENV =
     env.mod2((x, y) => y.vec1(f => x.map(a => env.evalA(Vector(a), f))))
@@ -199,6 +211,7 @@ extension (env: ENV)
     case "form" => form
 
     // I/O
+    case "I>"  => in
     case ">O"  => out
     case "n>O" => outn
     case "f>O" => outf
@@ -235,6 +248,7 @@ extension (env: ENV)
     // NUM/MATH
     case ">~"   => prec
     case "oo>~" => infprec
+    case "E"    => scale
     case "I"    => trunc
     case "|_"   => floor
     case "|-"   => round
@@ -250,6 +264,7 @@ extension (env: ENV)
     case "^"    => pow
     case "^~"   => powi
     case "e^"   => exp
+    case "rng"  => rng
     case "abs"  => abs
 
     // NUM/TRIG
@@ -271,6 +286,25 @@ extension (env: ENV)
     case "log"  => log
     case "ln"   => ln
     case "logX" => log10
+
+    // NUM/LOGIC
+    case "!"   => not
+    case "!`"  => not$$
+    case "&"   => min
+    case "&&"  => and
+    case "&`"  => and$$
+    case "|"   => max
+    case "||"  => or
+    case "|`"  => or$$
+    case "<=>" => cmp
+    case "="   => eql
+    case "=`"  => eql$$
+    case "!="  => neq
+    case "!=`" => neq$$
+    case "<"   => lt
+    case ">"   => gt
+    case "<="  => lteq
+    case ">="  => gteq
 
     // ITR
     case "len" => len

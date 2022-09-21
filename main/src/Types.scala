@@ -75,13 +75,24 @@ enum ANY:
     case UN     => "UN"
     case _      => toString
 
+  def cmp(t: ANY): Int = (this, t) match
+    case (NUM(x), NUM(y)) => x.compareTo(y)
+    case (STR(x), STR(y)) => x.compareTo(y)
+    case (NUM(x), STR(y)) => x.compareTo(y.codePointAt(0))
+    case (_: STR, _: NUM) => -t.cmp(this)
+    case _                => ???
+
+  def eql(t: ANY): Boolean = (this, t) match
+    case (_: NUM, _: NUM) => cmp(t) == 0
+    case _                => this == t
+
   /** Converts `ANY` to boolean. */
   def toBool: Boolean = this match
     case SEQ(x)   => !x.isEmpty
     case ARR(x)   => !x.isEmpty
     case MAP(x)   => !x.isEmpty
     case STR(x)   => !x.isEmpty
-    case NUM(x)   => x != 0
+    case NUM(_)   => !eql(NUM(0))
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
@@ -199,6 +210,12 @@ enum ANY:
     case MAP(x) => x.map { case (a, b) => (a, f(b)) }.toMAP
     case _      => toSEQ.map(f)
 
+  def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
+    case SEQ(x) => x.foldLeft(a)(f)
+    case ARR(x) => x.foldLeft(a)(f)
+    case MAP(x) => x.foldLeft(a)((b, c) => f(b, c._2))
+    case _      => toSEQ.foldLeft(a)(f)
+
   /** Zips 2 `ANY`s using function.
     *
     * @param t
@@ -222,20 +239,29 @@ enum ANY:
     case (_, _: ARR)      => t.zip(this)((x, y) => f(y, x))
     case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
 
-  /** Recursively maps over `ANY`.
+  /** Vectorizes function over `ANY`.
     *
     * @param f
-    *   function to map with
+    *   function to vectorize
     */
   def vec1(f: ANY => ANY): ANY = this match
     case Itr(_) => map(_.vec1(f))
     case _      => f(this)
 
+  /** Vectorize function over 2 `ANY`s.
+    *
+    * @param f
+    *   function to vectrorize
+    */
   def vec2(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (Itr(_), Itr(_)) => zip(t)(_.vec2(_)(f))
     case (Itr(_), _)      => map(f(_, t))
     case (_, Itr(_))      => map(f(t, _))
     case _                => f(this, t)
+
+  def vef1[T](a: T)(f: (T, ANY) => T): T = this match
+    case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
+    case _      => f(a, this)
 
 object ANY:
 
