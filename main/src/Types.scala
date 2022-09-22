@@ -199,7 +199,7 @@ enum ANY:
     */
   def iFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), toFNx)
 
-  /** Maps function over `ANY`.
+  /** Applies function over each element of `ANY`.
     *
     * @param f
     *   function to map with
@@ -215,6 +215,39 @@ enum ANY:
     case ARR(x) => x.foldLeft(a)(f)
     case MAP(x) => x.foldLeft(a)((b, c) => f(b, c._2))
     case _      => toSEQ.foldLeft(a)(f)
+
+  /** Filters elements of `ANY` with function.
+    *
+    * @param f
+    *   function to filter with
+    */
+  def filter(f: ANY => Boolean): ANY = this match
+    case SEQ(x) => x.filter(f).toSEQ
+    case ARR(x) => x.filter(f).toARR
+    case MAP(x) => x.filter { case (_, b) => f(b) }.toMAP
+    case _      => toSEQ.filter(f)
+
+  /** Check if any elements of `ANY` satisfy function.
+    *
+    * @param f
+    *   function to check with
+    */
+  def any(f: ANY => Boolean): Boolean = this match
+    case SEQ(x) => x.exists(f)
+    case ARR(x) => x.exists(f)
+    case MAP(x) => x.exists { case (_, b) => f(b) }
+    case _      => toSEQ.any(f)
+
+  /** Check if all elements of `ANY` satisfy function.
+    *
+    * @param f
+    *   function to check with
+    */
+  def all(f: ANY => Boolean): Boolean = this match
+    case SEQ(x) => x.forall(f)
+    case ARR(x) => x.forall(f)
+    case MAP(x) => x.forall { case (_, b) => f(b) }
+    case _      => toSEQ.all(f)
 
   /** Zips 2 `ANY`s using function.
     *

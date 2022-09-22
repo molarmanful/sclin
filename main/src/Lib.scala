@@ -57,12 +57,39 @@ extension (env: ENV)
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toI
     val env1 = env.fnLine(i)
-    env1.push(env1.getLine(i).getOrElse(UN)).eval
+    env1.push(env1.getLineF(i)).eval
   )
-  def evalLRel: ENV  = env.push(NUM(env.code.p.l)).add.evalLine
+  def getLNum: ENV = env.push(NUM(env.code.p.l))
+  def getLFile: ENV = env.push(env.code.p.f match
+    case Some(x) => STR(x.toString)
+    case _       => UN
+  )
+  def evalLRel: ENV  = getLNum.add.evalLine
   def evalLHere: ENV = env.push(NUM(0)).evalLRel
   def evalLNext: ENV = env.push(NUM(1)).evalLRel
   def evalLPrev: ENV = env.push(NUM(-1)).evalLRel
+  def getLn: ENV     = env.mod1(n => env.getLineS(n.toNUM.x.intValue))
+  def getLRel: ENV   = getLNum.add.getLn
+  def getLHere: ENV  = env.push(NUM(0)).getLRel
+  def getLNext: ENV  = env.push(NUM(1)).getLRel
+  def getLPrev: ENV  = env.push(NUM(-1)).getLRel
+  def evalAnd: ENV =
+    env.arg2((x, f, env) => if x.toBool then env.push(f).eval else env)
+  def evalOr: ENV =
+    env.arg2((x, f, env) => if x.toBool then env else env.push(f).eval)
+  def evalIf: ENV =
+    env.arg3((x, f, g, env) => env.push(if x.toBool then f else g).eval)
+  def evalTimes: ENV =
+    env.arg2((f, n, env) =>
+      val n1 = n.toNUM.x
+      if n1.compareTo(0) > 0 then
+        env.push(f).evale.pushs(Vector(f, NUM(n1.subtract(1)))).evalTimes
+      else env
+    )
+  def evalArrSt: ENV = env.arg2((x, f, env) =>
+    env.push(ARR(env.push(x).unwrap$.push(f).evale.stack))
+  )
+  def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
 
   def startARR: ENV = env.setArr(env.stack :: env.arr).clr
   def endARR: ENV = env.arr match
@@ -110,10 +137,10 @@ extension (env: ENV)
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
+  def wrap$$ : ENV  = env.modStack(x => Vector(ARR(x)))
   def unwrap: ENV   = env.mods1(_.toARR.x)
   def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
   def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
-  def wrapFN$ : ENV = env.wrap$.mod1(_.toFN(env))
 
   def prec: ENV =
     env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
@@ -174,8 +201,14 @@ extension (env: ENV)
   def cmp: ENV    = env.mod2(_.vec2(_)((x, y) => NUM(x.cmp(y))))
   def lt: ENV     = cmp.push(NUM(-1)).eql
   def gt: ENV     = cmp.push(NUM(1)).eql
-  def lteq: ENV   = ???
-  def gteq: ENV   = ???
+  def lteq: ENV =
+    env.arg2((x, y, env) =>
+      env.pushs(Vector(x, y)).lt.pushs(Vector(x, y)).eql.or
+    )
+  def gteq: ENV =
+    env.arg2((x, y, env) =>
+      env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
+    )
   def eql: ENV    = env.mod2(_.vec2(_)(_.eql(_).boolNUM))
   def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
   def neq: ENV    = eql.not
@@ -183,6 +216,22 @@ extension (env: ENV)
 
   def map: ENV =
     env.mod2((x, y) => y.vec1(f => x.map(a => env.evalA(Vector(a), f))))
+  def fold: ENV =
+    env.mod3((x, y, z) =>
+      z.vec1(f => x.foldLeft(y)((a, b) => env.evalA(Vector(a, b), f)))
+    )
+  def fltr: ENV =
+    env.mod2((x, y) =>
+      y.vec1(f => x.filter(a => env.evalA(Vector(a), f).toBool))
+    )
+  def any: ENV =
+    env.mod2((x, y) =>
+      y.vec1(f => x.any(a => env.evalA(Vector(a), f).toBool).boolNUM)
+    )
+  def all: ENV =
+    env.mod2((x, y) =>
+      y.vec1(f => x.all(a => env.evalA(Vector(a), f).toBool).boolNUM)
+    )
   def zip: ENV =
     env.mod3((x, y, z) =>
       z.vec1(f => x.zip(y)((a, b) => env.evalA(Vector(a, b), f)))
@@ -236,7 +285,6 @@ extension (env: ENV)
 
     // FN/EXEC
     case "\\"  => wrapFN
-    case ",\\" => wrapFN$
     case "#"   => eval
     case "Q"   => quar
     case "@@"  => evalLine
@@ -244,6 +292,17 @@ extension (env: ENV)
     case "@"   => evalLHere
     case ";"   => evalLNext
     case ";;"  => evalLPrev
+    case "g@@" => getLn
+    case "g@~" => getLRel
+    case "g@"  => getLHere
+    case "g;"  => getLNext
+    case "g;;" => getLPrev
+    case "&#"  => evalAnd
+    case "|#"  => evalOr
+    case "?#"  => evalIf
+    case "*#"  => evalTimes
+    case "'"   => evalArrSt
+    case "'_"  => evalStArr
 
     // NUM/MATH
     case ">~"   => prec
@@ -307,13 +366,24 @@ extension (env: ENV)
     case ">="  => gteq
 
     // ITR
-    case "len" => len
-    case ","   => wrap$
-    case ",,"  => wrap
-    case ",_"  => unwrap
-    case ",,_" => unwrap$
-    case "map" => map
-    case "zip" => zip
+    case "len"   => len
+    case ","     => wrap$
+    case ",,"    => wrap
+    case ",`"    => wrap$$
+    case ",_"    => unwrap
+    case ",,_"   => unwrap$
+    case "tk"    => ???
+    case "dp"    => ???
+    case "map"   => map
+    case "fold"  => fold
+    case "fltr"  => fltr
+    case "any"   => any
+    case "all"   => all
+    case "tk*"   => ???
+    case "dp*"   => ???
+    case "find"  => ???
+    case "ifind" => ???
+    case "zip"   => zip
 
     // CONSTANTS
     case "UN"  => env.push(UN)
@@ -322,6 +392,8 @@ extension (env: ENV)
     case "{}"  => env.push(UN.toMAP)
     case "$PI" => env.push(NUM(env.fixp.pi))
     case "$E"  => env.push(NUM(env.fixp.exp(1)))
+    case "$L"  => getLNum
+    case "$F"  => getLFile
 
     // MAGIC DOT
     case "." => dot

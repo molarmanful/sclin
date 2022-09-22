@@ -1,5 +1,6 @@
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
 import scala.annotation._
+import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
 import ANY._
 
@@ -13,6 +14,8 @@ import ANY._
   *   current data stack
   * @param scope
   *   current scope
+  * @param gscope
+  *   global scope
   * @param arr
   *   queue of strucures being constructed
   * @param eS
@@ -23,13 +26,13 @@ import ANY._
   *   implicit mode
   */
 case class ENV(
-    lines: LINESW = Map(),
+    lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
     code: FN,
     stack: ARRW = Vector(),
     scope: Map[String, ANY] = Map(),
+    gscope: TrieMap[String, ANY] = TrieMap(),
     arr: List[ARRW] = List(),
     fixp: Afp = Afp(100),
-    // rng: Uniform[Long],
     eS: Boolean = false,
     eV: Boolean = false,
     eI: Boolean = false
@@ -108,8 +111,14 @@ case class ENV(
     * @param x
     *   new line
     */
-  def setLine(p: PATH, x: ANY): ENV =
-    copy(lines = lines + (p -> x))
+  def setLine(p: PATH, x: STR, y: ANY): ENV =
+    lines += (p -> (x, y))
+    this
+
+  def setLineF(i: Int, x: ANY): ENV =
+    val p = PATH(code.p.f, i)
+    lines += (p -> (lines(p)._1, x))
+    this
 
   /** Gets line at number in `lines`.
     *
@@ -117,24 +126,45 @@ case class ENV(
     *   line number to retrieve
     * @return
     */
-  def getLine(i: Int): Option[ANY] = lines.get(PATH(code.p.f, i))
+  def getLine(i: Int): Option[(ANY, ANY)] = lines.get(PATH(code.p.f, i))
 
-  /** Converts line at number in `lines` to `FN`.
+  /** Gets STR part of line at number in `lines`.
     *
     * @param i
-    *   line number to convert
+    *   line number to retrieve
+    * @return
     */
-  def fnLine(i: Int): ENV =
-    val p = PATH(code.p.f, i)
-    lines.get(p) match
-      case Some(x) =>
-        setLine(
-          p,
-          x match
-            case _: STR => x.iFN(i, this)
-            case _      => x
-        )
-      case _ => this
+  def getLineS(i: Int): ANY = getLine(i) match
+    case Some(x, _) => x
+    case _          => UN
+
+  /** Gets FN part of line at number in `lines`.
+    *
+    * @param i
+    *   line number to retrieve
+    * @return
+    */
+  def getLineF(i: Int): ANY = getLine(i) match
+    case Some(x, y) =>
+      y match
+        case _: FN => y
+        case _     => x
+    case _ => UN
+
+  /** Caches line at number in `lines` as `FN`.
+    *
+    * @param i
+    *   line number to cache
+    */
+  def fnLine(i: Int): ENV = getLine(i) match
+    case Some(x, y) =>
+      setLineF(
+        i,
+        y match
+          case UN => x.iFN(i, this)
+          case _  => y
+      )
+    case _ => this
 
   /** Converts line at number in `lines` to `FN` and pushes to `code`.
     *
@@ -142,10 +172,10 @@ case class ENV(
     *   line number to load
     */
   def loadLine(i: Int): ENV =
-    val env = fnLine(i)
-    env.copy(code = env.getLine(i) match
-      case Some(x: FN) => x
-      case _           => FN(env.code.p, List())
+    fnLine(i)
+    copy(code = getLineF(i) match
+      case x: FN => x
+      case _     => FN(code.p, List())
     )
 
   /** Pushes `ANY` to `stack`.
@@ -282,9 +312,9 @@ object ENV:
   def run(o: (Boolean, Boolean, Boolean), f: FILE, l: String): ENV =
     val (s, v, i) = o
     ENV(
-      l.linesIterator.zipWithIndex.map { case (x, i) =>
-        (PATH(f, i), STR(x))
-      }.toMap,
+      TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
+        (PATH(f, i), (STR(x), UN))
+      }),
       FN(PATH(f, 0), List()),
       eS = s,
       eV = v,

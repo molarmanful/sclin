@@ -1,5 +1,6 @@
 import java.math.MathContext
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
+import scala.collection.concurrent.TrieMap
 import scala.language.implicitConversions
 import util.chaining._
 
@@ -16,7 +17,7 @@ object NUMF:
   implicit def IntAp(n: Int): NUMF       = Apfloat(n)
   implicit def StringAp(s: String): NUMF = Apfloat(s)
 
-type LINESW = Map[PATH, ANY]
+object MMap {}
 
 case class PATH(f: FILE, l: Int):
 
