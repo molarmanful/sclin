@@ -178,6 +178,24 @@ case class ENV(
       case _     => FN(code.p, List())
     )
 
+  /** Adds variable to `scope`.
+    * @param k
+    *   variable name
+    * @param v
+    *   variable value
+    */
+  def addLoc(k: String, v: ANY): ENV = copy(scope = scope + (k -> v))
+
+  /** Adds variable to `gscope`.
+    * @param k
+    *   variable name
+    * @param v
+    *   variable value
+    */
+  def addGlob(k: String, v: ANY): ENV =
+    gscope += (k -> v)
+    this
+
   /** Pushes `ANY` to `stack`.
     *
     * @param x
@@ -192,13 +210,6 @@ case class ENV(
     */
   def pushs(xs: ARRW): ENV = modStack(_ ++ xs)
 
-  /** Pops top `n` `ANY`s and modifies `ENV` accordingly.
-    *
-    * @param n
-    *   number of `ANY`s to pop
-    * @param f
-    *   function to modify `ENV` with
-    */
   def arg(n: Int, f: (ARRW, ENV) => ENV) =
     if stack.length < n then
       throw LinERR(code.p, "ST_LEN", s"stack length < $n")
@@ -206,49 +217,29 @@ case class ENV(
       val (xs, ys) = stack.splitAt(stack.length - n)
       f(ys, modStack(_ => xs))
 
-  /** Modifies top `n` `ANY`s purely.
-    *
-    * @param n
-    *   number of `ANY`s to pop
-    * @param f
-    *   function to modify top `ANY` with
-    */
   def mods(n: Int, f: ARRW => ARRW): ENV =
     arg(n, (xs, env) => env.pushs(f(xs)))
 
-  /** Modifies top `n` `ANY`s purely into one `ANY`.
-    *
-    * @param n
-    *   number of `ANY`s to pop
-    * @param f
-    *   function to modify top `ANY` with
-    */
   def modx(n: Int, f: ARRW => ANY): ENV = mods(n, xs => Vector(f(xs)))
 
   def arg1(f: (ANY, ENV) => ENV): ENV =
     arg(1, { case (Vector(x), env) => f(x, env); case _ => ??? })
-
   def arg2(f: (ANY, ANY, ENV) => ENV): ENV =
     arg(2, { case (Vector(x, y), env) => f(x, y, env); case _ => ??? })
-
   def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
     arg(3, { case (Vector(x, y, z), env) => f(x, y, z, env); case _ => ??? })
 
   def mods1(f: ANY => ARRW): ENV =
     mods(1, { case Vector(x) => f(x); case _ => ??? })
-
   def mods2(f: (ANY, ANY) => ARRW): ENV =
     mods(2, { case Vector(x, y) => f(x, y); case _ => ??? })
-
   def mods3(f: (ANY, ANY, ANY) => ARRW): ENV =
     mods(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
   def mod1(f: ANY => ANY): ENV =
     modx(1, { case Vector(x) => f(x); case _ => ??? })
-
   def mod2(f: (ANY, ANY) => ANY): ENV =
     modx(2, { case Vector(x, y) => f(x, y); case _ => ??? })
-
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
     modx(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
@@ -261,7 +252,6 @@ case class ENV(
           case e                      => throw LinERR(code.p, "MATH", e.getMessage)
       )
     )
-
   def num2(f: (NUMF, NUMF) => NUMF): ENV =
     mod2(
       _.vec2(_)((x, y) =>
@@ -280,13 +270,15 @@ case class ENV(
   def execA(c: ANY): ENV = c match
     case CMD(x) =>
       x match
-        case s"\$y" if y != "" => push(CMD(y).toFN(this))
-        case s"#$y" if y != "" => this
-        case s"$$$y" if y != "" =>
-          if scope.contains(y) then push(scope(y))
-          else this.cmd(x)
-        case s"=$$$y" if y != "" => ???
-        case _                   => this.cmd(x)
+        case s"\$y" if y != ""                          => push(CMD(y).toFN(this))
+        case s"#$y" if y != ""                          => this
+        case s"$$$$$y" if y != "" && gscope.contains(y) => push(gscope(y))
+        case s"=$$$$$y" if y != ""                      => arg1((v, env) => env.addGlob(y, v))
+        case s"$$$y" if y != "" && scope.contains(y)    => push(scope(y))
+        case s"=$$$y" if y != ""                        => arg1((v, env) => env.addLoc(y, v))
+        case x if scope.contains(x)                     => push(scope(x)).eval
+        case x if gscope.contains(x)                    => push(gscope(x)).eval
+        case _                                          => this.cmd(x)
     case _ => push(c)
 
   /** Executes an `ENV`. */
