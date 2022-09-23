@@ -35,3 +35,4 @@ metals.sbt
 out
 
 *.sclin
+!examples/*.sclin

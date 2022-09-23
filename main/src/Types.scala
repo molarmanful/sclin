@@ -112,21 +112,46 @@ enum ANY:
     * @param i
     *   index to retrieve
     */
-  def get(i: ANY): ANY =
-    this match
-      case Its(x) if i.optI != None =>
-        val i1 = i.toI
-        val i2 = if i1 < 0 then i1 + length else i1
-        this match
-          case SEQ(x) => x.applyOrElse(i2, _ => UN)
-          case ARR(x) => x.applyOrElse(i2, _ => UN)
-          case STR(x) => if i2 < x.length then STR(x(i2).toString) else UN
-          case _      => toSEQ.get(NUM(i2))
-      case _ =>
-        this match
-          case MAP(x) => x.applyOrElse(i, _ => UN)
-          case _: CMD => toSTR.get(i)
-          case _      => UN
+  def get(i: ANY): ANY = this match
+    case Its(x) if i.optI != None =>
+      val i1 = i.toI
+      val i2 = if i1 < 0 then i1 + length else i1
+      this match
+        case SEQ(x) => x.applyOrElse(i2, _ => UN)
+        case ARR(x) => x.applyOrElse(i2, _ => UN)
+        case STR(x) => if i2 < x.length then STR(x(i2).toString) else UN
+        case _      => toSEQ.get(NUM(i2))
+    case _ =>
+      this match
+        case MAP(x) => x.applyOrElse(i, _ => UN)
+        case _: CMD => toSTR.get(i)
+        case _      => UN
+
+  /** Takes `n` items in `ANY`. Negative `n` takes from the end.
+    *
+    * @param n
+    *   number of items to take
+    */
+  def take(n: Int): ANY = this match
+    case SEQ(x)   => SEQ(if n < 0 then x.takeRight(-n) else x.take(n))
+    case ARR(x)   => ARR(if n < 0 then x.takeRight(-n) else x.take(n))
+    case MAP(x)   => MAP(if n < 0 then x.takeRight(-n) else x.take(n))
+    case STR(x)   => STR(if n < 0 then x.takeRight(-n) else x.take(n))
+    case FN(p, x) => FN(p, if n < 0 then x.takeRight(-n) else x.take(n))
+    case _        => toSEQ.take(n)
+
+  /** Drops `n` items from `ANY`. Negative `n` drops from the end.
+    *
+    * @param n
+    *   number of items to drop
+    */
+  def drop(n: Int): ANY = this match
+    case SEQ(x)   => SEQ(if n < 0 then x.dropRight(-n) else x.drop(n))
+    case ARR(x)   => ARR(if n < 0 then x.dropRight(-n) else x.drop(n))
+    case MAP(x)   => MAP(if n < 0 then x.dropRight(-n) else x.drop(n))
+    case STR(x)   => STR(if n < 0 then x.dropRight(-n) else x.drop(n))
+    case FN(p, x) => FN(p, if n < 0 then x.dropRight(-n) else x.drop(n))
+    case _        => toSEQ.drop(n)
 
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
@@ -207,14 +232,18 @@ enum ANY:
   def map(f: ANY => ANY): ANY = this match
     case SEQ(x) => x.map(f).toSEQ
     case ARR(x) => x.map(f).toARR
-    case MAP(x) => x.map { case (a, b) => (a, f(b)) }.toMAP
     case _      => toSEQ.map(f)
+  def mapM(f: (ANY, ANY) => (ANY, ANY)): ANY = this match
+    case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
+    case _      => ???
 
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)
-    case MAP(x) => x.foldLeft(a)((b, c) => f(b, c._2))
     case _      => toSEQ.foldLeft(a)(f)
+  def foldLeftM[T](a: T)(f: (T, (ANY, ANY)) => T): T = this match
+    case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
+    case _      => ???
 
   /** Filters elements of `ANY` with function.
     *
@@ -224,8 +253,10 @@ enum ANY:
   def filter(f: ANY => Boolean): ANY = this match
     case SEQ(x) => x.filter(f).toSEQ
     case ARR(x) => x.filter(f).toARR
-    case MAP(x) => x.filter { case (_, b) => f(b) }.toMAP
     case _      => toSEQ.filter(f)
+  def filterM(f: (ANY, ANY) => Boolean): ANY = this match
+    case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
+    case _      => ???
 
   /** Check if any elements of `ANY` satisfy function.
     *
@@ -235,8 +266,10 @@ enum ANY:
   def any(f: ANY => Boolean): Boolean = this match
     case SEQ(x) => x.exists(f)
     case ARR(x) => x.exists(f)
-    case MAP(x) => x.exists { case (_, b) => f(b) }
     case _      => toSEQ.any(f)
+  def anyM(f: (ANY, ANY) => Boolean): Boolean = this match
+    case MAP(x) => x.exists { case (a, b) => f(a, b) }
+    case _      => ???
 
   /** Check if all elements of `ANY` satisfy function.
     *
@@ -246,8 +279,44 @@ enum ANY:
   def all(f: ANY => Boolean): Boolean = this match
     case SEQ(x) => x.forall(f)
     case ARR(x) => x.forall(f)
-    case MAP(x) => x.forall { case (_, b) => f(b) }
     case _      => toSEQ.all(f)
+  def allM(f: (ANY, ANY) => Boolean): Boolean = this match
+    case MAP(x) => x.forall { case (a, b) => f(a, b) }
+    case _      => ???
+
+  /** Take elements of `ANY` until function is no longer satisified.
+    *
+    * @param f
+    *   function to check with
+    */
+  def takeWhile(f: ANY => Boolean): ANY = this match
+    case SEQ(x) => x.takeWhile(f).toSEQ
+    case ARR(x) => x.takeWhile(f).toARR
+    case _      => toSEQ.takeWhile(f)
+  def takeWhileM(f: (ANY, ANY) => Boolean): ANY = this match
+    case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
+    case _      => ???
+
+  /** Drop elements of `ANY` until function is no longer satisified.
+    *
+    * @param f
+    *   function to check with
+    */
+  def dropWhile(f: ANY => Boolean): ANY = this match
+    case SEQ(x) => x.dropWhile(f).toSEQ
+    case ARR(x) => x.dropWhile(f).toARR
+    case _      => toSEQ.dropWhile(f)
+  def dropWhileM(f: (ANY, ANY) => Boolean): ANY = this match
+    case MAP(x) => x.dropWhile { case (a, b) => f(a, b) }.toMAP
+    case _      => ???
+
+  def find(f: ANY => Boolean): Option[ANY] = this match
+    case SEQ(x) => x.find(f)
+    case ARR(x) => x.find(f)
+    case _      => toSEQ.find(f)
+  def findM(f: (ANY, ANY) => Boolean): Option[(ANY, ANY)] = this match
+    case MAP(x) => x.find { case (a, b) => f(a, b) }
+    case _      => ???
 
   /** Zips 2 `ANY`s using function.
     *

@@ -40,7 +40,7 @@ case class ENV(
 
   /** Prints debug trace header. */
   def trace1: ENV =
-    println(fansi.Color.DarkGray("———>"))
+    println(fansi.Color.DarkGray(s"———(${code.p})"))
     println(code.x match
       case List() => fansi.Color.Green("(EMPTY)")
       case c :: cs =>
@@ -56,11 +56,11 @@ case class ENV(
           " "
         )
     )
-    println(fansi.Color.DarkGray(s"———(${code.p})"))
     this
 
   /** Prints debug trace stack. */
   def trace2: ENV =
+    println(fansi.Color.DarkGray("———>"))
     println(stack.map(_.toForm).mkString("\n"))
     this
 
@@ -95,7 +95,11 @@ case class ENV(
     * @param i
     *   index of item to retrieve
     */
-  def getStack(i: Int): ANY = stack.applyOrElse(stack.length - 1 - i, _ => UN)
+  def getStack(i: Int): ANY = stack.applyOrElse(iStack(i), _ => UN)
+
+  def iStack(i: Int): Int =
+    val i1 = ~i
+    if i1 < 0 then stack.length + i1 else i1
 
   /** Sets `arr`.
     *

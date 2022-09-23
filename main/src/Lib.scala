@@ -17,8 +17,11 @@ extension (env: ENV)
         case f: CMD => env.execA(f)
         case _      => env.push(x).toFN.eval
     )
-  def evale: ENV                  = eval.exec
-  def evalA(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).evale.getStack(0)
+  def evale: ENV                   = eval.exec
+  def evalA1(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).evale.getStack(0)
+  def evalA2(x: ARRW, f: ANY): (ANY, ANY) =
+    val env1 = env.modStack(_ => x :+ f).evale
+    (env1.getStack(1), env1.getStack(0))
   def quar: ENV =
     env.arg1((x, env) => x.vec1(env.push(_).evale.getStack(0)).pipe(env.push))
 
@@ -118,17 +121,33 @@ extension (env: ENV)
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
   def over: ENV = env.mods2((x, y) => Vector(x, y, x))
+  def pick: ENV =
+    env.arg1((x, env) => env.push(x.vec1(n => env.getStack(n.toI))))
 
   def pop: ENV = env.mods1(_ => Vector())
   def clr: ENV = env.modStack(_ => Vector())
   def nip: ENV = env.mod2((x, _) => x)
+  def nix: ENV = env.arg1((x, env) =>
+    env.modStack(s =>
+      val i = env.iStack(x.toI)
+      if 0 < i && i < s.length then s.patch(i, Nil, 1) else s
+    )
+  )
 
   def swap: ENV = env.mods2((x, y) => Vector(y, x))
   def rev: ENV  = env.modStack(_.reverse)
   def tuck: ENV = env.mods2((x, y) => Vector(y, x, y))
+  def trade: ENV =
+    env.arg1((x, env) => env.push(x).rollu.push(x).push(NUM(1)).sub.roll)
 
   def rot: ENV  = env.mods3((x, y, z) => Vector(y, z, x))
   def rotu: ENV = env.mods3((x, y, z) => Vector(z, x, y))
+  def roll: ENV =
+    env.arg1((x, env) => env.push(x).pick.push(x).push(NUM(1)).add.nix)
+  def rollu: ENV = env.arg1((x, env) =>
+    val a = env.getStack(0)
+    env.modStack(s => s.patch(env.iStack(x.toI), Vector(a), 0)).pop
+  )
 
   def dip: ENV = env.arg1((x, env) => env.evale.push(x))
 
@@ -141,6 +160,9 @@ extension (env: ENV)
   def unwrap: ENV   = env.mods1(_.toARR.x)
   def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
   def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
+
+  def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toI)))
+  def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toI)))
 
   def prec: ENV =
     env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
@@ -168,9 +190,10 @@ extension (env: ENV)
     )
   def pow: ENV  = env.num2(env.fixp.pow)
   def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
-  def exp: ENV  = env.num1(env.fixp.exp(_))
-  def rng: ENV  = env.num1(_.longValue.pipe(Ap.random))
-  def abs: ENV  = env.num1(env.fixp.abs)
+
+  def exp: ENV = env.num1(env.fixp.exp(_))
+  def rng: ENV = env.num1(_.longValue.pipe(Ap.random))
+  def abs: ENV = env.num1(env.fixp.abs)
 
   def sin: ENV   = env.num1(env.fixp.sin)
   def cos: ENV   = env.num1(env.fixp.cos)
@@ -201,41 +224,84 @@ extension (env: ENV)
   def cmp: ENV    = env.mod2(_.vec2(_)((x, y) => NUM(x.cmp(y))))
   def lt: ENV     = cmp.push(NUM(-1)).eql
   def gt: ENV     = cmp.push(NUM(1)).eql
-  def lteq: ENV =
-    env.arg2((x, y, env) =>
-      env.pushs(Vector(x, y)).lt.pushs(Vector(x, y)).eql.or
-    )
-  def gteq: ENV =
-    env.arg2((x, y, env) =>
-      env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
-    )
+  def lteq: ENV = env.arg2((x, y, env) =>
+    env.pushs(Vector(x, y)).lt.pushs(Vector(x, y)).eql.or
+  )
+  def gteq: ENV = env.arg2((x, y, env) =>
+    env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
+  )
   def eql: ENV    = env.mod2(_.vec2(_)(_.eql(_).boolNUM))
   def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
   def neq: ENV    = eql.not
   def neq$$ : ENV = eql$$.not
 
-  def map: ENV =
-    env.mod2((x, y) => y.vec1(f => x.map(a => env.evalA(Vector(a), f))))
-  def fold: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.foldLeft(y)((a, b) => env.evalA(Vector(a, b), f)))
-    )
-  def fltr: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.filter(a => env.evalA(Vector(a), f).toBool))
-    )
-  def any: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.any(a => env.evalA(Vector(a), f).toBool).boolNUM)
-    )
-  def all: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.all(a => env.evalA(Vector(a), f).toBool).boolNUM)
-    )
-  def zip: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.zip(y)((a, b) => env.evalA(Vector(a, b), f)))
-    )
+  def map: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP => y.vec1(f => x.mapM((a, b) => env.evalA2(Vector(a, b), f)))
+      case _      => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
+  )
+  def zip: ENV = env.mod3((x, y, z) =>
+    z.vec1(f => x.zip(y)((a, b) => env.evalA1(Vector(a, b), f)))
+  )
+
+  def fold: ENV = env.mod3((x, y, z) =>
+    x match
+      case x: MAP =>
+        z.vec1(f =>
+          x.foldLeftM(y)((a, b) => env.evalA1(Vector(b._1, a, b._2), f))
+        )
+      case _ => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
+    z.vec1(f => x.foldLeft(y)((a, b) => env.evalA1(Vector(a, b), f)))
+  )
+
+  def fltr: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.filterM((a, b) => env.evalA1(Vector(a, b), f).toBool))
+      case _ => y.vec1(f => x.filter(a => env.evalA1(Vector(a), f).toBool))
+  )
+
+  def any: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f =>
+          x.anyM((a, b) => env.evalA1(Vector(a, b), f).toBool).boolNUM
+        )
+      case _ => y.vec1(f => x.any(a => env.evalA1(Vector(a), f).toBool).boolNUM)
+  )
+  def all: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f =>
+          x.allM((a, b) => env.evalA1(Vector(a, b), f).toBool).boolNUM
+        )
+      case _ => y.vec1(f => x.all(a => env.evalA1(Vector(a), f).toBool).boolNUM)
+  )
+
+  def tkwl: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.takeWhileM((a, b) => env.evalA1(Vector(a, b), f).toBool))
+      case _ => y.vec1(f => x.takeWhile(a => env.evalA1(Vector(a), f).toBool))
+  )
+  def dpwl: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.dropWhileM((a, b) => env.evalA1(Vector(a, b), f).toBool))
+      case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
+  )
+
+  def find: ENV = env.mod2((x, y) =>
+    y.vec1(f => x.find(a => env.evalA1(Vector(a), f).toBool).getOrElse(UN))
+    x match
+      case x: MAP =>
+        y.vec1(f =>
+          x.findM((a, b) => env.evalA1(Vector(a, b), f).toBool)
+            .map { case (a, b) => ARR(Vector(a, b)) }
+            .getOrElse(UN)
+        )
+      case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
+  )
 
   def dot: ENV = ???
 
@@ -269,18 +335,19 @@ extension (env: ENV)
     case "dup"   => dup
     case "dups"  => dups
     case "over"  => over
-    case "pick"  => ???
+    case "pick"  => pick
     case "pop"   => pop
     case "clr"   => clr
     case "nip"   => nip
-    case "nix"   => ???
+    case "nix"   => nix
     case "swap"  => swap
     case "rev"   => rev
     case "tuck"  => tuck
-    case "trade" => ???
+    case "trade" => trade
     case "rot"   => rot
-    case "roll"  => rotu
-    case "roll_" => ???
+    case "rot_"  => rotu
+    case "roll"  => roll
+    case "roll_" => rollu
     case "dip"   => dip
 
     // FN/EXEC
@@ -372,16 +439,16 @@ extension (env: ENV)
     case ",`"    => wrap$$
     case ",_"    => unwrap
     case ",,_"   => unwrap$
-    case "tk"    => ???
-    case "dp"    => ???
+    case "tk"    => tk
+    case "dp"    => dp
     case "map"   => map
     case "fold"  => fold
     case "fltr"  => fltr
     case "any"   => any
     case "all"   => all
-    case "tk*"   => ???
-    case "dp*"   => ???
-    case "find"  => ???
+    case "tk*"   => tkwl
+    case "dp*"   => dpwl
+    case "find"  => find
     case "ifind" => ???
     case "zip"   => zip
 
