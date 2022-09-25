@@ -1,4 +1,5 @@
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
+import pprint.Tree.Lazy
 import scala.io.StdIn._
 import scala.util.chaining._
 import ANY._
@@ -6,18 +7,21 @@ import NUMF._
 
 extension (env: ENV)
 
-  def eval: ENV =
-    env.arg1((x, env) =>
-      x match
-        case f: FN =>
-          val env1 = env.copy(code = f)
-          env.code.x match
-            case List() => env1
-            case _      => env.modStack(_ => env1.exec.stack)
-        case f: CMD => env.execA(f)
-        case _      => env.push(x).toFN.eval
-    )
-  def evale: ENV                   = eval.exec
+  def eval: ENV = env.arg1((x, env) =>
+    x match
+      case f: FN =>
+        val env1 = env.copy(code = f)
+        env.code.x match
+          case List() => env1
+          case _      => env.modStack(_ => env1.exec.stack)
+      case f: CMD => env.execA(f)
+      case _      => env.push(x).toFN.eval
+  )
+  def evale: ENV = env.arg1((x, env) =>
+    x match
+      case f: FN => env.modStack(_ => env.copy(code = f).exec.stack)
+      case _     => env.push(x).eval
+  )
   def evalA1(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).evale.getStack(0)
   def evalA2(x: ARRW, f: ANY): (ANY, ANY) =
     val env1 = env.modStack(_ => x :+ f).evale
@@ -84,13 +88,13 @@ extension (env: ENV)
     env.arg3((x, f, g, env) => env.push(if x.toBool then f else g).eval)
   def evalTimes: ENV =
     env.arg2((f, n, env) =>
-      val n1 = n.toNUM.x
-      if n1.compareTo(0) > 0 then
-        env.push(f).evale.pushs(Vector(f, NUM(n1.subtract(1)))).evalTimes
-      else env
+      def loop(env: ENV, n: NUMF): ENV =
+        if n.compareTo(0) > 0 then loop(env.push(f).evale, n.subtract(1))
+        else env
+      loop(env, n.toNUM.x)
     )
   def evalArrSt: ENV = env.arg2((x, f, env) =>
-    env.push(ARR(env.push(x).unwrap$.push(f).evale.stack))
+    env.push(env.push(x).unwrap$.push(f).evale.stack.toARR)
   )
   def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
 
@@ -156,7 +160,7 @@ extension (env: ENV)
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
-  def wrap$$ : ENV  = env.modStack(x => Vector(ARR(x)))
+  def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
   def unwrap: ENV   = env.mods1(_.toARR.x)
   def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
   def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
@@ -174,12 +178,67 @@ extension (env: ENV)
     env.num1(x => env.fixp.divide(env.fixp.multiply(x, 2).floor, 2).ceil)
   def ceil: ENV = env.num1(_.ceil)
 
-  def neg: ENV  = env.num1(env.fixp.negate)
-  def add: ENV  = env.num2(env.fixp.add)
-  def sub: ENV  = env.num2(env.fixp.subtract)
-  def mul: ENV  = env.num2(env.fixp.multiply)
+  def neg: ENV   = env.num1(env.fixp.negate)
+  def neg$ : ENV = env.str1(_.reverse)
+  def neg$$ : ENV =
+    def loop(x: ANY): ANY = x match
+      case SEQ(x) => x.reverse.toSEQ
+      case ARR(x) => x.reverse.toARR
+      case _: MAP => loop(x.toSEQ).toMAP
+      case _      => x.str1(_.reverse)
+    env.mod1(loop)
+
+  def _add(x: String, y: String): String = x ++ y
+  def add: ENV                           = env.num2(env.fixp.add)
+  def add$ : ENV                         = env.str2(_add)
+  def add$$ : ENV =
+    def loop(x: ANY, y: ANY): ANY = (x, y) match
+      case (It(x), SEQ(y))      => SEQ(x.toSEQ.x #::: y)
+      case (ARR(x), ARR(y))     => ARR(x ++ y)
+      case (MAP(x), MAP(y))     => MAP(x ++ y)
+      case (FN(p, x), FN(_, y)) => FN(p, x ++ y)
+      case (FN(p, _), It(y))    => loop(x.toARR, y).pFN(p)
+      case (SEQ(x), ARR(y))     => SEQ(x ++ y)
+      case (_, SEQ(y))          => SEQ(x #:: y)
+      case (SEQ(x), _)          => SEQ(x :+ y)
+      case (ARR(x), _)          => ARR(x :+ y)
+      case (_, ARR(y))          => ARR(x +: y)
+      case (FN(p, x), _)        => FN(p, x :+ y)
+      case (_, FN(p, y))        => FN(p, x +: y)
+      case _                    => x.str2(y, _add)
+    env.mod2(loop)
+
+  def _sub(x: String, y: String): String = x.replace(y, "")
+  def sub: ENV                           = env.num2(env.fixp.subtract)
+  def sub$ : ENV                         = env.str2(_sub)
+  def sub$$ : ENV =
+    def loop(x: ANY, y: ANY): ANY = (x, y) match
+      case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
+      case (ARR(x), It(y))  => x.filterNot(y.has).toARR
+      case (MAP(x), MAP(y)) => y.foldLeft(x)(_ - _._1).toMAP
+      case (MAP(x), It(y))  => y.foldLeft(x)(_ - _).toMAP
+      case (It(x), MAP(y))  => loop(x, y.keys.toARR)
+      case (It(x), It(y))   => loop(x, y.toSEQ)
+      case (Itr(x), _)      => loop(x, Vector(y).toARR)
+      case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
+      case _                => x.str2(y, _sub)
+    env.mod2(loop)
+
+  def mul: ENV   = env.num2(env.fixp.multiply)
+  def mul$ : ENV = env.strnum(_ * _.intValue)
+  def mul$$ : ENV =
+    def loop(x: ANY, y: ANY): ANY = (x, y) match
+      case (Itr(x), Itr(y)) => x.zip(y, loop).flat
+      case (x: SEQ, _)      => LazyList.fill(y.toI)(x).toSEQ.flat
+      case (x: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
+      case _                => loop(Vector(x).toARR, y)
+    env.mod2(loop)
+  def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
+  def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
+
   def div: ENV  = env.num2(env.fixp.divide)
   def divi: ENV = env.num2((x, y) => x.truncate.divide(y.truncate))
+
   def mod: ENV = env.num2((x, y) =>
     val a = y.truncate
     x.truncate.mod(a).add(a).mod(a)
@@ -188,6 +247,7 @@ extension (env: ENV)
     env.arg2((x, y, env) =>
       env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
     )
+
   def pow: ENV  = env.num2(env.fixp.pow)
   def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
 
@@ -215,13 +275,13 @@ extension (env: ENV)
 
   def not: ENV    = env.mod1(_.vec1(_.toBool.unary_!.boolNUM))
   def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
-  def min: ENV    = env.mod2(_.vec2(_)((x, y) => if x.cmp(y) < 0 then x else y))
-  def and: ENV    = env.mod2(_.vec2(_)((x, y) => (x.toBool && y.toBool).boolNUM))
+  def min: ENV    = env.mod2(_.vec2(_, (x, y) => if x.cmp(y) < 0 then x else y))
+  def and: ENV    = env.mod2(_.vec2(_, (x, y) => (x.toBool && y.toBool).boolNUM))
   def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolNUM)
-  def max: ENV    = env.mod2(_.vec2(_)((x, y) => if x.cmp(y) > 0 then x else y))
-  def or: ENV     = env.mod2(_.vec2(_)((x, y) => (x.toBool || y.toBool).boolNUM))
+  def max: ENV    = env.mod2(_.vec2(_, (x, y) => if x.cmp(y) > 0 then x else y))
+  def or: ENV     = env.mod2(_.vec2(_, (x, y) => (x.toBool || y.toBool).boolNUM))
   def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
-  def cmp: ENV    = env.mod2(_.vec2(_)((x, y) => NUM(x.cmp(y))))
+  def cmp: ENV    = env.mod2(_.vec2(_, (x, y) => NUM(x.cmp(y))))
   def lt: ENV     = cmp.push(NUM(-1)).eql
   def gt: ENV     = cmp.push(NUM(1)).eql
   def lteq: ENV = env.arg2((x, y, env) =>
@@ -230,7 +290,7 @@ extension (env: ENV)
   def gteq: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
   )
-  def eql: ENV    = env.mod2(_.vec2(_)(_.eql(_).boolNUM))
+  def eql: ENV    = env.mod2(_.vec2(_, _.eql(_).boolNUM))
   def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
   def neq: ENV    = eql.not
   def neq$$ : ENV = eql$$.not
@@ -240,8 +300,15 @@ extension (env: ENV)
       case x: MAP => y.vec1(f => x.mapM((a, b) => env.evalA2(Vector(a, b), f)))
       case _      => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
   )
+  def flatMap: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.flatMapM((a, b) => env.evalA1(Vector(a, b), f)))
+      case _ => y.vec1(f => x.flatMap(a => env.evalA1(Vector(a), f)))
+  )
+  def flat: ENV = env.mod1(_.flat)
   def zip: ENV = env.mod3((x, y, z) =>
-    z.vec1(f => x.zip(y)((a, b) => env.evalA1(Vector(a, b), f)))
+    z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
   )
 
   def fold: ENV = env.mod3((x, y, z) =>
@@ -297,7 +364,7 @@ extension (env: ENV)
       case x: MAP =>
         y.vec1(f =>
           x.findM((a, b) => env.evalA1(Vector(a, b), f).toBool)
-            .map { case (a, b) => ARR(Vector(a, b)) }
+            .map { case (a, b) => Vector(a, b).toARR }
             .getOrElse(UN)
         )
       case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
@@ -380,13 +447,25 @@ extension (env: ENV)
     case "|-"   => round
     case "|^"   => ceil
     case "_"    => neg
+    case "__"   => neg$
+    case "_`"   => neg$$
     case "+"    => add
+    case "++"   => add$
+    case "+`"   => add$$
     case "-"    => sub
+    case "--"   => sub$
+    case "-`"   => sub$$
     case "*"    => mul
+    case "**"   => mul$
+    case "*`"   => mul$$
     case "/"    => div
     case "/~"   => divi
+    case "//"   => ???
+    case "/`"   => ???
     case "%"    => mod
     case "/%"   => divmod
+    case "%%"   => ???
+    case "%`"   => ???
     case "^"    => pow
     case "^~"   => powi
     case "e^"   => exp
@@ -441,7 +520,12 @@ extension (env: ENV)
     case ",,_"   => unwrap$
     case "tk"    => tk
     case "dp"    => dp
+    case "flat"  => flat
+    case "rep"   => rep
+    case "cyc"   => cyc
+    case "uniq"  => ???
     case "map"   => map
+    case "mapf"  => flatMap
     case "fold"  => fold
     case "fltr"  => fltr
     case "any"   => any
@@ -461,6 +545,7 @@ extension (env: ENV)
     case "$E"  => env.push(NUM(env.fixp.exp(1)))
     case "$L"  => getLNum
     case "$F"  => getLFile
+    case "$W"  => env.push(SEQ(LazyList.from(0).map(NUM(_))))
 
     // MAGIC DOT
     case "." => dot

@@ -165,7 +165,7 @@ case class ENV(
       setLineF(
         i,
         y match
-          case UN => x.iFN(i, this)
+          case UN => x.lFN(i, this)
           case _  => y
       )
     case _ => this
@@ -247,24 +247,13 @@ case class ENV(
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
     modx(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
-  def num1(f: NUMF => NUMF): ENV =
-    mod1(
-      _.vec1(x =>
-        try NUM(f(x.toNUM.x))
-        catch
-          case _: ArithmeticException => UN
-          case e                      => throw LinERR(code.p, "MATH", e.getMessage)
-      )
-    )
-  def num2(f: (NUMF, NUMF) => NUMF): ENV =
-    mod2(
-      _.vec2(_)((x, y) =>
-        try NUM(f(x.toNUM.x, y.toNUM.x))
-        catch
-          case _: ArithmeticException => UN
-          case e                      => throw LinERR(code.p, "MATH", e.getMessage)
-      )
-    )
+  def num1(f: NUMF => NUMF): ENV         = mod1(_.num1(this, f))
+  def num2(f: (NUMF, NUMF) => NUMF): ENV = mod2(_.num2(this, _, f))
+
+  def str1(f: String => String): ENV           = mod1(_.str1(f))
+  def str2(f: (String, String) => String): ENV = mod2(_.str2(_, f))
+
+  def strnum(f: (String, NUMF) => String): ENV = mod2(_.strnum(_, f))
 
   /** Executes `CMD`s and pushes other `ANY`s.
     *

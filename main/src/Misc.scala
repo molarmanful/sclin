@@ -1,6 +1,7 @@
 import java.math.MathContext
 import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
 import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.VectorMap
 import scala.language.implicitConversions
 import util.chaining._
 
@@ -8,7 +9,7 @@ type FILE = Option[os.Path]
 
 type ARRW = Vector[ANY]
 type SEQW = LazyList[ANY]
-type MAPW = Map[ANY, ANY]
+type MAPW = VectorMap[ANY, ANY]
 
 type NUMF = Apfloat
 

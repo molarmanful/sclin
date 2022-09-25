@@ -1,6 +1,8 @@
 import java.util.Formatter
 import org.apfloat._
+import scala.collection.immutable.VectorMap
 import util.chaining._
+import ANY._
 import NUMF._
 
 /** ADT for lin types. */
@@ -15,27 +17,6 @@ enum ANY:
   case FN(p: PATH, x: List[ANY])
   case ERR(x: LinERR)
   case UN
-
-  /** Pattern for `SEQ`-like. */
-  object Itr:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: MAP => Some(a)
-      case _                        => None
-
-  /** Pattern for strict `SEQ`-like. */
-  object It:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR => Some(a)
-      case _               => None
-
-  /** Pattern for loose `SEQ`-like. */
-  object Its:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
-      case _                                => None
 
   /** Gets type name of `ANY`. */
   def getType: String = getClass.getSimpleName
@@ -153,9 +134,16 @@ enum ANY:
     case FN(p, x) => FN(p, if n < 0 then x.dropRight(-n) else x.drop(n))
     case _        => toSEQ.drop(n)
 
+  def has(t: ANY): Boolean = this match
+    case SEQ(x) => x.contains(t)
+    case ARR(x) => x.contains(t)
+    case MAP(x) => x.contains(t)
+    case STR(x) => x.contains(t.toString)
+    case x      => x.toSEQ.has(t)
+
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
-    case SEQ(x) => x.toSEQ
+    case x: SEQ => x
     case ARR(x) => LazyList.from(x).toSEQ
     case MAP(x) =>
       LazyList.from(x).map { case (i, a) => Vector(i, a).toARR }.toSEQ
@@ -166,18 +154,18 @@ enum ANY:
 
   /** Converts `ANY` to `ARR`. */
   def toARR: ARR = this match
-    case ARR(x) => x.toARR
+    case x: ARR => x
     case SEQ(x) => x.toVector.toARR
     case _      => toSEQ.toARR
 
   /** Converts `ANY` to `MAP`. */
   def toMAP: MAP = this match
-    case MAP(x) => x.toMAP
+    case x: MAP => x
     case SEQ(x) =>
       x.flatMap {
         case Itr(a) if a.length > 0 => Some((a.get(NUM(0)), a.get(NUM(1))))
         case _                      => None
-      }.toMap.toMAP
+      }.to(VectorMap).toMAP
     case _ => toSEQ.toMAP
 
   /** Converts `ANY` to `STR`. */
@@ -185,7 +173,7 @@ enum ANY:
 
   /** Converts `ANY` to `NUM`. */
   def toNUM: NUM = this match
-    case NUM(x) => NUM(x)
+    case x: NUM => x
     case STR(x) => NUM(x)
     case UN     => NUM(0)
     case _      => toSTR.toNUM
@@ -202,18 +190,18 @@ enum ANY:
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
   /** Converts `ANY` to `FN` body. */
-  def toFNx: List[ANY] = this match
+  def xFN: List[ANY] = this match
     case FN(_, x) => x
     case STR(x)   => Parser.parse(x)
     case SEQ(x)   => x.toList
-    case _        => toSEQ.toFNx
+    case _        => toSEQ.xFN
 
   /** Converts `ANY` to `FN`.
     *
     * @param env
     *   context `ENV` to wrap `FN`
     */
-  def toFN(env: ENV): FN = FN(env.code.p, toFNx)
+  def toFN(env: ENV): FN = FN(env.code.p, xFN)
 
   /** Converts `ANY` to `FN` at given line number.
     *
@@ -222,7 +210,16 @@ enum ANY:
     * @param env
     *   context `ENV` to wrap `FN`
     */
-  def iFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), toFNx)
+  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), xFN)
+
+  /** Converts `ANY` to `FN` at given `PATH`.
+    *
+    * @param p
+    *   `PATH`
+    * @param env
+    *   context `ENV` to wrap `FN`
+    */
+  def pFN(p: PATH): FN = FN(p, xFN)
 
   /** Applies function over each element of `ANY`.
     *
@@ -236,6 +233,43 @@ enum ANY:
   def mapM(f: (ANY, ANY) => (ANY, ANY)): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
     case _      => ???
+
+  /** Applies function over each element of `ANY` and flatten.
+    *
+    * @param f
+    *   function to map with
+    */
+  def flatMap(f: ANY => ANY): ANY = this match
+    case SEQ(x) => x.flatMap(f(_).toSEQ.x).toSEQ
+    case ARR(x) => x.flatMap(f(_).toARR.x).toARR
+    case _      => toSEQ.flatMap(f)
+  def flatMapM(f: (ANY, ANY) => ANY): ANY = this match
+    case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
+    case _      => ???
+  def flat: ANY = flatMap(x => x)
+
+  /** Zips 2 `ANY`s using function.
+    *
+    * @param t
+    *   second `ANY` to zip with
+    * @param f
+    *   function to zip with
+    * @return
+    */
+  def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
+    case (MAP(x), Itr(_)) =>
+      x.foldLeft(VectorMap[ANY, ANY]())((a, b) =>
+        val (k, v) = b
+        t.get(k) match
+          case UN => a
+          case w  => a + (k -> f(v, w))
+      ).toMAP
+    case (Itr(_), _: MAP) => t.zip(this, (x, y) => f(y, x))
+    case (_: MAP, _)      => zip(t.toSEQ, f)
+    case (_, _: MAP)      => toSEQ.zip(t, f)
+    case (ARR(x), _)      => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toARR
+    case (_, _: ARR)      => t.zip(this, (x, y) => f(y, x)).toARR
+    case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
 
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)
@@ -318,29 +352,6 @@ enum ANY:
     case MAP(x) => x.find { case (a, b) => f(a, b) }
     case _      => ???
 
-  /** Zips 2 `ANY`s using function.
-    *
-    * @param t
-    *   second `ANY` to zip with
-    * @param f
-    *   function to zip with
-    * @return
-    */
-  def zip(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (MAP(x), Itr(_)) =>
-      x.foldLeft(Map[ANY, ANY]())((a, b) =>
-        val (k, v) = b
-        t.get(k) match
-          case UN => a
-          case w  => a + (k -> f(v, w))
-      ).toMAP
-    case (Itr(_), _: MAP) => t.zip(this)((x, y) => f(y, x))
-    case (_: MAP, _)      => zip(t.toSEQ)(f)
-    case (_, _: MAP)      => toSEQ.zip(t)(f)
-    case (ARR(x), _)      => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toARR
-    case (_, _: ARR)      => t.zip(this)((x, y) => f(y, x))
-    case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
-
   /** Vectorizes function over `ANY`.
     *
     * @param f
@@ -350,20 +361,44 @@ enum ANY:
     case Itr(_) => map(_.vec1(f))
     case _      => f(this)
 
-  /** Vectorize function over 2 `ANY`s.
+  /** Vectorizes function over 2 `ANY`s.
     *
     * @param f
     *   function to vectrorize
     */
-  def vec2(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (Itr(_), Itr(_)) => zip(t)(_.vec2(_)(f))
+  def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
+    case (Itr(_), Itr(_)) => zip(t, _.vec2(_, f))
     case (Itr(_), _)      => map(f(_, t))
-    case (_, Itr(_))      => map(f(t, _))
+    case (_, Itr(_))      => t.map(f(this, _))
     case _                => f(this, t)
 
   def vef1[T](a: T)(f: (T, ANY) => T): T = this match
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
     case _      => f(a, this)
+
+  def num1(env: ENV, f: NUMF => NUMF): ANY = vec1(x =>
+    try NUM(f(x.toNUM.x))
+    catch
+      case _: ArithmeticException => UN
+      case e                      => throw LinERR(env.code.p, "MATH", e.getMessage)
+  )
+
+  def num2(env: ENV, t: ANY, f: (NUMF, NUMF) => NUMF): ANY = vec2(
+    t,
+    (x, y) =>
+      try NUM(f(x.toNUM.x, y.toNUM.x))
+      catch
+        case _: ArithmeticException => UN
+        case e                      => throw LinERR(env.code.p, "MATH", e.getMessage)
+  )
+
+  def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR.apply))
+
+  def str2(t: ANY, f: (String, String) => String): ANY =
+    vec2(t, (x, y) => STR(f(x.toString, y.toString)))
+
+  def strnum(t: ANY, f: (String, NUMF) => String): ANY =
+    vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
 object ANY:
 
@@ -371,6 +406,29 @@ object ANY:
 
   extension (x: ARRW) def toARR: ARR = ARR(x)
 
+  extension (x: Iterable[ANY]) def toARR: ARR = ARR(x.toVector)
+
   extension (x: MAPW) def toMAP: MAP = MAP(x)
 
   extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)
+
+  /** Pattern for `SEQ`-like. */
+  object Itr:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: SEQ | _: ARR | _: MAP => Some(a)
+      case _                        => None
+
+  /** Pattern for strict `SEQ`-like. */
+  object It:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: SEQ | _: ARR => Some(a)
+      case _               => None
+
+  /** Pattern for loose `SEQ`-like. */
+  object Its:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
+      case _                                => None
