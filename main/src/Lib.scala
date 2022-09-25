@@ -22,8 +22,9 @@ extension (env: ENV)
       case f: FN => env.modStack(_ => env.copy(code = f).exec.stack)
       case _     => env.push(x).eval
   )
-  def evalA1(x: ARRW, f: ANY): ANY = env.modStack(_ => x :+ f).evale.getStack(0)
-  def evalA2(x: ARRW, f: ANY): (ANY, ANY) =
+  def evalA1(x: ARRW[ANY], f: ANY): ANY =
+    env.modStack(_ => x :+ f).evale.getStack(0)
+  def evalA2(x: ARRW[ANY], f: ANY): (ANY, ANY) =
     val env1 = env.modStack(_ => x :+ f).evale
     (env1.getStack(1), env1.getStack(0))
   def quar: ENV =
@@ -225,7 +226,7 @@ extension (env: ENV)
     env.mod2(loop)
 
   def mul: ENV   = env.num2(env.fixp.multiply)
-  def mul$ : ENV = env.strnum(_ * _.intValue)
+  def mul$ : ENV = env.strnums(_ * _.intValue)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
@@ -236,8 +237,10 @@ extension (env: ENV)
   def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
   def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
 
-  def div: ENV  = env.num2(env.fixp.divide)
-  def divi: ENV = env.num2((x, y) => x.truncate.divide(y.truncate))
+  def div: ENV    = env.num2(env.fixp.divide)
+  def divi: ENV   = env.num2((x, y) => x.truncate.divide(y.truncate))
+  def div$ : ENV  = env.strnuma((x, y) => x.grouped(y.intValue).to(LazyList))
+  def div$$ : ENV = ???
 
   def mod: ENV = env.num2((x, y) =>
     val a = y.truncate
@@ -435,6 +438,7 @@ extension (env: ENV)
     case "|#"  => evalOr
     case "?#"  => evalIf
     case "*#"  => evalTimes
+    case "!#"  => ???
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
@@ -460,8 +464,8 @@ extension (env: ENV)
     case "*`"   => mul$$
     case "/"    => div
     case "/~"   => divi
-    case "//"   => ???
-    case "/`"   => ???
+    case "//"   => div$
+    case "/`"   => div$$
     case "%"    => mod
     case "/%"   => divmod
     case "%%"   => ???

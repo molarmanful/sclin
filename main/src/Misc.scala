@@ -7,9 +7,9 @@ import util.chaining._
 
 type FILE = Option[os.Path]
 
-type ARRW = Vector[ANY]
-type SEQW = LazyList[ANY]
-type MAPW = VectorMap[ANY, ANY]
+type ARRW[T]    = Vector[T]
+type SEQW[T]    = LazyList[T]
+type MAPW[K, V] = VectorMap[K, V]
 
 type NUMF = Apfloat
 
@@ -18,11 +18,13 @@ object NUMF:
   implicit def IntAp(n: Int): NUMF       = Apfloat(n)
   implicit def StringAp(s: String): NUMF = Apfloat(s)
 
-object MMap {}
-
 case class PATH(f: FILE, l: Int):
 
   override def toString: String = s"${f.getOrElse("?")}:$l"
+
+case class LinEx(t: String, x: String) extends Exception(x):
+
+  def toERR(env: ENV): LinERR = LinERR(env.code.p, t, x)
 
 case class LinERR(p: PATH, t: String, x: String) extends Exception(x):
 

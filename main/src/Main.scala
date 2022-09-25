@@ -1,4 +1,3 @@
-import java.nio.file._
 import mainargs._
 import scala.util.chaining._
 
@@ -28,9 +27,10 @@ object Main:
             case Some(s) => ENV.run(flags, file, s)
             case _       => ()
     catch
-      case e: NoSuchFileException => err(s"no file ${e.getFile()}")
-      case e: LinERR              => err(e.toString)
-      case e                      => err(s"ERR: $e").tap(_ => e.printStackTrace)
+      case e: java.nio.file.NoSuchFileException =>
+        err(s"no file ${e.getFile()}")
+      case e: LinERR => err(e.toString)
+      case e         => err(s"ERR: $e").tap(_ => e.printStackTrace)
 
   def main(args: Array[String]): Unit =
     ParserForMethods(this).runOrExit(args.toIndexedSeq, allowPositional = true)

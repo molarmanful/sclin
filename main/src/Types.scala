@@ -8,9 +8,9 @@ import NUMF._
 /** ADT for lin types. */
 enum ANY:
 
-  case SEQ(x: SEQW)
-  case ARR(x: ARRW)
-  case MAP(x: MAPW)
+  case SEQ(x: SEQW[ANY])
+  case ARR(x: ARRW[ANY])
+  case MAP(x: MAPW[ANY, ANY])
   case STR(x: String)
   case NUM(x: NUMF)
   case CMD(x: String)
@@ -93,20 +93,22 @@ enum ANY:
     * @param i
     *   index to retrieve
     */
-  def get(i: ANY): ANY = this match
-    case Its(x) if i.optI != None =>
-      val i1 = i.toI
-      val i2 = if i1 < 0 then i1 + length else i1
-      this match
-        case SEQ(x) => x.applyOrElse(i2, _ => UN)
-        case ARR(x) => x.applyOrElse(i2, _ => UN)
-        case STR(x) => if i2 < x.length then STR(x(i2).toString) else UN
-        case _      => toSEQ.get(NUM(i2))
-    case _ =>
-      this match
-        case MAP(x) => x.applyOrElse(i, _ => UN)
-        case _: CMD => toSTR.get(i)
-        case _      => UN
+  def get(i: ANY): ANY =
+    val oi = i.optI
+    this match
+      case Its(x) if oi != None =>
+        val i1 = oi.get
+        val i2 = if i1 < 0 then i1 + length else i1
+        this match
+          case SEQ(x) => x.applyOrElse(i2, _ => UN)
+          case ARR(x) => x.applyOrElse(i2, _ => UN)
+          case STR(x) => if i2 < x.length then STR(x(i2).toString) else UN
+          case _      => toSEQ.get(NUM(i2))
+      case _ =>
+        this match
+          case MAP(x) => x.applyOrElse(i, _ => UN)
+          case _: CMD => toSTR.get(i)
+          case _      => UN
 
   /** Takes `n` items in `ANY`. Negative `n` takes from the end.
     *
@@ -155,7 +157,7 @@ enum ANY:
   /** Converts `ANY` to `ARR`. */
   def toARR: ARR = this match
     case x: ARR => x
-    case SEQ(x) => x.toVector.toARR
+    case SEQ(x) => x.toARR
     case _      => toSEQ.toARR
 
   /** Converts `ANY` to `MAP`. */
@@ -174,9 +176,14 @@ enum ANY:
   /** Converts `ANY` to `NUM`. */
   def toNUM: NUM = this match
     case x: NUM => x
-    case STR(x) => NUM(x)
-    case UN     => NUM(0)
-    case _      => toSTR.toNUM
+    case STR(x) =>
+      try NUM(x)
+      catch
+        case e: java.lang.NumberFormatException =>
+          throw LinEx("NUM", s"""bad cast "$x"""")
+        case e => throw e
+    case UN => NUM(0)
+    case _  => toSTR.toNUM
 
   /** Converts `ANY` to `NUM` without failing. */
   def optNUM: Option[NUM] =
@@ -376,20 +383,20 @@ enum ANY:
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
     case _      => f(a, this)
 
-  def num1(env: ENV, f: NUMF => NUMF): ANY = vec1(x =>
+  def num1(f: NUMF => NUMF): ANY = vec1(x =>
     try NUM(f(x.toNUM.x))
     catch
       case _: ArithmeticException => UN
-      case e                      => throw LinERR(env.code.p, "MATH", e.getMessage)
+      case e                      => throw LinEx("MATH", e.getMessage)
   )
 
-  def num2(env: ENV, t: ANY, f: (NUMF, NUMF) => NUMF): ANY = vec2(
+  def num2(t: ANY, f: (NUMF, NUMF) => NUMF): ANY = vec2(
     t,
     (x, y) =>
       try NUM(f(x.toNUM.x, y.toNUM.x))
       catch
         case _: ArithmeticException => UN
-        case e                      => throw LinERR(env.code.p, "MATH", e.getMessage)
+        case e                      => throw LinEx("MATH", e.getMessage)
   )
 
   def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR.apply))
@@ -397,18 +404,20 @@ enum ANY:
   def str2(t: ANY, f: (String, String) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toString)))
 
-  def strnum(t: ANY, f: (String, NUMF) => String): ANY =
+  def strnums(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
+
+  def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
 
 object ANY:
 
-  extension (x: SEQW) def toSEQ: SEQ = SEQ(x)
+  extension (x: Iterable[ANY])
 
-  extension (x: ARRW) def toARR: ARR = ARR(x)
+    def toSEQ: SEQ = SEQ(x.to(LazyList))
+    def toARR: ARR = ARR(x.toVector)
 
-  extension (x: Iterable[ANY]) def toARR: ARR = ARR(x.toVector)
-
-  extension (x: MAPW) def toMAP: MAP = MAP(x)
+  extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
 
   extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)
 
