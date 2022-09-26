@@ -172,6 +172,39 @@ extension (env: ENV)
   def get: ENV = env.mod2((x, y) => x.get(y))
   def len: ENV = env.mod1(x => NUM(x.length))
 
+  def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
+  def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
+  def itr: ENV = env.mod2((x, y) =>
+    y.vec1(f => LazyList.iterate(x)(s => env.evalA1(Vector(s), f)).toSEQ)
+  )
+  def unfold: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      LazyList
+        .unfold(x)(s =>
+          env.modStack(_ => Vector(s, f)).evale.stack match
+            case st :+ n =>
+              st match
+                case _ :+ m => Some(m, n)
+                case _      => throw LinEx("ST_LEN", "stack length = 1")
+            case _ => None
+        )
+        .toSEQ
+    )
+  )
+
+  def enumL: ENV =
+    env.mod1 {
+      case x: MAP => x.toSEQ
+      case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
+    }
+  def range: ENV = env.num2a((x, y) =>
+    Range(x.intValue, y.intValue, y.subtract(x).compareTo(0)).map(Apfloat(_))
+  )
+  def orang: ENV = env.push(NUM(0)).range
+  def rango: ENV = env.push(NUM(0)).swap.range
+  def irang: ENV = env.push(NUM(1)).range
+  def rangi: ENV = env.push(NUM(1)).swap.range
+
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
   def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
@@ -239,7 +272,7 @@ extension (env: ENV)
     env.mod2(loop)
 
   def mul: ENV   = env.num2(env.fixp.multiply)
-  def mul$ : ENV = env.strnums(_ * _.intValue)
+  def mul$ : ENV = env.strnum(_ * _.intValue)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
@@ -247,13 +280,6 @@ extension (env: ENV)
       case (x: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
-  def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
-  def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
-  def enumL: ENV =
-    env.mod1 {
-      case x: MAP => x.toSEQ
-      case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
-    }
 
   def div: ENV    = env.num2(env.fixp.divide)
   def divi: ENV   = env.num2((x, y) => x.truncate.divide(y.truncate))
@@ -546,15 +572,15 @@ extension (env: ENV)
     case "flat"  => flat
     case "rep"   => rep
     case "cyc"   => cyc
-    case "itr"   => ???
-    case "fold_" => ???
+    case "itr"   => itr
+    case "fold_" => unfold
     case "uniq"  => ???
     case ">kv"   => enumL
-    case "a>b"   => ???
-    case "o>b"   => ???
-    case "a>o"   => ???
-    case "i>b"   => ???
-    case "a>i"   => ???
+    case "a>b"   => range
+    case "o>b"   => rango
+    case "a>o"   => orang
+    case "i>b"   => rangi
+    case "a>i"   => irang
     case "map"   => map
     case "mapf"  => flatMap
     case "fold"  => fold

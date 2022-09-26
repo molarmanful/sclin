@@ -23,7 +23,7 @@ enum ANY:
 
   /** `toString` override for `ANY`. */
   override def toString: String = this match
-    case SEQ(x) => x.mkString
+    case SEQ(x) => x.mkString(" ")
     case ARR(x) => x.mkString(" ")
     case MAP(x) =>
       x.iterator.map { case (i, a) => i.toString + " " + a.toString }
@@ -399,16 +399,19 @@ enum ANY:
         case e                      => throw LinEx("MATH", e.getMessage)
   )
 
+  def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
+    vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
+
   def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR.apply))
 
   def str2(t: ANY, f: (String, String) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toString)))
 
-  def strnums(t: ANY, f: (String, NUMF) => String): ANY =
+  def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
 
 object ANY:
 
