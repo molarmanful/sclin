@@ -289,7 +289,9 @@ case class ENV(
           .exec
       catch
         case e: LinEx => throw e.toERR(this)
-        case e        => throw e
+        case e: java.lang.StackOverflowError =>
+          throw LinEx("REC", "stack overflow").toERR(this)
+        case e => throw e
 
 /** Frontend for `ENV`. */
 object ENV:

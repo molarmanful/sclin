@@ -94,6 +94,19 @@ extension (env: ENV)
         else env
       loop(env, n.toNUM.x)
     )
+  def evalTry: ENV = env.arg2((f, g, env) =>
+    try env.push(f).evale
+    catch
+      case e: LinERR => env.pushs(Vector(ERR(e), g)).evale
+      case e: LinEx  => env.pushs(Vector(ERR(e.toERR(env)), g)).evale
+      case e =>
+        env.pushs(Vector(ERR(LinEx("_", e.getMessage).toERR(env)), g)).evale
+  )
+  def throwERR: ENV = env.arg1((x, env) =>
+    x match
+      case ERR(x) => throw x
+      case _      => throw LinEx("_", x.toString).toERR(env)
+  )
   def evalArrSt: ENV = env.arg2((x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR)
   )
@@ -236,6 +249,11 @@ extension (env: ENV)
     env.mod2(loop)
   def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
   def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
+  def enumL: ENV =
+    env.mod1 {
+      case x: MAP => x.toSEQ
+      case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
+    }
 
   def div: ENV    = env.num2(env.fixp.divide)
   def divi: ENV   = env.num2((x, y) => x.truncate.divide(y.truncate))
@@ -392,7 +410,7 @@ extension (env: ENV)
     case ">N"   => toNUM
     case ">F"   => toFN
     case ">E"   => toERR
-    case ">!"   => toBool
+    case ">?"   => toBool
     case "form" => form
 
     // I/O
@@ -438,7 +456,8 @@ extension (env: ENV)
     case "|#"  => evalOr
     case "?#"  => evalIf
     case "*#"  => evalTimes
-    case "!#"  => ???
+    case "!#"  => evalTry
+    case ">!"  => throwERR
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
@@ -527,7 +546,15 @@ extension (env: ENV)
     case "flat"  => flat
     case "rep"   => rep
     case "cyc"   => cyc
+    case "itr"   => ???
+    case "fold_" => ???
     case "uniq"  => ???
+    case ">kv"   => enumL
+    case "a>b"   => ???
+    case "o>b"   => ???
+    case "a>o"   => ???
+    case "i>b"   => ???
+    case "a>i"   => ???
     case "map"   => map
     case "mapf"  => flatMap
     case "fold"  => fold
@@ -549,7 +576,7 @@ extension (env: ENV)
     case "$E"  => env.push(NUM(env.fixp.exp(1)))
     case "$L"  => getLNum
     case "$F"  => getLFile
-    case "$W"  => env.push(SEQ(LazyList.from(0).map(NUM(_))))
+    case "$W"  => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
 
     // MAGIC DOT
     case "." => dot
