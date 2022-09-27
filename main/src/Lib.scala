@@ -245,7 +245,7 @@ extension (env: ENV)
       case (MAP(x), MAP(y))     => MAP(x ++ y)
       case (FN(p, x), FN(_, y)) => FN(p, x ++ y)
       case (FN(p, _), It(y))    => loop(x.toARR, y).pFN(p)
-      case (SEQ(x), ARR(y))     => SEQ(x ++ y)
+      case (SEQ(x), ARR(y))     => SEQ(x :++ y)
       case (_, SEQ(y))          => SEQ(x #:: y)
       case (SEQ(x), _)          => SEQ(x :+ y)
       case (ARR(x), _)          => ARR(x :+ y)
@@ -281,11 +281,20 @@ extension (env: ENV)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
-  def div: ENV    = env.num2(env.fixp.divide)
-  def divi: ENV   = env.num2((x, y) => x.truncate.divide(y.truncate))
-  def div$ : ENV  = env.strnuma((x, y) => x.grouped(y.intValue).to(LazyList))
-  def div$$ : ENV = ???
+  def _div(x: String, y: NUMF) = x.grouped(y.intValue).toVector
+  def div: ENV                 = env.num2(env.fixp.divide)
+  def divi: ENV                = env.num2((x, y) => x.truncate.divide(y.truncate))
+  def div$ : ENV               = env.strnuma(_div)
+  def div$$ : ENV =
+    def loop(x: ANY, y: ANY): ANY = (x, y) match
+      case (SEQ(x), _)   => x.grouped(y.toNUM.toI).map(_.toSEQ).toSEQ
+      case (ARR(x), _)   => x.grouped(y.toNUM.toI).map(_.toARR).toARR
+      case (MAP(x), _)   => x.grouped(y.toNUM.toI).map(_.toMAP).toARR
+      case (FN(p, x), _) => x.grouped(y.toNUM.toI).map(_.pFN(p)).pFN(p)
+      case _             => x.strnuma(y, _div)
+    env.mod2((x, y) => y.vec1(loop(x, _)))
 
+  def _mod(x: String, y: NUMF) = x.sliding(y.intValue).toVector
   def mod: ENV = env.num2((x, y) =>
     val a = y.truncate
     x.truncate.mod(a).add(a).mod(a)
@@ -294,6 +303,15 @@ extension (env: ENV)
     env.arg2((x, y, env) =>
       env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
     )
+  def mod$ : ENV = env.strnuma(_mod)
+  def mod$$ : ENV =
+    def loop(x: ANY, y: ANY): ANY = (x, y) match
+      case (SEQ(x), _)   => x.sliding(y.toNUM.toI).map(_.toSEQ).toSEQ
+      case (ARR(x), _)   => x.sliding(y.toNUM.toI).map(_.toARR).toARR
+      case (MAP(x), _)   => x.sliding(y.toNUM.toI).map(_.toMAP).toARR
+      case (FN(p, x), _) => x.sliding(y.toNUM.toI).map(_.pFN(p)).pFN(p)
+      case _             => x.strnuma(y, _div)
+    env.mod2((x, y) => y.vec1(loop(x, _)))
 
   def pow: ENV  = env.num2(env.fixp.pow)
   def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
@@ -328,14 +346,24 @@ extension (env: ENV)
   def max: ENV    = env.mod2(_.vec2(_, (x, y) => if x.cmp(y) > 0 then x else y))
   def or: ENV     = env.mod2(_.vec2(_, (x, y) => (x.toBool || y.toBool).boolNUM))
   def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
+
   def cmp: ENV    = env.mod2(_.vec2(_, (x, y) => NUM(x.cmp(y))))
+  def cmp$$ : ENV = env.mod2((x, y) => NUM(x.cmp(y)))
   def lt: ENV     = cmp.push(NUM(-1)).eql
+  def lt$$ : ENV  = cmp$$.push(NUM(-1)).eql
   def gt: ENV     = cmp.push(NUM(1)).eql
+  def gt$$ : ENV  = cmp$$.push(NUM(1)).eql
   def lteq: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).lt.pushs(Vector(x, y)).eql.or
   )
+  def lteq$$ : ENV = env.arg2((x, y, env) =>
+    env.pushs(Vector(x, y)).lt$$.pushs(Vector(x, y)).eql$$.or
+  )
   def gteq: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
+  )
+  def gteq$$ : ENV = env.arg2((x, y, env) =>
+    env.pushs(Vector(x, y)).gt$$.pushs(Vector(x, y)).eql$$.or
   )
   def eql: ENV    = env.mod2(_.vec2(_, _.eql(_).boolNUM))
   def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
@@ -415,6 +443,28 @@ extension (env: ENV)
             .getOrElse(UN)
         )
       case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
+  )
+
+  def uniq: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.uniqByM((a, b) => env.evalA1(Vector(a, b), f)))
+      case _ => y.vec1(f => x.uniqBy(a => env.evalA1(Vector(a), f)))
+  )
+  def sort: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f => x.sortByM((a, b) => env.evalA1(Vector(a, b), f)))
+      case _ => y.vec1(f => x.sortBy(a => env.evalA1(Vector(a), f)))
+  )
+  def sort$ : ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f =>
+          x.sortWithM((i, j, a, b) => env.evalA1(Vector(i, j, a, b), f).toBool)
+        )
+      case _ =>
+        y.vec1(f => x.sortWith((a, b) => env.evalA1(Vector(a, b), f).toBool))
   )
 
   def dot: ENV =
@@ -545,8 +595,8 @@ extension (env: ENV)
     case "/`"   => div$$
     case "%"    => mod
     case "/%"   => divmod
-    case "%%"   => ???
-    case "%`"   => ???
+    case "%%"   => mod$
+    case "%`"   => mod$$
     case "^"    => pow
     case "^~"   => powi
     case "e^"   => exp
@@ -574,23 +624,28 @@ extension (env: ENV)
     case "logX" => log10
 
     // NUM/LOGIC
-    case "!"   => not
-    case "!`"  => not$$
-    case "&"   => min
-    case "&&"  => and
-    case "&`"  => and$$
-    case "|"   => max
-    case "||"  => or
-    case "|`"  => or$$
-    case "<=>" => cmp
-    case "="   => eql
-    case "=`"  => eql$$
-    case "!="  => neq
-    case "!=`" => neq$$
-    case "<"   => lt
-    case ">"   => gt
-    case "<="  => lteq
-    case ">="  => gteq
+    case "!"    => not
+    case "!`"   => not$$
+    case "&"    => min
+    case "&&"   => and
+    case "&`"   => and$$
+    case "|"    => max
+    case "||"   => or
+    case "|`"   => or$$
+    case "<=>"  => cmp
+    case "<=>`" => cmp$$
+    case "="    => eql
+    case "=`"   => eql$$
+    case "!="   => neq
+    case "!=`"  => neq$$
+    case "<"    => lt
+    case "<`"   => lt$$
+    case ">"    => gt
+    case ">`"   => gt$$
+    case "<="   => lteq
+    case "<=`"  => gt$$
+    case ">="   => gteq
+    case ">=`"  => gt$$
 
     // ITR
     case "len"   => len
@@ -606,7 +661,6 @@ extension (env: ENV)
     case "cyc"   => cyc
     case "itr"   => itr
     case "fold_" => unfold
-    case "uniq"  => ???
     case ">kv"   => enumL
     case "a>b"   => range
     case "o>b"   => rango
@@ -614,6 +668,7 @@ extension (env: ENV)
     case "i>b"   => rangi
     case "a>i"   => irang
     case "map"   => map
+    case "zip"   => zip
     case "mapf"  => flatMap
     case "fold"  => fold
     case "fltr"  => fltr
@@ -622,8 +677,9 @@ extension (env: ENV)
     case "tk*"   => tkwl
     case "dp*"   => dpwl
     case "find"  => find
-    case "ifind" => ???
-    case "zip"   => zip
+    case "uniq"  => uniq
+    case "sort"  => sort
+    case "sort~" => sort$
 
     // CONSTANTS
     case "UN"  => env.push(UN)

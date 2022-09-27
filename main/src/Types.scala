@@ -26,7 +26,7 @@ enum ANY:
     case SEQ(x) => x.mkString(" ")
     case ARR(x) => x.mkString(" ")
     case MAP(x) =>
-      x.iterator.map { case (i, a) => i.toString + " " + a.toString }
+      x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
     case STR(x)   => x
     case NUM(x)   => x.toString(true)
@@ -40,7 +40,7 @@ enum ANY:
     case _: SEQ => s"[…]"
     case ARR(x) => s"[${x.map(_.toForm).mkString(" ")}]"
     case MAP(x) =>
-      s"{${x.iterator.map { case (i, a) => i.toForm + "=>" + a.toForm }
+      s"{${x.toSeq.map { case (i, a) => i.toForm + "=>" + a.toForm }
           .mkString(" ")}}"
     case STR(x) =>
       s"\"${x.map {
@@ -57,6 +57,12 @@ enum ANY:
     case _      => toString
 
   def cmp(t: ANY): Int = (this, t) match
+    case (SEQ(x), SEQ(y)) => x.sizeCompare(y)
+    case (SEQ(x), Itr(y)) => x.sizeCompare(y.length)
+    case (Itr(x), SEQ(y)) => -y.sizeCompare(x.length)
+    case (SEQ(x), NUM(y)) => x.sizeCompare(y.intValue)
+    case (NUM(x), SEQ(y)) => -y.sizeCompare(x.intValue)
+    case (Itr(x), Itr(y)) => x.length.compare(y.length)
     case (NUM(x), NUM(y)) => x.compareTo(y)
     case (STR(x), STR(y)) => x.compareTo(y)
     case (NUM(x), STR(y)) => x.compareTo(y.codePointAt(0))
@@ -234,9 +240,10 @@ enum ANY:
     *   function to map with
     */
   def map(f: ANY => ANY): ANY = this match
-    case SEQ(x) => x.map(f).toSEQ
-    case ARR(x) => x.map(f).toARR
-    case _      => toSEQ.map(f)
+    case SEQ(x)   => x.map(f).toSEQ
+    case ARR(x)   => x.map(f).toARR
+    case FN(p, x) => x.map(f).pFN(p)
+    case _        => toSEQ.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY)): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
     case _      => ???
@@ -247,9 +254,10 @@ enum ANY:
     *   function to map with
     */
   def flatMap(f: ANY => ANY): ANY = this match
-    case SEQ(x) => x.flatMap(f(_).toSEQ.x).toSEQ
-    case ARR(x) => x.flatMap(f(_).toARR.x).toARR
-    case _      => toSEQ.flatMap(f)
+    case SEQ(x)   => x.flatMap(f(_).toSEQ.x).toSEQ
+    case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
+    case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
+    case _        => toSEQ.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
     case _      => ???
@@ -292,9 +300,10 @@ enum ANY:
     *   function to filter with
     */
   def filter(f: ANY => Boolean): ANY = this match
-    case SEQ(x) => x.filter(f).toSEQ
-    case ARR(x) => x.filter(f).toARR
-    case _      => toSEQ.filter(f)
+    case SEQ(x)   => x.filter(f).toSEQ
+    case ARR(x)   => x.filter(f).toARR
+    case FN(p, x) => x.filter(f).pFN(p)
+    case _        => toSEQ.filter(f)
   def filterM(f: (ANY, ANY) => Boolean): ANY = this match
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
     case _      => ???
@@ -305,9 +314,10 @@ enum ANY:
     *   function to check with
     */
   def any(f: ANY => Boolean): Boolean = this match
-    case SEQ(x) => x.exists(f)
-    case ARR(x) => x.exists(f)
-    case _      => toSEQ.any(f)
+    case SEQ(x)   => x.exists(f)
+    case ARR(x)   => x.exists(f)
+    case FN(p, x) => x.exists(f)
+    case _        => toSEQ.any(f)
   def anyM(f: (ANY, ANY) => Boolean): Boolean = this match
     case MAP(x) => x.exists { case (a, b) => f(a, b) }
     case _      => ???
@@ -318,9 +328,10 @@ enum ANY:
     *   function to check with
     */
   def all(f: ANY => Boolean): Boolean = this match
-    case SEQ(x) => x.forall(f)
-    case ARR(x) => x.forall(f)
-    case _      => toSEQ.all(f)
+    case SEQ(x)   => x.forall(f)
+    case ARR(x)   => x.forall(f)
+    case FN(p, x) => x.forall(f)
+    case _        => toSEQ.all(f)
   def allM(f: (ANY, ANY) => Boolean): Boolean = this match
     case MAP(x) => x.forall { case (a, b) => f(a, b) }
     case _      => ???
@@ -331,9 +342,10 @@ enum ANY:
     *   function to check with
     */
   def takeWhile(f: ANY => Boolean): ANY = this match
-    case SEQ(x) => x.takeWhile(f).toSEQ
-    case ARR(x) => x.takeWhile(f).toARR
-    case _      => toSEQ.takeWhile(f)
+    case SEQ(x)   => x.takeWhile(f).toSEQ
+    case ARR(x)   => x.takeWhile(f).toARR
+    case FN(p, x) => x.takeWhile(f).pFN(p)
+    case _        => toSEQ.takeWhile(f)
   def takeWhileM(f: (ANY, ANY) => Boolean): ANY = this match
     case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
     case _      => ???
@@ -344,20 +356,54 @@ enum ANY:
     *   function to check with
     */
   def dropWhile(f: ANY => Boolean): ANY = this match
-    case SEQ(x) => x.dropWhile(f).toSEQ
-    case ARR(x) => x.dropWhile(f).toARR
-    case _      => toSEQ.dropWhile(f)
+    case SEQ(x)   => x.dropWhile(f).toSEQ
+    case ARR(x)   => x.dropWhile(f).toARR
+    case FN(p, x) => x.dropWhile(f).pFN(p)
+    case _        => toSEQ.dropWhile(f)
   def dropWhileM(f: (ANY, ANY) => Boolean): ANY = this match
     case MAP(x) => x.dropWhile { case (a, b) => f(a, b) }.toMAP
     case _      => ???
 
   def find(f: ANY => Boolean): Option[ANY] = this match
-    case SEQ(x) => x.find(f)
-    case ARR(x) => x.find(f)
-    case _      => toSEQ.find(f)
+    case SEQ(x)   => x.find(f)
+    case ARR(x)   => x.find(f)
+    case FN(p, x) => x.find(f)
+    case _        => toSEQ.find(f)
   def findM(f: (ANY, ANY) => Boolean): Option[(ANY, ANY)] = this match
     case MAP(x) => x.find { case (a, b) => f(a, b) }
     case _      => ???
+
+  def uniqBy(f: ANY => ANY): ANY = this match
+    case SEQ(x)   => x.distinctBy(f).toSEQ
+    case ARR(x)   => x.distinctBy(f).toARR
+    case FN(p, x) => x.distinctBy(f).pFN(p)
+    case _        => toSEQ.uniqBy(f)
+  def uniqByM(f: (ANY, ANY) => ANY): ANY = this match
+    case MAP(x) =>
+      x.toSeq.distinctBy { case (a, b) => f(a, b) }.to(VectorMap).toMAP
+    case _ => ???
+
+  def sortBy(f: ANY => ANY): ANY = this match
+    case SEQ(x)   => x.sortBy(f)(OrdANY).toSEQ
+    case ARR(x)   => x.sortBy(f)(OrdANY).toARR
+    case FN(p, x) => x.sortBy(f)(OrdANY).pFN(p)
+    case _        => toSEQ.sortBy(f)
+  def sortByM(f: (ANY, ANY) => ANY): ANY = this match
+    case MAP(x) =>
+      x.toSeq.sortBy { case (a, b) => f(a, b) }(OrdANY).to(VectorMap).toMAP
+    case _ => ???
+
+  def sortWith(f: (ANY, ANY) => Boolean): ANY = this match
+    case SEQ(x)   => x.sortWith(f).toSEQ
+    case ARR(x)   => x.sortWith(f).toARR
+    case FN(p, x) => x.sortWith(f).pFN(p)
+    case _        => toSEQ.sortWith(f)
+  def sortWithM(f: (ANY, ANY, ANY, ANY) => Boolean): ANY = this match
+    case MAP(x) =>
+      x.toSeq.sortWith { case ((i, a), (j, b)) => f(i, j, a, b) }
+        .to(VectorMap)
+        .toMAP
+    case _ => ???
 
   /** Vectorizes function over `ANY`.
     *
@@ -413,12 +459,23 @@ enum ANY:
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
 
+object OrdANY extends Ordering[ANY]:
+
+  def compare(x: ANY, y: ANY): Int = x.cmp(y)
+
 object ANY:
 
   extension (x: Iterable[ANY])
 
-    def toSEQ: SEQ = SEQ(x.to(LazyList))
-    def toARR: ARR = ARR(x.toVector)
+    def toSEQ: SEQ       = SEQ(x.to(LazyList))
+    def toARR: ARR       = ARR(x.toVector)
+    def pFN(p: PATH): FN = FN(p, x.toList)
+
+  extension (x: Iterator[ANY])
+
+    def toSEQ: SEQ       = SEQ(x.to(LazyList))
+    def toARR: ARR       = ARR(x.toVector)
+    def pFN(p: PATH): FN = FN(p, x.toList)
 
   extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
 
