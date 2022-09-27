@@ -246,8 +246,8 @@ case class ENV(
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
     modx(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
-  def num1(f: NUMF => NUMF): ENV         = mod1(_.num1(f))
-  def num2(f: (NUMF, NUMF) => NUMF): ENV = mod2(_.num2(_, f))
+  def num1(f: NUMF => NUMF): ENV                    = mod1(_.num1(f))
+  def num2(f: (NUMF, NUMF) => NUMF): ENV            = mod2(_.num2(_, f))
   def num2a(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2a(_, f))
 
   def str1(f: String => String): ENV           = mod1(_.str1(f))
@@ -264,18 +264,8 @@ case class ENV(
     *   `ANY` to evaluate
     */
   def execA(c: ANY): ENV = c match
-    case CMD(x) =>
-      x match
-        case s"\$y" if y != ""                          => push(CMD(y).toFN(this))
-        case s"#$y" if y != ""                          => this
-        case s"$$$$$y" if y != "" && gscope.contains(y) => push(gscope(y))
-        case s"=$$$$$y" if y != ""                      => arg1((v, env) => env.addGlob(y, v))
-        case s"$$$y" if y != "" && scope.contains(y)    => push(scope(y))
-        case s"=$$$y" if y != ""                        => arg1((v, env) => env.addLoc(y, v))
-        case x if scope.contains(x)                     => push(scope(x)).eval
-        case x if gscope.contains(x)                    => push(gscope(x)).eval
-        case _                                          => this.cmd(x)
-    case _ => push(c)
+    case CMD(x) => this.cmd(x)
+    case _      => push(c)
 
   /** Executes an `ENV`. */
   @tailrec

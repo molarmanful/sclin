@@ -54,10 +54,10 @@ extension (env: ENV)
         res.last.toString match
           case s"$c)$d" =>
             (
-              CMD(s")$d") :: code,
+              CMD(")" + d) :: code,
               c match
                 case "" => res1
-                case _  => List(FN(env.code.p, res1)) :+ CMD(c)
+                case _  => List(FN(env.code.p, res1), CMD(c))
             )
     val (code, res) = loop(env.code.x)
     env.modCode(_ => code).push(FN(env.code.p, res))
@@ -417,9 +417,41 @@ extension (env: ENV)
       case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
   )
 
-  def dot: ENV = ???
+  def dot: ENV =
+    env.code.x match
+      case c :: cs =>
+        env
+          .modCode(_ => cs)
+          .pipe(env =>
+            c match
+              case STR(x) => env.push(STR(StringContext.processEscapes(x)))
+              case CMD(x) => env.dotcmd(x)
+              case _      => ???
+          )
+      case _ => evalLNext
+
+  def dotcmd(x: String): ENV = x match
+    case "\\" =>
+      val (xs, ys) = env.code.x.splitAt(2)
+      env.modCode(_ => ys).push(FN(env.code.p, xs))
+    case _ => ???
 
   def cmd(x: String): ENV = x match
+
+    // SYNTAX
+    case s"\$y" if y != "" => env.push(CMD(y).toFN(env))
+    case s"#$y" if y != "" => env
+
+    // VARS
+    case s"$$$$$y" if y != "" && env.gscope.contains(y) =>
+      env.push(env.gscope(y))
+    case s"=$$$$$y" if y != ""                       => env.arg1((v, env) => env.addGlob(y, v))
+    case s"$$$y" if y != "" && env.scope.contains(y) => env.push(env.scope(y))
+    case s"=$$$y" if y != ""                         => env.arg1((v, env) => env.addLoc(y, v))
+
+    // VARS/EVAL
+    case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
+    case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
 
     // TYPES
     case "type" => getType
@@ -607,4 +639,4 @@ extension (env: ENV)
     // MAGIC DOT
     case "." => dot
 
-    case _ => throw LinERR(env.code.p, "FN", s"unknown fn \"$x\"")
+    case _ => throw LinEx("FN", s"unknown fn \"$x\"")
