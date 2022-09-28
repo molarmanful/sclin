@@ -488,25 +488,23 @@ extension (env: ENV)
 
   def cmd(x: String): ENV = x match
 
-    // SYNTAX
-    case s"\$y" if y != "" => env.push(CMD(y).toFN(env))
-    case s"#$y" if y != "" => env
+    // CMDOC START
 
-    // VARS
-    case s"$$$$$y" if y != "" && env.gscope.contains(y) =>
-      env.push(env.gscope(y))
-    case s"=$$$$$y" if y != ""                       => env.arg1((v, env) => env.addGlob(y, v))
-    case s"$$$y" if y != "" && env.scope.contains(y) => env.push(env.scope(y))
-    case s"=$$$y" if y != ""                         => env.arg1((v, env) => env.addLoc(y, v))
+    case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
+    case s"#$k" if k != "" => env
 
-    // VARS/EVAL
+    case s"$$$$$k" if k != "" && env.gscope.contains(k) =>
+      env.push(env.gscope(k))
+    case s"=$$$$$k" if k != ""                       => env.arg1((v, env) => env.addGlob(k, v))
+    case s"$$$k" if k != "" && env.scope.contains(k) => env.push(env.scope(k))
+    case s"=$$$k" if k != ""                         => env.arg1((v, env) => env.addLoc(k, v))
+
     case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
     case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
 
-    // TYPES
     case "type" => getType
     case "("    => startFN
-    case ")"    => env // TODO: ?
+    case ")"    => env
     case "["    => startARR
     case "]"    => endARR
     case "{"    => startARR
@@ -521,13 +519,11 @@ extension (env: ENV)
     case ">?"   => toBool
     case "form" => form
 
-    // I/O
     case "I>"  => in
     case ">O"  => out
     case "n>O" => outn
     case "f>O" => outf
 
-    // STACK
     case "dup"   => dup
     case "dups"  => dups
     case "over"  => over
@@ -546,7 +542,6 @@ extension (env: ENV)
     case "roll_" => rollu
     case "dip"   => dip
 
-    // FN/EXEC
     case "\\"  => wrapFN
     case "#"   => eval
     case "Q"   => quar
@@ -569,7 +564,6 @@ extension (env: ENV)
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
-    // NUM/MATH
     case ">~"   => prec
     case "oo>~" => infprec
     case "E"    => scale
@@ -603,7 +597,6 @@ extension (env: ENV)
     case "rng"  => rng
     case "abs"  => abs
 
-    // NUM/TRIG
     case "sin"    => sin
     case "cos"    => cos
     case "tan"    => tan
@@ -618,12 +611,10 @@ extension (env: ENV)
     case "cosh_"  => acosh
     case "tanh_"  => atanh
 
-    // NUM/LOG
     case "log"  => log
     case "ln"   => ln
     case "logX" => log10
 
-    // NUM/LOGIC
     case "!"    => not
     case "!`"   => not$$
     case "&"    => min
@@ -647,7 +638,6 @@ extension (env: ENV)
     case ">="   => gteq
     case ">=`"  => gt$$
 
-    // ITR
     case "len"   => len
     case ","     => wrap$
     case ",,"    => wrap
@@ -681,7 +671,6 @@ extension (env: ENV)
     case "sort"  => sort
     case "sort~" => sort$
 
-    // CONSTANTS
     case "UN"  => env.push(UN)
     case "()"  => env.push(UN.toFN(env))
     case "[]"  => env.push(UN.toARR)
@@ -692,7 +681,8 @@ extension (env: ENV)
     case "$F"  => getLFile
     case "$W"  => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
 
-    // MAGIC DOT
     case "." => dot
+
+    // CMDOC END
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")

@@ -12,6 +12,15 @@ object main extends ScalaModule {
     ivy"com.lihaoyi::fansi:0.4.0"
   )
 
+  def cmdoc = T {
+    val src = os.read
+      .lines(os.pwd / "main" / "src" / "Lib.scala")
+      .dropWhile(_.trim != "// CMDOC START")
+      .takeWhile(_.trim != "// CMDOC END")
+      .tail
+    println(src)
+  }
+
   object test extends Tests with TestModule.Munit {
 
     def ivyDeps = Agg(
