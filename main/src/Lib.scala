@@ -299,7 +299,10 @@ extension (env: ENV)
       case _             => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
-  def mod: ENV = env.num2(_ fmod _)
+  def mod: ENV = env.num2(
+    (x, y) => if y == 0 then throw ArithmeticException() else x.fmod(y),
+    "bad %"
+  )
   def divmod: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
   )
