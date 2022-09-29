@@ -255,7 +255,7 @@ case class ENV(
   def str2(f: (String, String) => String): ENV = mod2(_.str2(_, f))
 
   def strnum(f: (String, NUMF) => String): ENV = mod2(_.strnum(_, f))
-  def strnuma(f: (String, NUMF) => Iterable[String]): ENV = mod2(
+  def strnuma(f: (String, NUMF) => Iterator[String]): ENV = mod2(
     _.strnuma(_, f)
   )
 

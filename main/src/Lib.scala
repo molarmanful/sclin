@@ -170,7 +170,9 @@ extension (env: ENV)
 
   def dip: ENV = env.arg1((x, env) => env.evale.push(x))
 
-  def get: ENV = env.mod2((x, y) => x.get(y))
+  def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
+  def get$$ : ENV = env.mod2(_.get(_))
+
   def len: ENV = env.mod1(x => NUM(x.length))
 
   def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
@@ -208,6 +210,9 @@ extension (env: ENV)
   def irang: ENV = env.push(NUM(1)).range
   def rangi: ENV = env.push(NUM(1)).swap.range
 
+  def shuffle: ENV = env.mod1(_.shuffle)
+  def getr: ENV    = env.shuffle.push(NUM(0)).get
+
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
   def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
@@ -234,9 +239,8 @@ extension (env: ENV)
       case _      => x.str1(_.reverse)
     env.mod1(loop)
 
-  def _add(x: String, y: String): String = x ++ y
-  def add: ENV                           = env.num2(_ + _)
-  def add$ : ENV                         = env.str2(_add)
+  def add: ENV   = env.num2(_ + _)
+  def add$ : ENV = env.str2(_ ++ _)
   def add$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (It(x), SEQ(y))      => SEQ(x.toSEQ.x #::: y)
@@ -251,12 +255,11 @@ extension (env: ENV)
       case (_, ARR(y))          => ARR(x +: y)
       case (FN(p, x), _)        => FN(p, x :+ y)
       case (_, FN(p, y))        => FN(p, x +: y)
-      case _                    => x.str2(y, _add)
+      case _                    => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
-  def _sub(x: String, y: String): String = x.replace(y, "")
-  def sub: ENV                           = env.num2(_ - _)
-  def sub$ : ENV                         = env.str2(_sub)
+  def sub: ENV   = env.num2(_ - _)
+  def sub$ : ENV = env.str2(_.replace(_, ""))
   def sub$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
@@ -267,11 +270,11 @@ extension (env: ENV)
       case (It(x), It(y))   => loop(x, y.toSEQ)
       case (Itr(x), _)      => loop(x, Vector(y).toARR)
       case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
-      case _                => x.str2(y, _sub)
+      case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
   def mul: ENV   = env.num2(_ * _)
-  def mul$ : ENV = env.strnum((x, y) => Seq.fill(y.intValue)(x).mkString)
+  def mul$ : ENV = env.strnum(_ * _.intValue)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
@@ -280,40 +283,36 @@ extension (env: ENV)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
-  def _div(x: String, y: NUMF) = x.grouped(y.intValue).toVector
-  def div: ENV                 = env.num2(_ / _)
-  def divi: ENV                = env.num2(_ fquot _)
-  def div$ : ENV               = env.strnuma(_div)
+  def div: ENV   = env.num2(_ / _)
+  def divi: ENV  = env.num2(_ fquot _)
+  def div$ : ENV = env.strnuma((x, y) => x.grouped(y.intValue))
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (SEQ(x), _)   => x.grouped(y.toNUM.toI).map(_.toSEQ).toSEQ
-      case (ARR(x), _)   => x.grouped(y.toNUM.toI).map(_.toARR).toARR
-      case (MAP(x), _)   => x.grouped(y.toNUM.toI).map(_.toMAP).toARR
+      case (ARR(x), _)   => x.grouped(y.toNUM.toI).map(_.toARR).toSEQ
+      case (MAP(x), _)   => x.grouped(y.toNUM.toI).map(_.toMAP).toSEQ
       case (FN(p, x), _) => x.grouped(y.toNUM.toI).map(_.pFN(p)).pFN(p)
-      case _             => x.strnuma(y, _div)
+      case _             => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
-  def _mod(x: String, y: NUMF) = x.sliding(y.intValue).toVector
-  def mod: ENV                 = env.num2(_ fmod _)
-  def divmod: ENV =
-    env.arg2((x, y, env) =>
-      env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
-    )
-  def mod$ : ENV = env.strnuma(_mod)
+  def mod: ENV = env.num2(_ fmod _)
+  def divmod: ENV = env.arg2((x, y, env) =>
+    env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
+  )
+  def mod$ : ENV = env.strnuma((x, y) => x.sliding(y.intValue))
   def mod$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (SEQ(x), _)   => x.sliding(y.toNUM.toI).map(_.toSEQ).toSEQ
-      case (ARR(x), _)   => x.sliding(y.toNUM.toI).map(_.toARR).toARR
-      case (MAP(x), _)   => x.sliding(y.toNUM.toI).map(_.toMAP).toARR
+      case (ARR(x), _)   => x.sliding(y.toNUM.toI).map(_.toARR).toSEQ
+      case (MAP(x), _)   => x.sliding(y.toNUM.toI).map(_.toMAP).toSEQ
       case (FN(p, x), _) => x.sliding(y.toNUM.toI).map(_.pFN(p)).pFN(p)
-      case _             => x.strnuma(y, _div)
+      case _             => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
   def pow: ENV  = env.num2(_ fpow _)
   def powi: ENV = env.num2(_ ** _.intValue)
 
   def exp: ENV = env.num1(_.exp)
-  // def rng: ENV = env.num1(_.longValue.pipe(Ap.random))
   def abs: ENV = env.num1(_.abs)
 
   def sin: ENV   = env.num1(Real.sin)
@@ -524,6 +523,18 @@ extension (env: ENV)
     case ">?"   => toBool
     case "form" => form
 
+    case "UN"   => env.push(UN)
+    case "()"   => env.push(UN.toFN(env))
+    case "[]"   => env.push(UN.toARR)
+    case "{}"   => env.push(UN.toMAP)
+    case "$PI"  => env.push(NUM(Real.pi))
+    case "$E"   => env.push(NUM(Real.e))
+    case "$rng" => env.push(NUM(random))
+    case "$L"   => getLNum
+    case "$F"   => getLFile
+    case "$W"   => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
+    case "$P"   => env.push(prime.lazyList.map(NUM(_)).toSEQ)
+
     case "I>"  => in
     case ">O"  => out
     case "n>O" => outn
@@ -569,37 +580,36 @@ extension (env: ENV)
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
-    case "E"  => scale
-    case "I"  => trunc
-    case "|_" => floor
-    case "|-" => round
-    case "|^" => ceil
-    case "_"  => neg
-    case "__" => neg$
-    case "_`" => neg$$
-    case "+"  => add
-    case "++" => add$
-    case "+`" => add$$
-    case "-"  => sub
-    case "--" => sub$
-    case "-`" => sub$$
-    case "*"  => mul
-    case "**" => mul$
-    case "*`" => mul$$
-    case "/"  => div
-    case "/~" => divi
-    case "//" => div$
-    case "/`" => div$$
-    case "%"  => mod
-    case "/%" => divmod
-    case "%%" => mod$
-    case "%`" => mod$$
-    case "^"  => pow
-    case "^~" => powi
-    case "^^" => ???
-    case "^`" => ???
-    case "e^" => exp
-    // case "rng" => rng
+    case "E"   => scale
+    case "I"   => trunc
+    case "|_"  => floor
+    case "|-"  => round
+    case "|^"  => ceil
+    case "_"   => neg
+    case "__"  => neg$
+    case "_`"  => neg$$
+    case "+"   => add
+    case "++"  => add$
+    case "+`"  => add$$
+    case "-"   => sub
+    case "--"  => sub$
+    case "-`"  => sub$$
+    case "*"   => mul
+    case "**"  => mul$
+    case "*`"  => mul$$
+    case "/"   => div
+    case "/~"  => divi
+    case "//"  => div$
+    case "/`"  => div$$
+    case "%"   => mod
+    case "/%"  => divmod
+    case "%%"  => mod$
+    case "%`"  => mod$$
+    case "^"   => pow
+    case "^~"  => powi
+    case "^^"  => ???
+    case "^`"  => ???
+    case "e^"  => exp
     case "abs" => abs
 
     case "sin"    => sin
@@ -646,6 +656,10 @@ extension (env: ENV)
     case ">="   => gteq
     case ">=`"  => gt$$
 
+    case ":"     => get
+    case ":R"    => getr
+    case "::"    => ???
+    case ":`"    => get$$
     case "len"   => len
     case ","     => wrap$
     case ",,"    => wrap
@@ -662,13 +676,16 @@ extension (env: ENV)
     case ">kv"   => enumL
     case ">k"    => keys
     case ">v"    => vals
-    case "a>b"   => range
-    case "o>b"   => rango
-    case "a>o"   => orang
-    case "i>b"   => rangi
-    case "a>i"   => irang
+    case "n>m"   => range
+    case "o>n"   => rango
+    case "n>o"   => orang
+    case "i>n"   => rangi
+    case "n>i"   => irang
+    case "shuf"  => shuffle
+
     case "map"   => map
     case "zip"   => zip
+    case "tbl"   => ???
     case "mapf"  => flatMap
     case "fold"  => fold
     case "fltr"  => fltr
@@ -680,17 +697,6 @@ extension (env: ENV)
     case "uniq"  => uniq
     case "sort"  => sort
     case "sort~" => sort$
-
-    case "UN"  => env.push(UN)
-    case "()"  => env.push(UN.toFN(env))
-    case "[]"  => env.push(UN.toARR)
-    case "{}"  => env.push(UN.toMAP)
-    case "$PI" => env.push(NUM(Real.pi))
-    case "$E"  => env.push(NUM(Real.e))
-    case "$L"  => getLNum
-    case "$F"  => getLFile
-    case "$W"  => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
-    case "$P"  => env.push(prime.lazyList.map(NUM(_)).toSEQ)
 
     case "." => dot
 

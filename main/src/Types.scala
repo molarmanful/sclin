@@ -1,4 +1,5 @@
 import scala.collection.immutable.VectorMap
+import scala.util.Random
 import spire.math.Real
 import util.chaining._
 import ANY._
@@ -145,7 +146,15 @@ enum ANY:
     case ARR(x) => x.contains(t)
     case MAP(x) => x.contains(t)
     case STR(x) => x.contains(t.toString)
-    case x      => x.toSEQ.has(t)
+    case _      => toSEQ.has(t)
+
+  def shuffle: ANY = this match
+    case SEQ(x)   => Random.shuffle(x).toSEQ
+    case ARR(x)   => Random.shuffle(x).toARR
+    case MAP(x)   => Random.shuffle(x).toMAP
+    case STR(x)   => STR(Random.shuffle(x).toString)
+    case FN(p, x) => Random.shuffle(x).pFN(p)
+    case _        => toSEQ.shuffle
 
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
@@ -454,8 +463,8 @@ enum ANY:
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
-  def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
+  def strnuma(t: ANY, f: (String, NUMF) => Iterator[String]): ANY =
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
 
 object OrdANY extends Ordering[ANY]:
 
@@ -472,13 +481,13 @@ object ANY:
   extension (x: Iterator[ANY])
 
     def toSEQ: SEQ       = SEQ(x.to(LazyList))
-    def toARR: ARR       = ARR(x.toVector)
     def pFN(p: PATH): FN = FN(p, x.toList)
 
   extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
 
   extension (b: Boolean)
-    def boolI: Int = if b then 1 else 0
+
+    def boolI: Int   = if b then 1 else 0
     def boolNUM: NUM = NUM(b.boolI)
 
   extension (s: String) def toNUM: NUM = NUM(Real(s))
