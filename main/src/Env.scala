@@ -1,4 +1,3 @@
-import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
 import scala.annotation._
 import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
@@ -32,7 +31,6 @@ case class ENV(
     scope: Map[String, ANY] = Map(),
     gscope: TrieMap[String, ANY] = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
-    fixp: Afp = Afp(100),
     eS: Boolean = false,
     eV: Boolean = false,
     eI: Boolean = false

@@ -1,4 +1,4 @@
-oo>~ 2n>O [] 3 .
+2n>O [] 3 .
 =$n dup ; @
   ( 2^~ $n <= ) tk* .
   ( $n swap % ) all .

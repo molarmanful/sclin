@@ -1,9 +1,7 @@
-import java.util.Formatter
-import org.apfloat._
 import scala.collection.immutable.VectorMap
+import spire.math.Real
 import util.chaining._
 import ANY._
-import NUMF._
 
 /** ADT for lin types. */
 enum ANY:
@@ -29,7 +27,7 @@ enum ANY:
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
     case STR(x)   => x
-    case NUM(x)   => x.toString(true)
+    case NUM(x)   => x.toString
     case CMD(x)   => x
     case FN(_, x) => x.mkString(" ")
     case ERR(x)   => x.toString
@@ -63,9 +61,9 @@ enum ANY:
     case (SEQ(x), NUM(y)) => x.sizeCompare(y.intValue)
     case (NUM(x), SEQ(y)) => -y.sizeCompare(x.intValue)
     case (Itr(x), Itr(y)) => x.length.compare(y.length)
-    case (NUM(x), NUM(y)) => x.compareTo(y)
+    case (NUM(x), NUM(y)) => x.compare(y)
     case (STR(x), STR(y)) => x.compareTo(y)
-    case (NUM(x), STR(y)) => x.compareTo(y.codePointAt(0))
+    case (NUM(x), STR(y)) => x.compare(y.codePointAt(0))
     case (_: STR, _: NUM) => -t.cmp(this)
     case _                => ???
 
@@ -183,7 +181,7 @@ enum ANY:
   def toNUM: NUM = this match
     case x: NUM => x
     case STR(x) =>
-      try NUM(x)
+      try x.toNUM
       catch
         case e: java.lang.NumberFormatException =>
           throw LinEx("NUM", s"""bad cast "$x"""")
@@ -480,6 +478,8 @@ object ANY:
   extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
 
   extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)
+
+  extension (s: String) def toNUM: NUM = NUM(Real(s))
 
   /** Pattern for `SEQ`-like. */
   object Itr:

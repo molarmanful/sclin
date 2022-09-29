@@ -1,8 +1,7 @@
-import java.math.MathContext
-import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.VectorMap
 import scala.language.implicitConversions
+import spire.math.Real
 import util.chaining._
 
 type FILE = Option[os.Path]
@@ -11,12 +10,7 @@ type ARRW[T]    = Vector[T]
 type SEQW[T]    = LazyList[T]
 type MAPW[K, V] = VectorMap[K, V]
 
-type NUMF = Apfloat
-
-object NUMF:
-
-  implicit def IntAp(n: Int): NUMF       = Apfloat(n)
-  implicit def StringAp(s: String): NUMF = Apfloat(s)
+type NUMF = Real
 
 case class PATH(f: FILE, l: Int):
 

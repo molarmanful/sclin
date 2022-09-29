@@ -1,6 +1,5 @@
 import scala.util.chaining._
 import ANY._
-import NUMF._
 
 /** Parser primitive tags. */
 enum PT:
@@ -33,7 +32,7 @@ case class Parser(xs: List[ANY], x: String, t: PT):
                 t match
                   case PT.STR          => STR(x)
                   case PT.CMD          => CMD(x)
-                  case PT.DEC | PT.NUM => NUM(x)
+                  case PT.DEC | PT.NUM => x.toNUM
                   case _               => ???
             )
         ,

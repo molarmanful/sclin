@@ -1,9 +1,9 @@
-import org.apfloat.{ApfloatMath => Ap, FixedPrecisionApfloatHelper => Afp, _}
-import pprint.Tree.Lazy
 import scala.io.StdIn._
 import scala.util.chaining._
+import spire.algebra._
+import spire.implicits._
+import spire.math.Real
 import ANY._
-import NUMF._
 
 extension (env: ENV)
 
@@ -90,7 +90,7 @@ extension (env: ENV)
   def evalTimes: ENV =
     env.arg2((f, n, env) =>
       def loop(env: ENV, n: NUMF): ENV =
-        if n.compareTo(0) > 0 then loop(env.push(f).evale, n.subtract(1))
+        if n.compare(0) > 0 then loop(env.push(f).evale, n - 1)
         else env
       loop(env, n.toNUM.x)
     )
@@ -198,7 +198,7 @@ extension (env: ENV)
       case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
     }
   def range: ENV = env.num2a((x, y) =>
-    Range(x.intValue, y.intValue, y.subtract(x).compareTo(0)).map(Apfloat(_))
+    Range(x.intValue, y.intValue, (y - x).compare(0)).map(Real(_))
   )
   def orang: ENV = env.push(NUM(0)).range
   def rango: ENV = env.push(NUM(0)).swap.range
@@ -215,17 +215,16 @@ extension (env: ENV)
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toI)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toI)))
 
-  def prec: ENV =
-    env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
-  def infprec: ENV = env.copy(fixp = Afp(Long.MaxValue))
-  def scale: ENV   = env.num2((x, y) => Ap.scale(x, y.longValue))
-  def trunc: ENV   = env.num1(_.truncate)
-  def floor: ENV   = env.num1(_.floor)
-  def round: ENV =
-    env.num1(x => env.fixp.divide(env.fixp.multiply(x, 2).floor, 2).ceil)
-  def ceil: ENV = env.num1(_.ceil)
+  // def prec: ENV =
+  //   env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
+  // def infprec: ENV = env.copy(fixp = Afp(Long.MaxValue))
+  // def scale: ENV   = env.num2((x, y) => Ap.scale(x, y.longValue))
+  def trunc: ENV = env.num1(_.toBigInt)
+  def floor: ENV = env.num1(_.floor)
+  def round: ENV = env.num1(_.round)
+  def ceil: ENV  = env.num1(_.ceil)
 
-  def neg: ENV   = env.num1(env.fixp.negate)
+  def neg: ENV   = env.num1(-_)
   def neg$ : ENV = env.str1(_.reverse)
   def neg$$ : ENV =
     def loop(x: ANY): ANY = x match
@@ -236,7 +235,7 @@ extension (env: ENV)
     env.mod1(loop)
 
   def _add(x: String, y: String): String = x ++ y
-  def add: ENV                           = env.num2(env.fixp.add)
+  def add: ENV                           = env.num2(_ + _)
   def add$ : ENV                         = env.str2(_add)
   def add$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
@@ -256,7 +255,7 @@ extension (env: ENV)
     env.mod2(loop)
 
   def _sub(x: String, y: String): String = x.replace(y, "")
-  def sub: ENV                           = env.num2(env.fixp.subtract)
+  def sub: ENV                           = env.num2(_ - _)
   def sub$ : ENV                         = env.str2(_sub)
   def sub$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
@@ -271,8 +270,8 @@ extension (env: ENV)
       case _                => x.str2(y, _sub)
     env.mod2(loop)
 
-  def mul: ENV   = env.num2(env.fixp.multiply)
-  def mul$ : ENV = env.strnum(_ * _.intValue)
+  def mul: ENV   = env.num2(_ * _)
+  def mul$ : ENV = env.strnum((x, y) => Seq.fill(y.intValue)(x).mkString)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
@@ -282,8 +281,8 @@ extension (env: ENV)
     env.mod2(loop)
 
   def _div(x: String, y: NUMF) = x.grouped(y.intValue).toVector
-  def div: ENV                 = env.num2(env.fixp.divide)
-  def divi: ENV                = env.num2((x, y) => x.truncate.divide(y.truncate))
+  def div: ENV                 = env.num2(_ / _)
+  def divi: ENV                = env.num2(_ fquot _)
   def div$ : ENV               = env.strnuma(_div)
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
@@ -295,10 +294,7 @@ extension (env: ENV)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
   def _mod(x: String, y: NUMF) = x.sliding(y.intValue).toVector
-  def mod: ENV = env.num2((x, y) =>
-    val a = y.truncate
-    x.truncate.mod(a).add(a).mod(a)
-  )
+  def mod: ENV                 = env.num2(_ fmod _)
   def divmod: ENV =
     env.arg2((x, y, env) =>
       env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
@@ -313,30 +309,30 @@ extension (env: ENV)
       case _             => x.strnuma(y, _div)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
-  def pow: ENV  = env.num2(env.fixp.pow)
-  def powi: ENV = env.num2((x, y) => env.fixp.pow(x, y.longValue))
+  def pow: ENV  = env.num2(_ fpow _)
+  def powi: ENV = env.num2(_ ** _.intValue)
 
-  def exp: ENV = env.num1(env.fixp.exp(_))
-  def rng: ENV = env.num1(_.longValue.pipe(Ap.random))
-  def abs: ENV = env.num1(env.fixp.abs)
+  def exp: ENV = env.num1(_.exp)
+  // def rng: ENV = env.num1(_.longValue.pipe(Ap.random))
+  def abs: ENV = env.num1(_.abs)
 
-  def sin: ENV   = env.num1(env.fixp.sin)
-  def cos: ENV   = env.num1(env.fixp.cos)
-  def tan: ENV   = env.num1(env.fixp.tan)
-  def asin: ENV  = env.num1(env.fixp.asin)
-  def acos: ENV  = env.num1(env.fixp.acos)
-  def atan: ENV  = env.num1(env.fixp.atan)
-  def atan2: ENV = env.num2(env.fixp.atan2)
-  def sinh: ENV  = env.num1(env.fixp.sinh)
-  def cosh: ENV  = env.num1(env.fixp.cosh)
-  def tanh: ENV  = env.num1(env.fixp.tanh)
-  def asinh: ENV = env.num1(env.fixp.asinh)
-  def acosh: ENV = env.num1(env.fixp.acosh)
-  def atanh: ENV = env.num1(env.fixp.atanh)
+  def sin: ENV   = env.num1(Real.sin)
+  def cos: ENV   = env.num1(Real.cos)
+  def tan: ENV   = env.num1(Real.tan)
+  def asin: ENV  = env.num1(Real.asin)
+  def acos: ENV  = env.num1(Real.acos)
+  def atan: ENV  = env.num1(Real.atan)
+  def atan2: ENV = env.num2(Real.atan2)
+  def sinh: ENV  = env.num1(Real.sinh)
+  def cosh: ENV  = env.num1(Real.cosh)
+  def tanh: ENV  = env.num1(Real.tanh)
+  def asinh: ENV = env.num1(Real.asinh)
+  def acosh: ENV = env.num1(Real.acosh)
+  def atanh: ENV = env.num1(Real.atanh)
 
-  def log: ENV   = env.num2(env.fixp.log(_, _))
-  def ln: ENV    = env.num1(env.fixp.log(_))
-  def log10: ENV = env.num1(env.fixp.log(_, 10))
+  def ln: ENV    = env.num1(Real.log)
+  def log: ENV   = env.arg2((x, y, env) => env.push(x).ln.push(y).ln.div)
+  def log10: ENV = env.push(NUM(10)).log
 
   def not: ENV    = env.mod1(_.vec1(_.toBool.unary_!.boolNUM))
   def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
@@ -564,38 +560,40 @@ extension (env: ENV)
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
-    case ">~"   => prec
-    case "oo>~" => infprec
-    case "E"    => scale
-    case "I"    => trunc
-    case "|_"   => floor
-    case "|-"   => round
-    case "|^"   => ceil
-    case "_"    => neg
-    case "__"   => neg$
-    case "_`"   => neg$$
-    case "+"    => add
-    case "++"   => add$
-    case "+`"   => add$$
-    case "-"    => sub
-    case "--"   => sub$
-    case "-`"   => sub$$
-    case "*"    => mul
-    case "**"   => mul$
-    case "*`"   => mul$$
-    case "/"    => div
-    case "/~"   => divi
-    case "//"   => div$
-    case "/`"   => div$$
-    case "%"    => mod
-    case "/%"   => divmod
-    case "%%"   => mod$
-    case "%`"   => mod$$
-    case "^"    => pow
-    case "^~"   => powi
-    case "e^"   => exp
-    case "rng"  => rng
-    case "abs"  => abs
+    // case ">~"   => prec
+    // case "oo>~" => infprec
+    // case "E"    => scale
+    case "I"  => trunc
+    case "|_" => floor
+    case "|-" => round
+    case "|^" => ceil
+    case "_"  => neg
+    case "__" => neg$
+    case "_`" => neg$$
+    case "+"  => add
+    case "++" => add$
+    case "+`" => add$$
+    case "-"  => sub
+    case "--" => sub$
+    case "-`" => sub$$
+    case "*"  => mul
+    case "**" => mul$
+    case "*`" => mul$$
+    case "/"  => div
+    case "/~" => divi
+    case "//" => div$
+    case "/`" => div$$
+    case "%"  => mod
+    case "/%" => divmod
+    case "%%" => mod$
+    case "%`" => mod$$
+    case "^"  => pow
+    case "^~" => powi
+    case "^^" => ???
+    case "^`" => ???
+    case "e^" => exp
+    // case "rng" => rng
+    case "abs" => abs
 
     case "sin"    => sin
     case "cos"    => cos
@@ -675,8 +673,8 @@ extension (env: ENV)
     case "()"  => env.push(UN.toFN(env))
     case "[]"  => env.push(UN.toARR)
     case "{}"  => env.push(UN.toMAP)
-    case "$PI" => env.push(NUM(env.fixp.pi))
-    case "$E"  => env.push(NUM(env.fixp.exp(1)))
+    case "$PI" => env.push(NUM(Real.pi))
+    case "$E"  => env.push(NUM(Real.e))
     case "$L"  => getLNum
     case "$F"  => getLFile
     case "$W"  => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
