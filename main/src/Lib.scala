@@ -291,12 +291,12 @@ extension (env: ENV)
   )
   def div$ : ENV = env.strnuma((x, y) => x.grouped(y.intValue))
   def div$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = (x, y) match
-      case (SEQ(x), _)   => x.grouped(y.toNUM.toI).map(_.toSEQ).toSEQ
-      case (ARR(x), _)   => x.grouped(y.toNUM.toI).map(_.toARR).toSEQ
-      case (MAP(x), _)   => x.grouped(y.toNUM.toI).map(_.toMAP).toSEQ
-      case (FN(p, x), _) => x.grouped(y.toNUM.toI).map(_.pFN(p)).pFN(p)
-      case _             => loop(Vector(x).toARR, y)
+    def loop(x: ANY, y: ANY): ANY = x match
+      case SEQ(x)   => x.grouped(y.toI).map(_.toSEQ).toSEQ
+      case ARR(x)   => x.grouped(y.toI).map(_.toARR).toSEQ
+      case MAP(x)   => x.grouped(y.toI).map(_.toMAP).toSEQ
+      case FN(p, x) => x.grouped(y.toI).map(_.pFN(p)).pFN(p)
+      case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
   def mod: ENV = env.num2(

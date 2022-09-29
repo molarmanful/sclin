@@ -23,17 +23,18 @@ case class Parser(xs: List[ANY], x: String, t: PT):
     case _ =>
       Parser(
         t match
-          case PT.CMD if Parser.isPar(x) =>
-            xs ++ x.map(c => CMD(c.toString)).toList
-          case PT.DEC if x == "."      => xs :+ CMD(".")
-          case PT.DEC if x.last == '.' => xs ++ List(x.init.toNUM, CMD("."))
-          case _ =>
-            xs :+ (t match
-              case PT.STR          => STR(x)
-              case PT.CMD          => CMD(x)
-              case PT.DEC | PT.NUM => x.toNUM
-              case _               => ???
-            )
+          case PT.STR => xs :+ STR(x)
+          case PT.CMD =>
+            if Parser.isPar(x) then
+              xs ++ x.map(_.toString.pipe(CMD.apply)).toList
+            else xs :+ CMD(x)
+          case PT.DEC =>
+            x match
+              case "."    => xs :+ CMD(".")
+              case s"$x." => xs :+ x.toNUM :+ CMD(".")
+              case _      => xs :+ x.toNUM
+          case PT.NUM => xs :+ x.toNUM
+          case _      => ???
         ,
         "",
         PT.UN
