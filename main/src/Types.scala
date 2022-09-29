@@ -22,17 +22,15 @@ enum ANY:
 
   /** `toString` override for `ANY`. */
   override def toString: String = this match
-    case SEQ(x) => x.mkString(" ")
-    case ARR(x) => x.mkString(" ")
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x)   => x
-    case NUM(x)   => x.toString
-    case CMD(x)   => x
-    case FN(_, x) => x.mkString(" ")
-    case ERR(x)   => x.toString
-    case UN       => ""
+    case STR(x) => x
+    case NUM(x) => x.toString
+    case CMD(x) => x
+    case ERR(x) => x.toString
+    case UN     => ""
+    case _      => join(" ")
 
   /** Converts `ANY` to formatted string. */
   def toForm: String = this match
@@ -155,6 +153,13 @@ enum ANY:
     case STR(x)   => STR(Random.shuffle(x).toString)
     case FN(p, x) => Random.shuffle(x).pFN(p)
     case _        => toSEQ.shuffle
+
+  def join(s: String): String = this match
+    case SEQ(x)   => x.mkString(s)
+    case ARR(x)   => x.mkString(s)
+    case _: STR   => toSEQ.join(s)
+    case FN(_, x) => x.mkString(s)
+    case _        => toString
 
   /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
@@ -456,9 +461,18 @@ enum ANY:
     vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
 
   def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR.apply))
+  def str1a(f: String => Iterable[String]): ANY = vec1(
+    _.toString.pipe(f).map(STR(_)).toARR
+  )
 
   def str2(t: ANY, f: (String, String) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toString)))
+
+  def str2q(t: ANY, f: (String, String) => Iterator[String]): ANY =
+    vec2(t, (x, y) => f(x.toString, y.toString).map(STR(_)).toSEQ)
+
+  def str2a(t: ANY, f: (String, String) => Iterable[String]): ANY =
+    vec2(t, (x, y) => f(x.toString, y.toString).map(STR(_)).toARR)
 
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))

@@ -207,6 +207,10 @@ extension (env: ENV)
   def shuffle: ENV = env.mod1(_.shuffle)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
 
+  def split: ENV  = env.str2a(_.split(_))
+  def ssplit: ENV = env.str1a(_.split(raw"\s"))
+  def join: ENV   = env.mod2((x, y) => y.vec1(s => STR(x.join(s.toString))))
+
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
   def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
@@ -649,6 +653,8 @@ extension (env: ENV)
     case ":R"    => getr
     case "::"    => ???
     case ":`"    => get$$
+    case ":?"    => ???
+    case ":?`"   => ???
     case "len"   => len
     case ","     => wrap$
     case ",,"    => wrap
@@ -671,6 +677,20 @@ extension (env: ENV)
     case "i>n"   => rangi
     case "n>i"   => irang
     case "shuf"  => shuffle
+
+    case "S>c" => ???
+    case "c>S" => ???
+    case "<>"  => split
+    case "<>`" => ???
+    case "><"  => join
+    case "><`" => ???
+    case "c<>" => env.push(STR("")).split
+    case "c><" => env.push(STR("")).join
+    case "w<>" => env.push(STR(" ")).split
+    case "w><" => env.push(STR(" ")).join
+    case "n<>" => env.push(STR("\n")).split
+    case "n><" => env.push(STR("\n")).join
+    case "s<>" => ssplit
 
     case "map"   => map
     case "zip"   => zip
