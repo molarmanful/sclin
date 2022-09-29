@@ -477,7 +477,9 @@ object ANY:
 
   extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
 
-  extension (b: Boolean) def boolNUM: NUM = NUM(if b then 1 else 0)
+  extension (b: Boolean)
+    def boolI: Int = if b then 1 else 0
+    def boolNUM: NUM = NUM(b.boolI)
 
   extension (s: String) def toNUM: NUM = NUM(Real(s))
 

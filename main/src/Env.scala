@@ -244,6 +244,9 @@ case class ENV(
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
     modx(3, { case Vector(x, y, z) => f(x, y, z); case _ => ??? })
 
+  def vec1(f: ANY => ANY): ENV        = mod1(_.vec1(f))
+  def vec2(f: (ANY, ANY) => ANY): ENV = mod2(_.vec2(_, f))
+
   def num1(f: NUMF => NUMF): ENV                    = mod1(_.num1(f))
   def num2(f: (NUMF, NUMF) => NUMF): ENV            = mod2(_.num2(_, f))
   def num2a(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2a(_, f))

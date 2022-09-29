@@ -1,8 +1,9 @@
+import scala.collection.immutable.VectorMap
 import scala.io.StdIn._
 import scala.util.chaining._
 import spire.algebra._
 import spire.implicits._
-import spire.math.Real
+import spire.math._
 import ANY._
 
 extension (env: ENV)
@@ -192,11 +193,13 @@ extension (env: ENV)
     )
   )
 
-  def enumL: ENV =
-    env.mod1 {
-      case x: MAP => x.toSEQ
-      case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
-    }
+  def enumL: ENV = env.mod1 {
+    case x: MAP => x.toSEQ
+    case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
+  }
+  def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
+  def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
+
   def range: ENV = env.num2a((x, y) =>
     Range(x.intValue, y.intValue, (y - x).compare(0)).map(Real(_))
   )
@@ -215,10 +218,7 @@ extension (env: ENV)
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toI)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toI)))
 
-  // def prec: ENV =
-  //   env.arg1((x, env) => env.copy(fixp = Afp(x.toNUM.x.longValue)))
-  // def infprec: ENV = env.copy(fixp = Afp(Long.MaxValue))
-  // def scale: ENV   = env.num2((x, y) => Ap.scale(x, y.longValue))
+  def scale: ENV = env.push(NUM(10)).swap.pow.mul
   def trunc: ENV = env.num1(_.toBigInt)
   def floor: ENV = env.num1(_.floor)
   def round: ENV = env.num1(_.round)
@@ -334,16 +334,25 @@ extension (env: ENV)
   def log: ENV   = env.arg2((x, y, env) => env.push(x).ln.push(y).ln.div)
   def log10: ENV = env.push(NUM(10)).log
 
-  def not: ENV    = env.mod1(_.vec1(_.toBool.unary_!.boolNUM))
+  def isPrime: ENV = env.num1(x => prime.isPrime(x.toSafeLong).boolI)
+  def factor: ENV = env.vec1(
+    _.toNUM.x.toSafeLong
+      .pipe(prime.factor)
+      .to(VectorMap)
+      .map { case (x, y) => (NUM(x), NUM(y)) }
+      .toMAP
+  )
+
+  def not: ENV    = env.vec1(_.toBool.unary_!.boolNUM)
   def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
-  def min: ENV    = env.mod2(_.vec2(_, (x, y) => if x.cmp(y) < 0 then x else y))
-  def and: ENV    = env.mod2(_.vec2(_, (x, y) => (x.toBool && y.toBool).boolNUM))
+  def min: ENV    = env.vec2((x, y) => if x.cmp(y) < 0 then x else y)
+  def and: ENV    = env.vec2((x, y) => (x.toBool && y.toBool).boolNUM)
   def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolNUM)
-  def max: ENV    = env.mod2(_.vec2(_, (x, y) => if x.cmp(y) > 0 then x else y))
-  def or: ENV     = env.mod2(_.vec2(_, (x, y) => (x.toBool || y.toBool).boolNUM))
+  def max: ENV    = env.vec2((x, y) => if x.cmp(y) > 0 then x else y)
+  def or: ENV     = env.vec2((x, y) => (x.toBool || y.toBool).boolNUM)
   def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
 
-  def cmp: ENV    = env.mod2(_.vec2(_, (x, y) => NUM(x.cmp(y))))
+  def cmp: ENV    = env.vec2((x, y) => NUM(x.cmp(y)))
   def cmp$$ : ENV = env.mod2((x, y) => NUM(x.cmp(y)))
   def lt: ENV     = cmp.push(NUM(-1)).eql
   def lt$$ : ENV  = cmp$$.push(NUM(-1)).eql
@@ -361,7 +370,7 @@ extension (env: ENV)
   def gteq$$ : ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).gt$$.pushs(Vector(x, y)).eql$$.or
   )
-  def eql: ENV    = env.mod2(_.vec2(_, _.eql(_).boolNUM))
+  def eql: ENV    = env.vec2(_.eql(_).boolNUM)
   def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
   def neq: ENV    = eql.not
   def neq$$ : ENV = eql$$.not
@@ -560,9 +569,7 @@ extension (env: ENV)
     case "'"   => evalArrSt
     case "'_"  => evalStArr
 
-    // case ">~"   => prec
-    // case "oo>~" => infprec
-    // case "E"    => scale
+    case "E"  => scale
     case "I"  => trunc
     case "|_" => floor
     case "|-" => round
@@ -613,6 +620,9 @@ extension (env: ENV)
     case "ln"   => ln
     case "logX" => log10
 
+    case "P?" => isPrime
+    case "P/" => factor
+
     case "!"    => not
     case "!`"   => not$$
     case "&"    => min
@@ -650,6 +660,8 @@ extension (env: ENV)
     case "itr"   => itr
     case "fold_" => unfold
     case ">kv"   => enumL
+    case ">k"    => keys
+    case ">v"    => vals
     case "a>b"   => range
     case "o>b"   => rango
     case "a>o"   => orang
@@ -678,6 +690,7 @@ extension (env: ENV)
     case "$L"  => getLNum
     case "$F"  => getLFile
     case "$W"  => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
+    case "$P"  => env.push(prime.lazyList.map(NUM(_)).toSEQ)
 
     case "." => dot
 
