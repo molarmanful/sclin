@@ -39,7 +39,6 @@ extension (env: ENV)
     ): (List[ANY], List[ANY]) =
       if d > 0 then
         code match
-          case List() => (code, res)
           case c :: cs =>
             loop(
               cs,
@@ -50,18 +49,13 @@ extension (env: ENV)
               ,
               res :+ c
             )
-      else
-        val res1 = res.dropRight(1)
-        res.last.toString match
-          case s"$c)$d" =>
-            (
-              CMD(")" + d) :: code,
-              c match
-                case "" => res1
-                case _  => List(FN(env.code.p, res1), CMD(c))
-            )
+          case _ => (code, res)
+      else (code, res)
     val (code, res) = loop(env.code.x)
-    env.modCode(_ => code).push(FN(env.code.p, res))
+    val (cs, c) = res match
+      case cs :+ c => (cs, c)
+      case _       => (res, CMD(")"))
+    env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toI
@@ -479,16 +473,10 @@ extension (env: ENV)
           .pipe(env =>
             c match
               case STR(x) => env.push(STR(StringContext.processEscapes(x)))
-              case CMD(x) => env.dotcmd(x)
-              case _      => ???
+              case CMD(x) => env.wrapFN.push(CMD(x)).add$$
+              case _      => env.push(c)
           )
       case _ => evalLNext
-
-  def dotcmd(x: String): ENV = x match
-    case "\\" =>
-      val (xs, ys) = env.code.x.splitAt(2)
-      env.modCode(_ => ys).push(FN(env.code.p, xs))
-    case _ => ???
 
   def cmd(x: String): ENV = x match
 
@@ -529,6 +517,7 @@ extension (env: ENV)
     case "{}"   => env.push(UN.toMAP)
     case "$PI"  => env.push(NUM(Real.pi))
     case "$E"   => env.push(NUM(Real.e))
+    case "$PHI" => env.push(NUM(Real.phi))
     case "$rng" => env.push(NUM(random))
     case "$L"   => getLNum
     case "$F"   => getLFile

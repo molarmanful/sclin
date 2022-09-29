@@ -25,15 +25,14 @@ case class Parser(xs: List[ANY], x: String, t: PT):
         t match
           case PT.CMD if Parser.isPar(x) =>
             xs ++ x.map(c => CMD(c.toString)).toList
+          case PT.DEC if x == "."      => xs :+ CMD(".")
+          case PT.DEC if x.last == '.' => xs ++ List(x.init.toNUM, CMD("."))
           case _ =>
-            xs :+ (
-              if x == "." then CMD(".")
-              else
-                t match
-                  case PT.STR          => STR(x)
-                  case PT.CMD          => CMD(x)
-                  case PT.DEC | PT.NUM => x.toNUM
-                  case _               => ???
+            xs :+ (t match
+              case PT.STR          => STR(x)
+              case PT.CMD          => CMD(x)
+              case PT.DEC | PT.NUM => x.toNUM
+              case _               => ???
             )
         ,
         "",
