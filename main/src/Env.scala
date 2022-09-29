@@ -248,7 +248,9 @@ case class ENV(
   def vec2(f: (ANY, ANY) => ANY): ENV = mod2(_.vec2(_, f))
 
   def num1(f: NUMF => NUMF): ENV                    = mod1(_.num1(f))
+  def num1(f: NUMF => NUMF, e: String): ENV         = mod1(_.num1(f, e))
   def num2(f: (NUMF, NUMF) => NUMF): ENV            = mod2(_.num2(_, f))
+  def num2(f: (NUMF, NUMF) => NUMF, e: String): ENV = mod2(_.num2(_, f, e))
   def num2a(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2a(_, f))
 
   def str1a(f: String => Iterable[String]): ENV           = mod1(_.str1a(f))
@@ -286,7 +288,6 @@ case class ENV(
         case e: LinEx => throw e.toERR(this)
         case e: java.lang.StackOverflowError =>
           throw LinEx("REC", "stack overflow").toERR(this)
-        case e => throw e
 
 /** Frontend for `ENV`. */
 object ENV:

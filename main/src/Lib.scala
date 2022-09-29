@@ -281,8 +281,14 @@ extension (env: ENV)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
-  def div: ENV   = env.num2(_ / _)
-  def divi: ENV  = env.num2(_ fquot _)
+  def div: ENV = env.num2(
+    (x, y) => if y == 0 then throw ArithmeticException() else x / y,
+    "bad /"
+  )
+  def divi: ENV = env.num2(
+    (x, y) => if y == 0 then throw ArithmeticException() else x.fquot(y),
+    "bad /~"
+  )
   def div$ : ENV = env.strnuma((x, y) => x.grouped(y.intValue))
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
@@ -307,15 +313,21 @@ extension (env: ENV)
       case _             => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
-  def pow: ENV  = env.num2(_ fpow _)
+  def pow: ENV  = env.num2(_ fpow _, "bad ^")
   def powi: ENV = env.num2(_ ** _.intValue)
 
   def exp: ENV = env.num1(_.exp)
   def abs: ENV = env.num1(_.abs)
 
-  def sin: ENV   = env.num1(Real.sin)
-  def cos: ENV   = env.num1(Real.cos)
-  def tan: ENV   = env.num1(Real.tan)
+  def sin: ENV = env.num1(Real.sin)
+  def cos: ENV = env.num1(Real.cos)
+  def tan: ENV = env.num1(
+    x =>
+      val d = Real.cos(x)
+      if d == 0 then throw ArithmeticException() else Real.sin(x) / d
+    ,
+    "bad tan"
+  )
   def asin: ENV  = env.num1(Real.asin)
   def acos: ENV  = env.num1(Real.acos)
   def atan: ENV  = env.num1(Real.atan)
@@ -576,7 +588,7 @@ extension (env: ENV)
     case "E"   => scale
     case "I"   => trunc
     case "|_"  => floor
-    case "|-"  => round
+    case "|~"  => round
     case "|^"  => ceil
     case "_"   => neg
     case "__"  => neg$

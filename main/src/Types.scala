@@ -199,7 +199,6 @@ enum ANY:
       catch
         case e: java.lang.NumberFormatException =>
           throw LinEx("NUM", s"""bad cast "$x"""")
-        case e => throw e
     case UN => NUM(0)
     case _  => toSTR.toNUM
 
@@ -441,21 +440,16 @@ enum ANY:
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
     case _      => f(a, this)
 
-  def num1(f: NUMF => NUMF): ANY = vec1(x =>
-    try NUM(f(x.toNUM.x))
-    catch
-      case _: ArithmeticException => UN
-      case e                      => throw LinEx("MATH", e.getMessage)
-  )
+  def num1(f: NUMF => NUMF): ANY = vec1(x => NUM(f(x.toNUM.x)))
+  def num1(f: NUMF => NUMF, e: String): ANY =
+    try num1(f)
+    catch case _: ArithmeticException => throw LinEx("MATH", e)
 
-  def num2(t: ANY, f: (NUMF, NUMF) => NUMF): ANY = vec2(
-    t,
-    (x, y) =>
-      try NUM(f(x.toNUM.x, y.toNUM.x))
-      catch
-        case _: ArithmeticException => UN
-        case e                      => throw LinEx("MATH", e.getMessage)
-  )
+  def num2(t: ANY, f: (NUMF, NUMF) => NUMF): ANY =
+    vec2(t, (x, y) => NUM(f(x.toNUM.x, y.toNUM.x)))
+  def num2(t: ANY, f: (NUMF, NUMF) => NUMF, e: String): ANY =
+    try num2(t, f)
+    catch case _: ArithmeticException => throw LinEx("MATH", e)
 
   def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
     vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
