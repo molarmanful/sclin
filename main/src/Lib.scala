@@ -396,25 +396,31 @@ extension (env: ENV)
   def neq$$ : ENV = eql$$.not
 
   def map: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP => y.vec1(f => x.mapM((a, b) => env.evalA2(Vector(a, b), f)))
-      case _      => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
+    y.vec1(f =>
+      x.mapM(
+        (a, b) => env.evalA2(Vector(a, b), f),
+        a => env.evalA1(Vector(a), f)
+      )
+    )
   )
   def tapMap: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f =>
-          x.mapM((a, b) => env.evalA2(Vector(a, b), f).pipe(_ => (a, b)))
-        )
-      case _ => y.vec1(f => x.map(a => env.evalA1(Vector(a), f).pipe(_ => a)))
+    y.vec1(f =>
+      x.mapM(
+        (a, b) => env.evalA2(Vector(a, b), f).pipe(_ => (a, b)),
+        a => env.evalA1(Vector(a), f).pipe(_ => a)
+      )
+    )
   )
   def flatMap: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.flatMapM((a, b) => env.evalA1(Vector(a, b), f)))
-      case _ => y.vec1(f => x.flatMap(a => env.evalA1(Vector(a), f)))
+    y.vec1(f =>
+      x.flatMapM(
+        (a, b) => env.evalA1(Vector(a, b), f),
+        a => env.evalA1(Vector(a), f)
+      )
+    )
   )
   def flat: ENV = env.mod1(_.flat)
+
   def zip: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
   )
@@ -423,84 +429,92 @@ extension (env: ENV)
   )
 
   def fold: ENV = env.mod3((x, y, z) =>
-    x match
-      case x: MAP =>
-        z.vec1(f =>
-          x.foldLeftM(y)((a, b) => env.evalA1(Vector(b._1, a, b._2), f))
-        )
-      case _ => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
-    z.vec1(f => x.foldLeft(y)((a, b) => env.evalA1(Vector(a, b), f)))
+    z.vec1(f =>
+      x.foldLeftM(y)(
+        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
+        (a, b) => env.evalA1(Vector(a, b), f)
+      )
+    )
   )
 
   def fltr: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.filterM((a, b) => env.evalA1(Vector(a, b), f).toBool))
-      case _ => y.vec1(f => x.filter(a => env.evalA1(Vector(a), f).toBool))
+    y.vec1(f =>
+      x.filterM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      )
+    )
   )
 
   def any: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f =>
-          x.anyM((a, b) => env.evalA1(Vector(a, b), f).toBool).boolNUM
-        )
-      case _ => y.vec1(f => x.any(a => env.evalA1(Vector(a), f).toBool).boolNUM)
+    y.vec1(f =>
+      x.anyM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      ).boolNUM
+    )
   )
   def all: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f =>
-          x.allM((a, b) => env.evalA1(Vector(a, b), f).toBool).boolNUM
-        )
-      case _ => y.vec1(f => x.all(a => env.evalA1(Vector(a), f).toBool).boolNUM)
+    y.vec1(f =>
+      x.allM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      ).boolNUM
+    )
   )
 
   def tkwl: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.takeWhileM((a, b) => env.evalA1(Vector(a, b), f).toBool))
-      case _ => y.vec1(f => x.takeWhile(a => env.evalA1(Vector(a), f).toBool))
+    y.vec1(f =>
+      x.takeWhileM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      )
+    )
   )
   def dpwl: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.dropWhileM((a, b) => env.evalA1(Vector(a, b), f).toBool))
-      case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
+    y.vec1(f =>
+      x.dropWhileM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      )
+    )
   )
 
   def find: ENV = env.mod2((x, y) =>
-    y.vec1(f => x.find(a => env.evalA1(Vector(a), f).toBool).getOrElse(UN))
-    x match
-      case x: MAP =>
-        y.vec1(f =>
-          x.findM((a, b) => env.evalA1(Vector(a, b), f).toBool)
-            .map { case (a, b) => Vector(a, b).toARR }
-            .getOrElse(UN)
-        )
-      case _ => y.vec1(f => x.dropWhile(a => env.evalA1(Vector(a), f).toBool))
+    y.vec1(f =>
+      x.findM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      ) match
+        case Some((a, b)) => Vector(a, b).toARR
+        case Some(a: ANY) => a
+        case _            => UN
+    )
   )
 
   def uniq: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.uniqByM((a, b) => env.evalA1(Vector(a, b), f)))
-      case _ => y.vec1(f => x.uniqBy(a => env.evalA1(Vector(a), f)))
+    y.vec1(f =>
+      x.uniqByM(
+        (a, b) => env.evalA1(Vector(a, b), f),
+        a => env.evalA1(Vector(a), f)
+      )
+    )
   )
   def sort: ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f => x.sortByM((a, b) => env.evalA1(Vector(a, b), f)))
-      case _ => y.vec1(f => x.sortBy(a => env.evalA1(Vector(a), f)))
+    y.vec1(f =>
+      x.sortByM(
+        (a, b) => env.evalA1(Vector(a, b), f),
+        a => env.evalA1(Vector(a), f)
+      )
+    )
   )
   def sort$ : ENV = env.mod2((x, y) =>
-    x match
-      case x: MAP =>
-        y.vec1(f =>
-          x.sortWithM((i, j, a, b) => env.evalA1(Vector(i, j, a, b), f).toBool)
-        )
-      case _ =>
-        y.vec1(f => x.sortWith((a, b) => env.evalA1(Vector(a, b), f).toBool))
+    y.vec1(f =>
+      x.sortWithM(
+        (i, j, a, b) => env.evalA1(Vector(i, j, a, b), f).toBool,
+        (a, b) => env.evalA1(Vector(a, b), f).toBool
+      )
+    )
   )
 
   def dot: ENV =

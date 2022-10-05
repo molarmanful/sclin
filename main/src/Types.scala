@@ -185,7 +185,7 @@ enum ANY:
       LazyList.from(x).map { case (i, a) => Vector(i, a).toARR }.toSEQ
     case STR(x)   => LazyList.from(x).map(c => STR(c.toString)).toSEQ
     case FN(_, x) => LazyList.from(x).toSEQ
-    case UN       => LazyList[ANY]().toSEQ
+    case UN       => LazyList.empty.toSEQ
     case _        => LazyList(this).toSEQ
 
   /** Converts `ANY` to `ARR`. */
@@ -271,9 +271,9 @@ enum ANY:
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
     case _        => toSEQ.map(f)
-  def mapM(f: (ANY, ANY) => (ANY, ANY)): ANY = this match
+  def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
-    case _      => ???
+    case _      => map(g)
 
   /** Applies function over each element of `ANY` and flatten.
     *
@@ -285,9 +285,9 @@ enum ANY:
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
     case _        => toSEQ.flatMap(f)
-  def flatMapM(f: (ANY, ANY) => ANY): ANY = this match
+  def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
-    case _      => ???
+    case _      => flatMap(g)
   def flat: ANY = flatMap(x => x)
 
   /** Zips 2 `ANY`s using function.
@@ -319,9 +319,10 @@ enum ANY:
     case SEQ(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)
     case _      => toSEQ.foldLeft(a)(f)
-  def foldLeftM[T](a: T)(f: (T, (ANY, ANY)) => T): T = this match
-    case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
-    case _      => ???
+  def foldLeftM[T](a: T)(f: (T, (ANY, ANY)) => T, g: (T, ANY) => T): T =
+    this match
+      case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
+      case _      => foldLeft(a)(g)
 
   /** Filters elements of `ANY` with function.
     *
@@ -333,9 +334,9 @@ enum ANY:
     case ARR(x)   => x.filter(f).toARR
     case FN(p, x) => x.filter(f).pFN(p)
     case _        => toSEQ.filter(f)
-  def filterM(f: (ANY, ANY) => Boolean): ANY = this match
+  def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
-    case _      => ???
+    case _      => filter(g)
 
   /** Check if any elements of `ANY` satisfy function.
     *
@@ -347,9 +348,9 @@ enum ANY:
     case ARR(x)   => x.exists(f)
     case FN(p, x) => x.exists(f)
     case _        => toSEQ.any(f)
-  def anyM(f: (ANY, ANY) => Boolean): Boolean = this match
+  def anyM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.exists { case (a, b) => f(a, b) }
-    case _      => ???
+    case _      => any(g)
 
   /** Check if all elements of `ANY` satisfy function.
     *
@@ -361,9 +362,9 @@ enum ANY:
     case ARR(x)   => x.forall(f)
     case FN(p, x) => x.forall(f)
     case _        => toSEQ.all(f)
-  def allM(f: (ANY, ANY) => Boolean): Boolean = this match
+  def allM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.forall { case (a, b) => f(a, b) }
-    case _      => ???
+    case _      => all(g)
 
   /** Take elements of `ANY` until function is no longer satisified.
     *
@@ -375,9 +376,9 @@ enum ANY:
     case ARR(x)   => x.takeWhile(f).toARR
     case FN(p, x) => x.takeWhile(f).pFN(p)
     case _        => toSEQ.takeWhile(f)
-  def takeWhileM(f: (ANY, ANY) => Boolean): ANY = this match
+  def takeWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
-    case _      => ???
+    case _      => takeWhile(g)
 
   /** Drop elements of `ANY` until function is no longer satisified.
     *
@@ -389,50 +390,56 @@ enum ANY:
     case ARR(x)   => x.dropWhile(f).toARR
     case FN(p, x) => x.dropWhile(f).pFN(p)
     case _        => toSEQ.dropWhile(f)
-  def dropWhileM(f: (ANY, ANY) => Boolean): ANY = this match
+  def dropWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.dropWhile { case (a, b) => f(a, b) }.toMAP
-    case _      => ???
+    case _      => dropWhile(g)
 
   def find(f: ANY => Boolean): Option[ANY] = this match
     case SEQ(x)   => x.find(f)
     case ARR(x)   => x.find(f)
     case FN(p, x) => x.find(f)
     case _        => toSEQ.find(f)
-  def findM(f: (ANY, ANY) => Boolean): Option[(ANY, ANY)] = this match
+  def findM(
+      f: (ANY, ANY) => Boolean,
+      g: ANY => Boolean
+  ): Option[ANY | (ANY, ANY)] = this match
     case MAP(x) => x.find { case (a, b) => f(a, b) }
-    case _      => ???
+    case _      => find(g)
 
   def uniqBy(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.distinctBy(f).toSEQ
     case ARR(x)   => x.distinctBy(f).toARR
     case FN(p, x) => x.distinctBy(f).pFN(p)
     case _        => toSEQ.uniqBy(f)
-  def uniqByM(f: (ANY, ANY) => ANY): ANY = this match
+  def uniqByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.distinctBy { case (a, b) => f(a, b) }.to(VectorMap).toMAP
-    case _ => ???
+    case _ => uniqBy(g)
 
   def sortBy(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.sortBy(f)(OrdANY).toSEQ
     case ARR(x)   => x.sortBy(f)(OrdANY).toARR
     case FN(p, x) => x.sortBy(f)(OrdANY).pFN(p)
     case _        => toSEQ.sortBy(f)
-  def sortByM(f: (ANY, ANY) => ANY): ANY = this match
+  def sortByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.sortBy { case (a, b) => f(a, b) }(OrdANY).to(VectorMap).toMAP
-    case _ => ???
+    case _ => sortBy(g)
 
   def sortWith(f: (ANY, ANY) => Boolean): ANY = this match
     case SEQ(x)   => x.sortWith(f).toSEQ
     case ARR(x)   => x.sortWith(f).toARR
     case FN(p, x) => x.sortWith(f).pFN(p)
     case _        => toSEQ.sortWith(f)
-  def sortWithM(f: (ANY, ANY, ANY, ANY) => Boolean): ANY = this match
+  def sortWithM(
+      f: (ANY, ANY, ANY, ANY) => Boolean,
+      g: (ANY, ANY) => Boolean
+  ): ANY = this match
     case MAP(x) =>
       x.toSeq.sortWith { case ((i, a), (j, b)) => f(i, j, a, b) }
         .to(VectorMap)
         .toMAP
-    case _ => ???
+    case _ => sortWith(g)
 
   /** Vectorizes function over `ANY`.
     *
