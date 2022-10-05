@@ -418,6 +418,9 @@ extension (env: ENV)
   def zip: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
   )
+  def tbl: ENV = env.mod3((x, y, z) =>
+    z.vec1(f => x.table(y, (a, b) => env.evalA1(Vector(a, b), f)))
+  )
 
   def fold: ENV = env.mod3((x, y, z) =>
     x match
@@ -731,7 +734,7 @@ extension (env: ENV)
     case "map"   => map
     case "tap"   => tapMap
     case "zip"   => zip
-    case "tbl"   => ???
+    case "tbl"   => tbl
     case "mapf"  => flatMap
     case "fold"  => fold
     case "fltr"  => fltr

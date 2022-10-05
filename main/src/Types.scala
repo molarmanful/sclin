@@ -313,6 +313,8 @@ enum ANY:
     case (_, _: ARR)      => t.zip(this, (x, y) => f(y, x)).toARR
     case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
 
+  def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
+
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)
