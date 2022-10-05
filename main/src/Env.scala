@@ -251,6 +251,7 @@ case class ENV(
   def num1(f: NUMF => NUMF, e: String): ENV         = mod1(_.num1(f, e))
   def num2(f: (NUMF, NUMF) => NUMF): ENV            = mod2(_.num2(_, f))
   def num2(f: (NUMF, NUMF) => NUMF, e: String): ENV = mod2(_.num2(_, f, e))
+  def num2q(f: (NUMF, NUMF) => Iterator[NUMF]): ENV = mod2(_.num2q(_, f))
   def num2a(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2a(_, f))
 
   def str1a(f: String => Iterable[String]): ENV           = mod1(_.str1a(f))

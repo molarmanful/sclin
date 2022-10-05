@@ -167,6 +167,9 @@ extension (env: ENV)
   def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
   def get$$ : ENV = env.mod2(_.get(_))
 
+  def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolNUM))
+  def has$$ : ENV = env.mod2(_.has(_).boolNUM)
+
   def len: ENV = env.mod1(x => NUM(x.length))
 
   def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
@@ -196,16 +199,21 @@ extension (env: ENV)
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
-  def range: ENV = env.num2a((x, y) =>
-    Range(x.intValue, y.intValue, (y - x).compare(0)).map(Real(_))
+  def range: ENV = env.num2q((x, y) =>
+    Range(x.intValue, y.intValue, (y - x).compare(0)).iterator.map(Real(_))
   )
-  def orang: ENV = env.push(NUM(0)).range
-  def rango: ENV = env.push(NUM(0)).swap.range
-  def irang: ENV = env.push(NUM(1)).range
-  def rangi: ENV = env.push(NUM(1)).swap.range
 
   def shuffle: ENV = env.mod1(_.shuffle)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
+  def perm: ENV    = env.mod1(_.permutations)
+  def comb: ENV    = env.mod2((x, y) => x.combinations(y.toI))
+  def powset: ENV = env.dup.len
+    .push(NUM(1))
+    .add
+    .push(NUM(0))
+    .swap
+    .range
+    .mod2((x, y) => y.flatMap(n => x.combinations(n.toI)))
 
   def split: ENV  = env.str2a(_.split(_))
   def ssplit: ENV = env.str1a(_.split(raw"\s"))
@@ -392,6 +400,14 @@ extension (env: ENV)
       case x: MAP => y.vec1(f => x.mapM((a, b) => env.evalA2(Vector(a, b), f)))
       case _      => y.vec1(f => x.map(a => env.evalA1(Vector(a), f)))
   )
+  def tapMap: ENV = env.mod2((x, y) =>
+    x match
+      case x: MAP =>
+        y.vec1(f =>
+          x.mapM((a, b) => env.evalA2(Vector(a, b), f).pipe(_ => (a, b)))
+        )
+      case _ => y.vec1(f => x.map(a => env.evalA1(Vector(a), f).pipe(_ => a)))
+  )
   def flatMap: ENV = env.mod2((x, y) =>
     x match
       case x: MAP =>
@@ -543,10 +559,10 @@ extension (env: ENV)
     case "$W"   => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
     case "$P"   => env.push(prime.lazyList.map(NUM(_)).toSEQ)
 
-    case "I>"  => in
-    case ">O"  => out
-    case "n>O" => outn
-    case "f>O" => outf
+    case "i>"  => in
+    case ">o"  => out
+    case "n>o" => outn
+    case "f>o" => outf
 
     case "dup"   => dup
     case "dups"  => dups
@@ -593,6 +609,8 @@ extension (env: ENV)
     case "|_"  => floor
     case "|~"  => round
     case "|^"  => ceil
+    case "X>b" => ???
+    case "b>X" => ???
     case "_"   => neg
     case "__"  => neg$
     case "_`"  => neg$$
@@ -665,11 +683,10 @@ extension (env: ENV)
     case ">=`"  => gt$$
 
     case ":"     => get
-    case ":R"    => getr
-    case "::"    => ???
+    case ":r"    => getr
     case ":`"    => get$$
-    case ":?"    => ???
-    case ":?`"   => ???
+    case ":?"    => has
+    case ":?`"   => has$$
     case "len"   => len
     case ","     => wrap$
     case ",,"    => wrap
@@ -686,28 +703,33 @@ extension (env: ENV)
     case ">kv"   => enumL
     case ">k"    => keys
     case ">v"    => vals
-    case "n>m"   => range
-    case "o>n"   => rango
-    case "n>o"   => orang
-    case "i>n"   => rangi
-    case "n>i"   => irang
+    case "a>b"   => range
+    case "O>a"   => env.push(NUM(0)).swap.range
+    case "a>O"   => env.push(NUM(0)).range
+    case "I>a"   => env.push(NUM(1)).swap.range
+    case "a>I"   => env.push(NUM(1)).range
     case "shuf"  => shuffle
+    case "perm"  => perm
+    case "comb"  => comb
+    case "^set"  => powset
 
     case "S>c" => ???
     case "c>S" => ???
     case "<>"  => split
+    case "<>i" => ???
+    case "c<>" => env.push(STR("")).split
+    case "w<>" => env.push(STR(" ")).split
+    case "n<>" => env.push(STR("\n")).split
+    case "s<>" => ssplit
     case "<>`" => ???
     case "><"  => join
-    case "><`" => ???
-    case "c<>" => env.push(STR("")).split
     case "c><" => env.push(STR("")).join
-    case "w<>" => env.push(STR(" ")).split
     case "w><" => env.push(STR(" ")).join
-    case "n<>" => env.push(STR("\n")).split
     case "n><" => env.push(STR("\n")).join
-    case "s<>" => ssplit
+    case "><`" => ???
 
     case "map"   => map
+    case "tap"   => tapMap
     case "zip"   => zip
     case "tbl"   => ???
     case "mapf"  => flatMap
