@@ -407,3 +407,52 @@ Stack: ``` a* b f -> x* ```
 
 [``` # ```](#cmd--5)s `f` if `b` is truthy.
 
+
+## CMD: ``` |# ```
+
+Stack: ``` a* b f -> x* ```
+
+[``` # ```](#cmd--5)s `f` if `b` is falsy.
+
+
+## CMD: ``` ?# ```
+
+Stack: ``` a* b f g -> x* ```
+
+[``` # ```](#cmd--5)s `f` if `b` is truthy; else [``` # ```](#cmd--5)s `g`.
+
+
+## CMD: ``` *# ```
+
+Stack: ``` a* f (n >NUM) -> x* ```
+
+[``` # ```](#cmd--5)s `f` `n` times.
+
+
+## CMD: ``` !# ```
+
+Stack: ``` a* f g -> x* ```
+
+Tries to [``` # ```](#cmd--5) `f`; on error, pushes caught `ERR` and [``` # ```](#cmd--5)s `g`.
+
+
+## CMD: ``` >! ```
+
+Stack: ``` (e ERR) -> ```
+
+Throws `e`.
+
+
+## CMD: ``` ' ```
+
+Stack: ``` (a >ARR) f -> (x ARR) ```
+
+[``` # ```](#cmd--5)s `f` on `a` as if it were a stack.
+
+
+## CMD: ``` '_ ```
+
+Stack: ``` (a* >ARR) f -> x* ```
+
+[``` # ```](#cmd--5)s `f` on the stack as if it were an `ARR`.
+
