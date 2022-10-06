@@ -33,6 +33,7 @@ metals.sbt
 
 # Mill
 out
+.ammonite/
 
 *.sclin
 !examples/*.sclin

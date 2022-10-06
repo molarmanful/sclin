@@ -15,30 +15,23 @@ enum PT:
   * @param t
   *   type of `x`
   */
-case class Parser(xs: List[ANY], x: String, t: PT):
+case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
 
   /** Pushes `t` with type `t` to `xs`; resets `x` and `t`. */
-  def clean: Parser = t match
-    case PT.UN => this
-    case _ =>
-      Parser(
-        t match
-          case PT.STR => xs :+ STR(x)
-          case PT.CMD =>
-            if Parser.isPar(x) then
-              xs ++ x.map(_.toString.pipe(CMD.apply)).toList
-            else xs :+ CMD(x)
-          case PT.DEC =>
-            x match
-              case "."    => xs :+ CMD(".")
-              case s"$x." => xs :+ x.toNUM :+ CMD(".")
-              case _      => xs :+ x.toNUM
-          case PT.NUM => xs :+ x.toNUM
-          case _      => ???
-        ,
-        "",
-        PT.UN
-      )
+  def clean: Parser = Parser(t match
+    case PT.STR => xs :+ STR(x)
+    case PT.ESC => xs :+ STR(x + "\\")
+    case PT.CMD =>
+      if Parser.isPar(x) then xs ++ x.map(_.toString.pipe(CMD.apply)).toList
+      else xs :+ CMD(x)
+    case PT.DEC =>
+      x match
+        case "."    => xs :+ CMD(".")
+        case s"$x." => xs :+ x.toNUM :+ CMD(".")
+        case _      => xs :+ x.toNUM
+    case PT.NUM => xs :+ x.toNUM
+    case _      => xs
+  )
 
   /** Adds string/char to `x`.
     *
@@ -127,7 +120,7 @@ object Parser:
     *   string to parse
     */
   def pline(s: String): List[ANY] =
-    s.foldLeft(Parser(List(), "", PT.UN))((st, c) => st.choice(c)).clean.xs
+    s.foldLeft(Parser())((st, c) => st.choice(c)).clean.xs
 
   /** Parses an arbitrary string.
     *

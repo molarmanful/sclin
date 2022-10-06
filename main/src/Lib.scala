@@ -139,7 +139,7 @@ extension (env: ENV)
 
   def pop: ENV = env.mods1(_ => Vector())
   def clr: ENV = env.modStack(_ => Vector())
-  def nip: ENV = env.mod2((x, _) => x)
+  def nip: ENV = env.mod2((_, x) => x)
   def nix: ENV = env.arg1((x, env) =>
     env.modStack(s =>
       val i = env.iStack(x.toI)
@@ -546,66 +546,266 @@ extension (env: ENV)
     case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
     case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
 
+    case "(" => startFN
+    case ")" => env
+    case "[" => startARR
+    case "]" => endARR
+    case "{" => startARR
+    case "}" => endMAP
+
+    /*
+    @s a -> (STR x)
+    Pushes type of `a`.
+     */
     case "type" => getType
-    case "("    => startFN
-    case ")"    => env
-    case "["    => startARR
-    case "]"    => endARR
-    case "{"    => startARR
-    case "}"    => endMAP
-    case ">Q"   => toSEQ
-    case ">A"   => toARR
-    case ">M"   => toMAP
-    case ">S"   => toSTR
-    case ">N"   => toNUM
-    case ">F"   => toFN
-    case ">E"   => toERR
-    case ">?"   => toBool
+    /*
+    @s a -> (STR x)
+    Pushes `a` as formatted string.
+     */
     case "form" => form
+    /*
+    @s a -> (SEQ x)
+    Converts `a` to `SEQ`.
+     */
+    case ">Q" => toSEQ
+    /*
+    @s a -> (ARR x)
+    Converts `a` to `ARR`.
+     */
+    case ">A" => toARR
+    /*
+    @s a -> (MAP x)
+    Converts `a` to `MAP`.
+     */
+    case ">M" => toMAP
+    /*
+    @s a -> (STR x)
+    Converts `a` to `STR`.
+     */
+    case ">S" => toSTR
+    /*
+    @s a -> (NUM x)
+    Converts `a` to `NUM`.
+     */
+    case ">N" => toNUM
+    /*
+    @s a -> (FN x)
+    Converts `a` to `FN`.
+     */
+    case ">F" => toFN
+    /*
+    @s (a >STR) (b >STR) -> (ERR x)
+    Converts `a` to `ERR` with message `b`.
+     */
+    case ">E" => toERR
+    /*
+    @s a -> (NUM x)
+    Pushes 1 or 0 depending on truthiness of `a`.
+     */
+    case ">?" => toBool
 
-    case "UN"   => env.push(UN)
-    case "()"   => env.push(UN.toFN(env))
-    case "[]"   => env.push(UN.toARR)
-    case "{}"   => env.push(UN.toMAP)
-    case "$PI"  => env.push(NUM(Real.pi))
-    case "$E"   => env.push(NUM(Real.e))
+    /*
+    @s -> UN
+    Pushes `UN`.
+     */
+    case "UN" => env.push(UN)
+    /*
+    @s -> (FN x)
+    Pushes empty `FN`.
+     */
+    case "()" => env.push(UN.toFN(env))
+    /*
+    @s -> (ARR x)
+    Pushes empty `ARR`.
+     */
+    case "[]" => env.push(UN.toARR)
+    /*
+    @s -> (MAP x)
+    Pushes empty `MAP`.
+     */
+    case "{}" => env.push(UN.toMAP)
+    /*
+    @s -> (NUM x)
+    Pushes π (Pi).
+     */
+    case "$PI" => env.push(NUM(Real.pi))
+    /*
+    @s -> (NUM x)
+    Pushes e (Euler's number).
+     */
+    case "$E" => env.push(NUM(Real.e))
+    /*
+    @s -> (NUM x)
+    Pushes Φ (Golden Ratio).
+     */
     case "$PHI" => env.push(NUM(Real.phi))
+    /*
+    @s -> (NUM x)
+    Pushes uniformly random number.
+     */
     case "$rng" => env.push(NUM(random))
-    case "$L"   => getLNum
-    case "$F"   => getLFile
-    case "$W"   => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
-    case "$P"   => env.push(prime.lazyList.map(NUM(_)).toSEQ)
+    /*
+    @s -> (NUM x)
+    Pushes current line number of program execution.
+     */
+    case "$L" => getLNum
+    /*
+    @s -> (STR x)
+    Pushes current file of program execution.
+     */
+    case "$F" => getLFile
+    /*
+    @s -> (SEQ[NUM] x)
+    Pushes infinite list of 0 to ∞.
+     */
+    case "$W" => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
+    /*
+    @s -> (SEQ[NUM] x)
+    Pushes infinite list of 1 to ∞.
+     */
+    case "$N" => env.push(LazyList.from(1).map(NUM(_)).toSEQ)
+    /*
+    @s -> (SEQ[NUM] x)
+    Pushes infinite list of primes.
+     */
+    case "$P" => env.push(prime.lazyList.map(NUM(_)).toSEQ)
 
-    case "i>"  => in
-    case ">o"  => out
+    /*
+    @s -> (STR x)
+    Pushes line from STDIN.
+     */
+    case "i>" => in
+    /*
+    @s (a >STR) ->
+    Sends `a` to STDOUT.
+     */
+    case ">o" => out
+    /*
+    @s (a >STR) ->
+    Sends `a` as line to STDOUT.
+     */
     case "n>o" => outn
+    /*
+    @s a ->
+    `form`s and `n>o`s `a`.
+     */
     case "f>o" => outf
 
-    case "dup"   => dup
-    case "dups"  => dups
-    case "over"  => over
-    case "pick"  => pick
-    case "pop"   => pop
-    case "clr"   => clr
-    case "nip"   => nip
-    case "nix"   => nix
-    case "swap"  => swap
-    case "rev"   => rev
-    case "tuck"  => tuck
+    /*
+    @s a -> a a
+     */
+    case "dup" => dup
+    /*
+    @s a* -> a* (ARR a*)
+     */
+    case "dups" => dups
+    /*
+    @s a b -> a b a
+     */
+    case "over" => over
+    /*
+    @s (a @ n) b* (n >NUM) -> a b* a
+    `dup`s `n`th item from top of stack.
+     */
+    case "pick" => pick
+    /*
+    @s _ ->
+     */
+    case "pop" => pop
+    /*
+    @s _* ->
+     */
+    case "clr" => clr
+    /*
+    @s _ b -> b
+     */
+    case "nip" => nip
+    /*
+    @s (a @ n) b* (n >NUM) -> b*
+    `pop`s `n`th item from top of stack.
+     */
+    case "nix" => nix
+    /*
+    @s a b -> b a
+     */
+    case "swap" => swap
+    /*
+    @s a* -> x*
+    Reverses stack.
+     */
+    case "rev" => rev
+    /*
+    @s a b -> b a b
+     */
+    case "tuck" => tuck
+    /*
+    @s (a @ n) b* c (n >NUM) -> c b* a
+    `swaps`s `c` with `n`th item from top of stack.
+     */
     case "trade" => trade
-    case "rot"   => rot
-    case "rot_"  => rotu
-    case "roll"  => roll
+    /*
+    @s a b c -> b c a
+     */
+    case "rot" => rot
+    /*
+    @s a b c -> c a b
+     */
+    case "rot_" => rotu
+    /*
+    @s (a @ n) b* (n >NUM) -> b* a
+    `rot`s to top `n`th item from top of stack.
+     */
+    case "roll" => roll
+    /*
+    @s b* c (n >NUM) -> (c @ n) b*
+    `rot_`s `c` to `n`th from top of stack.
+     */
     case "roll_" => rollu
-    case "dip"   => dip
+    /*
+    @s a* b (f >FN) -> x* b
+    `pop`s `b`, executes `f`, and pushes `b`.
+     */
+    case "dip" => dip
 
-    case "\\"  => wrapFN
-    case "#"   => eval
-    case "Q"   => quar
-    case "@@"  => evalLine
-    case "@~"  => evalLRel
-    case "@"   => evalLHere
-    case ";"   => evalLNext
+    /*
+    @s a -> (FN a)
+    Wraps `a` in `FN`.
+     */
+    case "\\" => wrapFN
+    /*
+    @s a* f -> x*
+    Executes `f`.
+     */
+    case "#" => eval
+    /*
+    @s f -> y
+    Evaluates `f` (`#` but only preserves resulting top of stack).
+     */
+    case "Q" => quar
+    /*
+    @s a* (n >NUM) -> x*
+    Executes `n`th line.
+     */
+    case "@@" => evalLine
+    /*
+    @s a* (n >NUM) -> x*
+    Executes `n`th line relative to current line.
+     */
+    case "@~" => evalLRel
+    /*
+    @s a* -> x*
+    Executes current line.
+     */
+    case "@" => evalLHere
+    /*
+    @s a* -> x*
+    Executes next line.
+     */
+    case ";" => evalLNext
+    /*
+    @s a* -> x*
+    Executes previous line.
+     */
     case ";;"  => evalLPrev
     case "g@@" => getLn
     case "g@~" => getLRel
@@ -733,7 +933,7 @@ extension (env: ENV)
     case "S>c" => ???
     case "c>S" => ???
     case "<>"  => split
-    case "<>i" => ???
+    case "<>:" => ???
     case "c<>" => env.push(STR("")).split
     case "w<>" => env.push(STR(" ")).split
     case "n<>" => env.push(STR("\n")).split

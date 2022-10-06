@@ -1,4 +1,6 @@
+import $file.docp
 import mill._
+import scala.util.chaining._
 import scalalib._
 
 object main extends ScalaModule {
@@ -12,13 +14,15 @@ object main extends ScalaModule {
     ivy"com.lihaoyi::fansi:0.4.0"
   )
 
-  def cmdoc = T {
-    val src = os.read
+  def cmdoc() = T.command {
+    os.read
       .lines(os.pwd / "main" / "src" / "Lib.scala")
       .dropWhile(_.trim != "// CMDOC START")
       .takeWhile(_.trim != "// CMDOC END")
       .tail
-    println(src)
+      .pipe(docp.DocParser.parse)
+      .pipe(_.md)
+      .pipe(os.write.over(os.pwd / "sclin-docs" / "commands.md", _))
   }
 
   object test extends Tests with TestModule.Munit {
