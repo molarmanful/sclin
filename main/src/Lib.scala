@@ -837,12 +837,40 @@ extension (env: ENV)
     #{#}s `f` if `b` is truthy.
      */
     case "&#" => evalAnd
+    /*
+    @s a* b f -> x*
+    #{#}s `f` if `b` is falsy.
+     */
     case "|#" => evalOr
+    /*
+    @s a* b f g -> x*
+    #{#}s `f` if `b` is truthy; else #{#}s `g`.
+     */
     case "?#" => evalIf
+    /*
+    @s a* f (n >NUM) -> x*
+    #{#}s `f` `n` times.
+     */
     case "*#" => evalTimes
+    /*
+    @s a* f g -> x*
+    Tries to #{#} `f`; on error, pushes caught `ERR` and #{#}s `g`.
+     */
     case "!#" => evalTry
+    /*
+    @s (e ERR) ->
+    Throws `e`.
+     */
     case ">!" => throwERR
-    case "'"  => evalArrSt
+    /*
+    @s (a >ARR) f -> (x ARR)
+    #{#}s `f` on `a` as if it were a stack.
+     */
+    case "'" => evalArrSt
+    /*
+    @s (a* >ARR) f -> x*
+    #{#}s `f` on the stack as if it were an `ARR`.
+     */
     case "'_" => evalStArr
 
     case "E"   => scale
