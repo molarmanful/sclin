@@ -2,366 +2,408 @@
 # COMMANDS
 
 
-## ``` type ```
+## CMD: ``` type ```
 
-Stack: ``` a -> (STR x) ```
+Stack: ``` a -> (x STR) ```
 
 Pushes type of `a`.
 
 
-## ``` form ```
+## CMD: ``` form ```
 
-Stack: ``` a -> (STR x) ```
+Stack: ``` a -> (x STR) ```
 
 Pushes `a` as formatted string.
 
 
-## ``` >Q ```
+## CMD: ``` >Q ```
 
-Stack: ``` a -> (SEQ x) ```
+Stack: ``` a -> (x STR) ```
 
 Converts `a` to `SEQ`.
 
 
-## ``` >A ```
+## CMD: ``` >A ```
 
-Stack: ``` a -> (ARR x) ```
+Stack: ``` a -> (x ARR) ```
 
 Converts `a` to `ARR`.
 
 
-## ``` >M ```
+## CMD: ``` >M ```
 
-Stack: ``` a -> (MAP x) ```
+Stack: ``` a -> (x ARR) ```
 
 Converts `a` to `MAP`.
 
 
-## ``` >S ```
+## CMD: ``` >S ```
 
-Stack: ``` a -> (STR x) ```
+Stack: ``` a -> (x STR) ```
 
 Converts `a` to `STR`.
 
 
-## ``` >N ```
+## CMD: ``` >N ```
 
-Stack: ``` a -> (NUM x) ```
+Stack: ``` a -> (x NUM) ```
 
 Converts `a` to `NUM`.
 
 
-## ``` >F ```
+## CMD: ``` >F ```
 
-Stack: ``` a -> (FN x) ```
+Stack: ``` a -> (x FN) ```
 
 Converts `a` to `FN`.
 
 
-## ``` >E ```
+## CMD: ``` >E ```
 
-Stack: ``` (a >STR) (b >STR) -> (ERR x) ```
+Stack: ``` (a >STR) (b >STR) -> (x ERR) ```
 
 Converts `a` to `ERR` with message `b`.
 
 
-## ``` >? ```
+## CMD: ``` >? ```
 
-Stack: ``` a -> (NUM x) ```
+Stack: ``` a -> (x NUM) ```
 
 Pushes 1 or 0 depending on truthiness of `a`.
 
 
-## ``` UN ```
+## CMD: ``` UN ```
 
 Stack: ``` -> UN ```
 
 Pushes `UN`.
 
 
-## ``` () ```
+## CMD: ``` () ```
 
-Stack: ``` -> (FN x) ```
+Stack: ``` -> (x FN) ```
 
 Pushes empty `FN`.
 
 
-## ``` [] ```
+## CMD: ``` [] ```
 
-Stack: ``` -> (ARR x) ```
+Stack: ``` -> (x ARR) ```
 
 Pushes empty `ARR`.
 
 
-## ``` {} ```
+## CMD: ``` {} ```
 
-Stack: ``` -> (MAP x) ```
+Stack: ``` -> (x MAP) ```
 
 Pushes empty `MAP`.
 
 
-## ``` $PI ```
+## CMD: ``` $PI ```
 
-Stack: ``` -> (NUM x) ```
+Stack: ``` -> (x NUM) ```
 
 Pushes π (Pi).
 
 
-## ``` $E ```
+## CMD: ``` $E ```
 
-Stack: ``` -> (NUM x) ```
+Stack: ``` -> (x NUM) ```
 
 Pushes e (Euler's number).
 
 
-## ``` $PHI ```
+## CMD: ``` $PHI ```
 
-Stack: ``` -> (NUM x) ```
+Stack: ``` -> (x NUM) ```
 
 Pushes Φ (Golden Ratio).
 
 
-## ``` $rng ```
+## CMD: ``` $rng ```
 
-Stack: ``` -> (NUM x) ```
+Stack: ``` -> (x NUM) ```
 
 Pushes uniformly random number.
 
 
-## ``` $L ```
+## CMD: ``` $L ```
 
-Stack: ``` -> (NUM x) ```
+Stack: ``` -> (x NUM) ```
 
 Pushes current line number of program execution.
 
 
-## ``` $F ```
+## CMD: ``` $F ```
 
-Stack: ``` -> (STR x) ```
+Stack: ``` -> (x STR) ```
 
 Pushes current file of program execution.
 
 
-## ``` $W ```
+## CMD: ``` $W ```
 
-Stack: ``` -> (SEQ[NUM] x) ```
+Stack: ``` -> (x SEQ[NUM]) ```
 
 Pushes infinite list of 0 to ∞.
 
 
-## ``` $N ```
+## CMD: ``` $N ```
 
-Stack: ``` -> (SEQ[NUM] x) ```
+Stack: ``` -> (x SEQ[NUM]) ```
 
 Pushes infinite list of 1 to ∞.
 
 
-## ``` $P ```
+## CMD: ``` $P ```
 
-Stack: ``` -> (SEQ[NUM] x) ```
+Stack: ``` -> (x SEQ[NUM]) ```
 
 Pushes infinite list of primes.
 
 
-## ``` i> ```
+## CMD: ``` g@ ```
 
-Stack: ``` -> (STR x) ```
+Stack: ``` -> (x STR) ```
+
+Pushes current line.
+
+
+## CMD: ``` g; ```
+
+Stack: ``` -> (x STR) ```
+
+Pushes next line.
+
+
+## CMD: ``` g;; ```
+
+Stack: ``` -> (x STR) ```
+
+Pushes previous line.
+
+
+## CMD: ``` i> ```
+
+Stack: ``` -> (x STR) ```
 
 Pushes line from STDIN.
 
 
-## ``` >o ```
+## CMD: ``` >o ```
 
 Stack: ``` (a >STR) -> ```
 
 Sends `a` to STDOUT.
 
 
-## ``` n>o ```
+## CMD: ``` n>o ```
 
 Stack: ``` (a >STR) -> ```
 
-Sends `a` as line to STDOUT.
+[``` >o ```](#cmd-o)s `a` with trailing newline.
 
 
-## ``` f>o ```
+## CMD: ``` f>o ```
 
 Stack: ``` a -> ```
 
-`form`s and `n>o`s `a`.
+[``` form ```](#cmd-form)s and [``` n>o ```](#cmd-no)s `a`.
 
 
-## ``` dup ```
+## CMD: ``` dup ```
 
 Stack: ``` a -> a a ```
 
 
 
 
-## ``` dups ```
+## CMD: ``` dups ```
 
-Stack: ``` a* -> a* (ARR a*) ```
-
-
+Stack: ``` a* -> a* (a* ARR) ```
 
 
-## ``` over ```
+
+
+## CMD: ``` over ```
 
 Stack: ``` a b -> a b a ```
 
 
 
 
-## ``` pick ```
+## CMD: ``` pick ```
 
 Stack: ``` (a @ n) b* (n >NUM) -> a b* a ```
 
-`dup`s `n`th item from top of stack.
+[``` dup ```](#cmd-dup)s `n`th item from top of stack.
 
 
-## ``` pop ```
+## CMD: ``` pop ```
 
 Stack: ``` _ -> ```
 
 
 
 
-## ``` clr ```
+## CMD: ``` clr ```
 
 Stack: ``` _* -> ```
 
 
 
 
-## ``` nip ```
+## CMD: ``` nip ```
 
 Stack: ``` _ b -> b ```
 
 
 
 
-## ``` nix ```
+## CMD: ``` nix ```
 
 Stack: ``` (a @ n) b* (n >NUM) -> b* ```
 
-`pop`s `n`th item from top of stack.
+[``` pop ```](#cmd-pop)s `n`th item from top of stack.
 
 
-## ``` swap ```
+## CMD: ``` swap ```
 
 Stack: ``` a b -> b a ```
 
 
 
 
-## ``` rev ```
+## CMD: ``` rev ```
 
 Stack: ``` a* -> x* ```
 
 Reverses stack.
 
 
-## ``` tuck ```
+## CMD: ``` tuck ```
 
 Stack: ``` a b -> b a b ```
 
 
 
 
-## ``` trade ```
+## CMD: ``` trade ```
 
 Stack: ``` (a @ n) b* c (n >NUM) -> c b* a ```
 
-`swaps`s `c` with `n`th item from top of stack.
+[``` swap ```](#cmd-swap)s `c` with `n`th item from top of stack.
 
 
-## ``` rot ```
+## CMD: ``` rot ```
 
 Stack: ``` a b c -> b c a ```
 
 
 
 
-## ``` rot_ ```
+## CMD: ``` rot_ ```
 
 Stack: ``` a b c -> c a b ```
 
 
 
 
-## ``` roll ```
+## CMD: ``` roll ```
 
 Stack: ``` (a @ n) b* (n >NUM) -> b* a ```
 
-`rot`s to top `n`th item from top of stack.
+[``` rot ```](#cmd-rot)s to top `n`th item from top of stack.
 
 
-## ``` roll_ ```
+## CMD: ``` roll_ ```
 
 Stack: ``` b* c (n >NUM) -> (c @ n) b* ```
 
-`rot_`s `c` to `n`th from top of stack.
+[``` rot_ ```](#cmd-rot_)s `c` to `n`th from top of stack.
 
 
-## ``` dip ```
+## CMD: ``` dip ```
 
 Stack: ``` a* b (f >FN) -> x* b ```
 
-`pop`s `b`, executes `f`, and pushes `b`.
+[``` pop ```](#cmd-pop)s `b`, executes `f`, and pushes `b`.
 
 
-## ``` \ ```
+## CMD: ``` \ ```
 
-Stack: ``` a -> (FN a) ```
+Stack: ``` a -> (a FN) ```
 
 Wraps `a` in `FN`.
 
 
-## ``` # ```
+## CMD: ``` # ```
 
 Stack: ``` a* f -> x* ```
 
 Executes `f`.
 
 
-## ``` Q ```
+## CMD: ``` Q ```
 
 Stack: ``` f -> y ```
 
-Evaluates `f` (`#` but only preserves resulting top of stack).
+Evaluates `f` ([``` # ```](#cmd--5) but only preserves resulting top of stack).
 
 
-## ``` @@ ```
-
-Stack: ``` a* (n >NUM) -> x* ```
-
-Executes `n`th line.
-
-
-## ``` @~ ```
+## CMD: ``` @@ ```
 
 Stack: ``` a* (n >NUM) -> x* ```
 
-Executes `n`th line relative to current line.
+[``` # ```](#cmd--5)s `n`th line.
 
 
-## ``` @ ```
+## CMD: ``` @~ ```
 
-Stack: ``` a* -> x* ```
+Stack: ``` a* (n >NUM) -> x* ```
 
-Executes current line.
-
-
-## ``` ; ```
-
-Stack: ``` a* -> x* ```
-
-Executes next line.
+[``` # ```](#cmd--5)s `n`th line relative to current line.
 
 
-## ``` ;; ```
+## CMD: ``` @ ```
 
 Stack: ``` a* -> x* ```
 
-Executes previous line.
+[``` # ```](#cmd--5)s current line.
+
+
+## CMD: ``` ; ```
+
+Stack: ``` a* -> x* ```
+
+[``` # ```](#cmd--5)s next line.
+
+
+## CMD: ``` ;; ```
+
+Stack: ``` a* -> x* ```
+
+[``` # ```](#cmd--5)s previous line.
+
+
+## CMD: ``` g@@ ```
+
+Stack: ``` (n >NUM) -> (x STR) ```
+
+Pushes `n`th line.
+
+
+## CMD: ``` g@~ ```
+
+Stack: ``` (n >NUM) -> (x STR) ```
+
+Pushes `n`th line relative to current line.
+
+
+## CMD: ``` &# ```
+
+Stack: ``` a* b f -> x* ```
+
+[``` # ```](#cmd--5)s `f` if `b` is truthy.
 

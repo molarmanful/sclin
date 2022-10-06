@@ -3,7 +3,7 @@ name: cmdoc
 on: push
 
 jobs:
-  build:
+  cmdoc:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

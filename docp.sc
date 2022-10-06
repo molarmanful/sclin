@@ -6,19 +6,31 @@ case class DocCmd(
     body: Vector[String] = Vector.empty
 ) {
 
-  def md: String = s"""
-## ``` $name ```
+  def md(cs: Map[String, String]): String = {
+    val r = raw"#\{(.+?)\}".r
+    s"""
+## CMD: ``` $name ```
 
 Stack: ``` $stack ```
 
-${body.mkString}
+${body.map(
+        r.replaceAllIn(
+          _,
+          m => {
+            val a = m.group(1)
+            s"[``` $a ```](#${cs(a)})"
+          }
+        )
+      ).mkString}
 """
+  }
 
 }
 
 case class DocParser(
     xs: Vector[DocCmd] = Vector.empty,
     x: DocCmd = DocCmd(),
+    cs: Map[String, String] = Map.empty,
     com: Int = 0
 ) {
 
@@ -30,9 +42,17 @@ case class DocParser(
         case l        => copy(x = x.copy(body = x.body :+ l))
       }
     case 2 =>
-      DocParser(xs :+ x.copy(name = l.trim.pipe { case s"""case "$a"$_""" =>
+      val name = l.trim.pipe { case s"""case "$a"$_""" =>
         a.replace("\\\\", "\\")
-      }))
+      }
+      val nid = "cmd-" + name.toLowerCase.replaceAll(raw"[^\w -]", "")
+      def loop(id: String, n: Int = 0): String = {
+        val id1 = id + s"-$n"
+        if (n > 0) if (cs contains id1) loop(id, n + 1) else id1
+        else if (cs contains id) loop(id, 1)
+        else id
+      }
+      DocParser(xs :+ x.copy(name = name), cs = cs + (loop(nid) -> name))
     case _ =>
       l.trim match {
         case "/*" => copy(com = 1)
@@ -43,7 +63,7 @@ case class DocParser(
   def md: String = s"""
 # COMMANDS
 
-${xs.map(_.md).mkString("\n")}
+${xs.map(_.md(cs.map { case (a, b) => (b, a) })).mkString("\n")}
 """
 
 }

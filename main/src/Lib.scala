@@ -554,52 +554,52 @@ extension (env: ENV)
     case "}" => endMAP
 
     /*
-    @s a -> (STR x)
+    @s a -> (x STR)
     Pushes type of `a`.
      */
     case "type" => getType
     /*
-    @s a -> (STR x)
+    @s a -> (x STR)
     Pushes `a` as formatted string.
      */
     case "form" => form
     /*
-    @s a -> (SEQ x)
+    @s a -> (x STR)
     Converts `a` to `SEQ`.
      */
     case ">Q" => toSEQ
     /*
-    @s a -> (ARR x)
+    @s a -> (x ARR)
     Converts `a` to `ARR`.
      */
     case ">A" => toARR
     /*
-    @s a -> (MAP x)
+    @s a -> (x ARR)
     Converts `a` to `MAP`.
      */
     case ">M" => toMAP
     /*
-    @s a -> (STR x)
+    @s a -> (x STR)
     Converts `a` to `STR`.
      */
     case ">S" => toSTR
     /*
-    @s a -> (NUM x)
+    @s a -> (x NUM)
     Converts `a` to `NUM`.
      */
     case ">N" => toNUM
     /*
-    @s a -> (FN x)
+    @s a -> (x FN)
     Converts `a` to `FN`.
      */
     case ">F" => toFN
     /*
-    @s (a >STR) (b >STR) -> (ERR x)
+    @s (a >STR) (b >STR) -> (x ERR)
     Converts `a` to `ERR` with message `b`.
      */
     case ">E" => toERR
     /*
-    @s a -> (NUM x)
+    @s a -> (x NUM)
     Pushes 1 or 0 depending on truthiness of `a`.
      */
     case ">?" => toBool
@@ -610,68 +610,83 @@ extension (env: ENV)
      */
     case "UN" => env.push(UN)
     /*
-    @s -> (FN x)
+    @s -> (x FN)
     Pushes empty `FN`.
      */
     case "()" => env.push(UN.toFN(env))
     /*
-    @s -> (ARR x)
+    @s -> (x ARR)
     Pushes empty `ARR`.
      */
     case "[]" => env.push(UN.toARR)
     /*
-    @s -> (MAP x)
+    @s -> (x MAP)
     Pushes empty `MAP`.
      */
     case "{}" => env.push(UN.toMAP)
     /*
-    @s -> (NUM x)
+    @s -> (x NUM)
     Pushes π (Pi).
      */
     case "$PI" => env.push(NUM(Real.pi))
     /*
-    @s -> (NUM x)
+    @s -> (x NUM)
     Pushes e (Euler's number).
      */
     case "$E" => env.push(NUM(Real.e))
     /*
-    @s -> (NUM x)
+    @s -> (x NUM)
     Pushes Φ (Golden Ratio).
      */
     case "$PHI" => env.push(NUM(Real.phi))
     /*
-    @s -> (NUM x)
+    @s -> (x NUM)
     Pushes uniformly random number.
      */
     case "$rng" => env.push(NUM(random))
     /*
-    @s -> (NUM x)
+    @s -> (x NUM)
     Pushes current line number of program execution.
      */
     case "$L" => getLNum
     /*
-    @s -> (STR x)
+    @s -> (x STR)
     Pushes current file of program execution.
      */
     case "$F" => getLFile
     /*
-    @s -> (SEQ[NUM] x)
+    @s -> (x SEQ[NUM])
     Pushes infinite list of 0 to ∞.
      */
     case "$W" => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
     /*
-    @s -> (SEQ[NUM] x)
+    @s -> (x SEQ[NUM])
     Pushes infinite list of 1 to ∞.
      */
     case "$N" => env.push(LazyList.from(1).map(NUM(_)).toSEQ)
     /*
-    @s -> (SEQ[NUM] x)
+    @s -> (x SEQ[NUM])
     Pushes infinite list of primes.
      */
     case "$P" => env.push(prime.lazyList.map(NUM(_)).toSEQ)
+    /*
+    @s -> (x STR)
+    Pushes current line.
+     */
+    case "g@" => getLHere
+    /*
+    @s -> (x STR)
+    Pushes next line.
+     */
+    case "g;" => getLNext
+    /*
+    @s -> (x STR)
+    Pushes previous line.
+     */
+    case "g;;" => getLPrev
 
     /*
-    @s -> (STR x)
+    @s -> (x STR)
     Pushes line from STDIN.
      */
     case "i>" => in
@@ -682,12 +697,12 @@ extension (env: ENV)
     case ">o" => out
     /*
     @s (a >STR) ->
-    Sends `a` as line to STDOUT.
+    #{>o}s `a` with trailing newline.
      */
     case "n>o" => outn
     /*
     @s a ->
-    `form`s and `n>o`s `a`.
+    #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
 
@@ -696,7 +711,7 @@ extension (env: ENV)
      */
     case "dup" => dup
     /*
-    @s a* -> a* (ARR a*)
+    @s a* -> a* (a* ARR)
      */
     case "dups" => dups
     /*
@@ -705,7 +720,7 @@ extension (env: ENV)
     case "over" => over
     /*
     @s (a @ n) b* (n >NUM) -> a b* a
-    `dup`s `n`th item from top of stack.
+    #{dup}s `n`th item from top of stack.
      */
     case "pick" => pick
     /*
@@ -722,7 +737,7 @@ extension (env: ENV)
     case "nip" => nip
     /*
     @s (a @ n) b* (n >NUM) -> b*
-    `pop`s `n`th item from top of stack.
+    #{pop}s `n`th item from top of stack.
      */
     case "nix" => nix
     /*
@@ -740,7 +755,7 @@ extension (env: ENV)
     case "tuck" => tuck
     /*
     @s (a @ n) b* c (n >NUM) -> c b* a
-    `swaps`s `c` with `n`th item from top of stack.
+    #{swap}s `c` with `n`th item from top of stack.
      */
     case "trade" => trade
     /*
@@ -753,22 +768,22 @@ extension (env: ENV)
     case "rot_" => rotu
     /*
     @s (a @ n) b* (n >NUM) -> b* a
-    `rot`s to top `n`th item from top of stack.
+    #{rot}s to top `n`th item from top of stack.
      */
     case "roll" => roll
     /*
     @s b* c (n >NUM) -> (c @ n) b*
-    `rot_`s `c` to `n`th from top of stack.
+    #{rot_}s `c` to `n`th from top of stack.
      */
     case "roll_" => rollu
     /*
     @s a* b (f >FN) -> x* b
-    `pop`s `b`, executes `f`, and pushes `b`.
+    #{pop}s `b`, executes `f`, and pushes `b`.
      */
     case "dip" => dip
 
     /*
-    @s a -> (FN a)
+    @s a -> (a FN)
     Wraps `a` in `FN`.
      */
     case "\\" => wrapFN
@@ -779,47 +794,56 @@ extension (env: ENV)
     case "#" => eval
     /*
     @s f -> y
-    Evaluates `f` (`#` but only preserves resulting top of stack).
+    Evaluates `f` (#{#} but only preserves resulting top of stack).
      */
     case "Q" => quar
     /*
     @s a* (n >NUM) -> x*
-    Executes `n`th line.
+    #{#}s `n`th line.
      */
     case "@@" => evalLine
     /*
     @s a* (n >NUM) -> x*
-    Executes `n`th line relative to current line.
+    #{#}s `n`th line relative to current line.
      */
     case "@~" => evalLRel
     /*
     @s a* -> x*
-    Executes current line.
+    #{#}s current line.
      */
     case "@" => evalLHere
     /*
     @s a* -> x*
-    Executes next line.
+    #{#}s next line.
      */
     case ";" => evalLNext
     /*
     @s a* -> x*
-    Executes previous line.
+    #{#}s previous line.
      */
-    case ";;"  => evalLPrev
+    case ";;" => evalLPrev
+    /*
+    @s (n >NUM) -> (x STR)
+    Pushes `n`th line.
+     */
     case "g@@" => getLn
+    /*
+    @s (n >NUM) -> (x STR)
+    Pushes `n`th line relative to current line.
+     */
     case "g@~" => getLRel
-    case "g@"  => getLHere
-    case "g;"  => getLNext
-    case "g;;" => getLPrev
-    case "&#"  => evalAnd
-    case "|#"  => evalOr
-    case "?#"  => evalIf
-    case "*#"  => evalTimes
-    case "!#"  => evalTry
-    case ">!"  => throwERR
-    case "'"   => evalArrSt
-    case "'_"  => evalStArr
+    /*
+    @s a* b f -> x*
+    #{#}s `f` if `b` is truthy.
+     */
+    case "&#" => evalAnd
+    case "|#" => evalOr
+    case "?#" => evalIf
+    case "*#" => evalTimes
+    case "!#" => evalTry
+    case ">!" => throwERR
+    case "'"  => evalArrSt
+    case "'_" => evalStArr
 
     case "E"   => scale
     case "I"   => trunc
@@ -944,6 +968,8 @@ extension (env: ENV)
     case "w><" => env.push(STR(" ")).join
     case "n><" => env.push(STR("\n")).join
     case "><`" => ???
+    case "A>a" => ???
+    case "a>A" => ???
 
     case "map"   => map
     case "tap"   => tapMap
