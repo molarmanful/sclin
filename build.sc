@@ -2,11 +2,16 @@ import $file.docp
 import mill._
 import scala.util.chaining._
 import scalalib._
+// import scalanativelib._
+// import scalanativelib.api._
 
 object main extends ScalaModule {
 
+  // def scalaNativeVersion = "0.4.7"
   def scalaVersion  = "3.2.0"
   def scalacOptions = Seq("-deprecation", "-feature")
+  // def releaseMode        = ReleaseMode.ReleaseFast
+  // def nativeLTO          = LTO.Thin
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.2.3",
@@ -14,7 +19,7 @@ object main extends ScalaModule {
     ivy"com.lihaoyi::fansi:0.4.0"
   )
 
-  def cmdoc() = T.command {
+  def cmdoc = T {
     os.read
       .lines(os.pwd / "main" / "src" / "Lib.scala")
       .dropWhile(_.trim != "// CMDOC START")

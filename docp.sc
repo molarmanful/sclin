@@ -1,5 +1,7 @@
 import scala.util.chaining._
 
+// TODO: examples field
+
 case class DocCmd(
     name: String = "",
     stack: String = "",
