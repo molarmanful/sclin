@@ -1,6 +1,6 @@
 import $file.docp
 import mill._
-import publish._
+import scalalib.publish._
 import scala.util.chaining._
 import scalalib._
 
