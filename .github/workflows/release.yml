@@ -20,7 +20,7 @@ jobs:
       with:
         gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
     - name: build
-      run: ./mill main.assembly
+      run: ./mill sclin.assembly
     - name: mvn release
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -28,7 +28,7 @@ jobs:
         SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
       run: |
         ./mill mill.scalalib.PublishModule/publishAll \
-          main.publishArtifacts \
+          sclin.publishArtifacts \
           --sonatypeCreds $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
           --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
           --sonatypeUri https://s01.oss.sonatype.org/service/local \
@@ -39,5 +39,5 @@ jobs:
     - name: gh release
       uses: svenstaro/upload-release-action@v2
       with:
-        file: out/main/assembly.dest/out.jar
+        file: out/sclin/assembly.dest/out.jar
         asset_name: sclin

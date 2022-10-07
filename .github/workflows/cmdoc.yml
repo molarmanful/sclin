@@ -11,7 +11,7 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: generate docs
-      run: ./mill main.cmdoc
+      run: ./mill sclin.cmdoc
     - name: commit + push
       uses: actions-js/push@master
       with:
