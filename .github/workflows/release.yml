@@ -18,7 +18,10 @@ jobs:
     - name: gpg
       env:
         SONATYPE_GPG_SECRET: ${{ secrets.SONATYPE_GPG_SECRET }}
-      run: gpg --import --no-tty --batch --yes $SONATYPE_GPG_SECRET
+      run: |
+        echo $SONATYPE_GPG_SECRET | base64 --decode > gpg_key
+        && gpg --import --no-tty --batch --yes $SONATYPE_GPG_SECRET
+        && rm gpg_key
     - name: build
       run: ./mill main.assembly
     - name: mvn release
