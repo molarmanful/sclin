@@ -28,7 +28,7 @@ object sclin extends ScalaModule with PublishModule {
 
   def cmdoc = T {
     os.read
-      .lines(os.pwd / "main" / "src" / "Lib.scala")
+      .lines(os.pwd / "sclin" / "src" / "Lib.scala")
       .dropWhile(_.trim != "// CMDOC START")
       .takeWhile(_.trim != "// CMDOC END")
       .tail
