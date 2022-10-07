@@ -15,9 +15,31 @@ jobs:
       with:
         distribution: temurin
         java-version: 19
+    - name: gpg
+      env:
+        SONATYPE_GPG_SECRET: ${{ secrets.SONATYPE_GPG_SECRET }}
+      run: |
+        echo $SONATYPE_GPG_SECRET | base64 --decode > gpg_key
+        && gpg --import --no-tty --batch --yes gpg_key
+        && rm gpg_key
     - name: build
       run: ./mill main.assembly
-    - name: upload
+    - name: mvn release
+      env:
+        SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
+      run: |
+        mill mill.scalalib.PublishModule/publishAll \
+          main.publishArtifacts \
+          $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
+          --gpgArgs --passphrase=$GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
+          --sonatypeUri https://s01.oss.sonatype.org/service/local \
+          --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
+          --readTimeout  3600000 \
+          --awaitTimeout 3600000 \
+          --release true
+    - name: gh release
       uses: svenstaro/upload-release-action@v2
       with:
         file: out/main/assembly.dest/out.jar

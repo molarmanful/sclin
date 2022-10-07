@@ -1,17 +1,24 @@
 import $file.docp
 import mill._
+import publish._
 import scala.util.chaining._
 import scalalib._
-// import scalanativelib._
-// import scalanativelib.api._
 
-object main extends ScalaModule {
+object main extends ScalaModule with PublishModule {
 
-  // def scalaNativeVersion = "0.4.7"
-  def scalaVersion  = "3.2.0"
+  def scalaVersion   = "3.2.0"
+  def publishVersion = "0.0.0-0"
+  def pomSettings = PomSettings(
+    description = "Scala implementation of lin",
+    organization = "io.github.molarmanful",
+    url = "https://github.com/molarmanful/sclin",
+    licenses = Seq(License.MIT),
+    versionControl = VersionControl.github("molarmanful", "sclin"),
+    developers = Seq(
+      Developer("molarmanful", "Ben Pang", "https://github.com/molarmanful")
+    )
+  )
   def scalacOptions = Seq("-deprecation", "-feature")
-  // def releaseMode        = ReleaseMode.ReleaseFast
-  // def nativeLTO          = LTO.Thin
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.2.3",
