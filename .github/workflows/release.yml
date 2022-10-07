@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  release:
+  maven:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,6 @@ jobs:
       uses: crazy-max/ghaction-import-gpg@v5
       with:
         gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
-    - name: build
-      run: ./mill sclin.assembly
     - name: mvn release
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -36,6 +34,17 @@ jobs:
           --readTimeout  3600000 \
           --awaitTimeout 3600000 \
           --release true
+  github:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 19
+    - name: build
+      run: ./mill sclin.assembly
     - name: gh release
       uses: svenstaro/upload-release-action@v2
       with:
