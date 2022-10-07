@@ -8,13 +8,13 @@ on:
 jobs:
   maven:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
       with:
         distribution: temurin
         java-version: 19
+    - uses: coursier/cache-action@v6
     - name: gpg
       uses: crazy-max/ghaction-import-gpg@v5
       with:
@@ -36,13 +36,13 @@ jobs:
           --release true
   github:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
       with:
         distribution: temurin
         java-version: 19
+    - uses: coursier/cache-action@v6
     - name: build
       run: ./mill sclin.assembly
     - name: gh release
