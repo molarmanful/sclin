@@ -11,7 +11,7 @@ case class DocCmd(
   def md(cs: Map[String, String]): String = {
     val r = raw"#\{(.+?)\}".r
     s"""
-## CMD: ``` $name ```
+## CMD: [``` $name ```](#${cs(name)})
 
 Stack: ``` $stack ```
 

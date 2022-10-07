@@ -367,9 +367,11 @@ extension (env: ENV)
   def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
   def min: ENV    = env.vec2((x, y) => if x.cmp(y) < 0 then x else y)
   def and: ENV    = env.vec2((x, y) => (x.toBool && y.toBool).boolNUM)
+  def min$$ : ENV = env.mod2((x, y) => if x.cmp(y) < 0 then x else y)
   def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolNUM)
   def max: ENV    = env.vec2((x, y) => if x.cmp(y) > 0 then x else y)
   def or: ENV     = env.vec2((x, y) => (x.toBool || y.toBool).boolNUM)
+  def max$$ : ENV = env.mod2((x, y) => if x.cmp(y) > 0 then x else y)
   def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
 
   def cmp: ENV    = env.vec2((x, y) => NUM(x.cmp(y)))
@@ -555,12 +557,12 @@ extension (env: ENV)
 
     /*
     @s a -> (x STR)
-    Pushes type of `a`.
+    Type of `a`.
      */
     case "type" => getType
     /*
     @s a -> (x STR)
-    Pushes `a` as formatted string.
+    `a` as formatted string.
      */
     case "form" => form
     /*
@@ -600,94 +602,94 @@ extension (env: ENV)
     case ">E" => toERR
     /*
     @s a -> (x NUM)
-    Pushes 1 or 0 depending on truthiness of `a`.
+    1 or 0 depending on truthiness of `a`.
      */
     case ">?" => toBool
 
     /*
     @s -> UN
-    Pushes `UN`.
+    `UN`
      */
     case "UN" => env.push(UN)
     /*
     @s -> (x FN)
-    Pushes empty `FN`.
+    Empty `FN`.
      */
     case "()" => env.push(UN.toFN(env))
     /*
     @s -> (x ARR)
-    Pushes empty `ARR`.
+    Empty `ARR`.
      */
     case "[]" => env.push(UN.toARR)
     /*
     @s -> (x MAP)
-    Pushes empty `MAP`.
+    Empty `MAP`.
      */
     case "{}" => env.push(UN.toMAP)
     /*
     @s -> (x NUM)
-    Pushes π (Pi).
+    π (Pi).
      */
     case "$PI" => env.push(NUM(Real.pi))
     /*
     @s -> (x NUM)
-    Pushes e (Euler's number).
+    e (Euler's number).
      */
     case "$E" => env.push(NUM(Real.e))
     /*
     @s -> (x NUM)
-    Pushes Φ (Golden Ratio).
+    Φ (Golden Ratio).
      */
     case "$PHI" => env.push(NUM(Real.phi))
     /*
     @s -> (x NUM)
-    Pushes uniformly random number.
+    Uniformly random number.
      */
     case "$rng" => env.push(NUM(random))
     /*
     @s -> (x NUM)
-    Pushes current line number of program execution.
+    Current line number of program execution.
      */
     case "$L" => getLNum
     /*
     @s -> (x STR)
-    Pushes current file of program execution.
+    Current file of program execution.
      */
     case "$F" => getLFile
     /*
-    @s -> (x SEQ[NUM])
-    Pushes infinite list of 0 to ∞.
+    @s -> (x SEQ[(y NUM)*])
+    Infinite list of 0 to ∞.
      */
     case "$W" => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
     /*
-    @s -> (x SEQ[NUM])
-    Pushes infinite list of 1 to ∞.
+    @s -> (x SEQ[(y NUM)*])
+    Infinite list of 1 to ∞.
      */
     case "$N" => env.push(LazyList.from(1).map(NUM(_)).toSEQ)
     /*
-    @s -> (x SEQ[NUM])
-    Pushes infinite list of primes.
+    @s -> (x SEQ[(y NUM)*])
+    Infinite list of primes.
      */
     case "$P" => env.push(prime.lazyList.map(NUM(_)).toSEQ)
     /*
-    @s -> (x STR)
-    Pushes current line.
+    @s -> (x STR) | UN
+    Current line.
      */
     case "g@" => getLHere
     /*
-    @s -> (x STR)
-    Pushes next line.
+    @s -> (x STR) | UN
+    Next line.
      */
     case "g;" => getLNext
     /*
-    @s -> (x STR)
-    Pushes previous line.
+    @s -> (x STR) | UN
+    Previous line.
      */
     case "g;;" => getLPrev
 
     /*
     @s -> (x STR)
-    Pushes line from STDIN.
+    Line from STDIN.
      */
     case "i>" => in
     /*
@@ -711,7 +713,7 @@ extension (env: ENV)
      */
     case "dup" => dup
     /*
-    @s a* -> a* (a* ARR)
+    @s a* -> a* (x ARR[a*])
      */
     case "dups" => dups
     /*
@@ -793,7 +795,7 @@ extension (env: ENV)
      */
     case "#" => eval
     /*
-    @s f -> y
+    @s f' -> x'
     Evaluates `f` (#{#} but only preserves resulting top of stack).
      */
     case "Q" => quar
@@ -823,13 +825,13 @@ extension (env: ENV)
      */
     case ";;" => evalLPrev
     /*
-    @s (n >NUM) -> (x STR)
-    Pushes `n`th line.
+    @s (n >NUM) -> (x STR) | UN
+    `n`th line.
      */
     case "g@@" => getLn
     /*
-    @s (n >NUM) -> (x STR)
-    Pushes `n`th line relative to current line.
+    @s (n >NUM) -> (x STR) | UN
+    `n`th line relative to current line.
      */
     case "g@~" => getLRel
     /*
@@ -873,94 +875,392 @@ extension (env: ENV)
      */
     case "'_" => evalStArr
 
-    case "E"   => scale
-    case "I"   => trunc
-    case "|_"  => floor
-    case "|~"  => round
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a * 10 ^ b`
+     */
+    case "E" => scale
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Rounds `a` towards 0.
+     */
+    case "I" => trunc
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Rounds `a` towards -∞.
+     */
+    case "|_" => floor
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Rounds `a` to nearest integer.
+     */
+    case "|~" => round
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Rounds `a` towards ∞.
+     */
     case "|^"  => ceil
     case "X>b" => ???
     case "b>X" => ???
-    case "_"   => neg
-    case "__"  => neg$
-    case "_`"  => neg$$
-    case "+"   => add
-    case "++"  => add$
-    case "+`"  => add$$
-    case "-"   => sub
-    case "--"  => sub$
-    case "-`"  => sub$$
-    case "*"   => mul
-    case "**"  => mul$
-    case "*`"  => mul$$
-    case "/"   => div
-    case "/~"  => divi
-    case "//"  => div$
-    case "/`"  => div$$
-    case "%"   => mod
-    case "/%"  => divmod
-    case "%%"  => mod$
-    case "%`"  => mod$$
-    case "^"   => pow
-    case "^~"  => powi
-    case "^^"  => ???
-    case "^`"  => ???
-    case "e^"  => exp
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    `-a`
+     */
+    case "_" => neg
+    /*
+    @s (a >STR)' -> (x STR)'
+    Atom-reverses `a`.
+     */
+    case "__" => neg$
+    /*
+    @s a -> x
+    Reverses `a`.
+     */
+    case "_`" => neg$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a + b`
+     */
+    case "+" => add
+    /*
+    @s (a >STR)' (b >STR)' -> (x STR)'
+    Atomic #{+`}.
+     */
+    case "++" => add$
+    /*
+    @s a b -> x
+    Concatenates `a` and `b`.
+     */
+    case "+`" => add$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a - b`
+     */
+    case "-"  => sub
+    case "--" => sub$
+    case "-`" => sub$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a * b`
+     */
+    case "*"  => mul
+    case "**" => mul$
+    case "*`" => mul$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a / b`. Throws error if `b` is 0.
+     */
+    case "/" => div
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    Integer #{/}.
+     */
+    case "/~" => divi
+    case "//" => div$
+    case "/`" => div$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a (mod b)`
+     */
+    case "%" => mod
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)' (y NUM)'
+    Results of #{/~} and #{%} on `a` and `b`.
+     */
+    case "/%" => divmod
+    case "%%" => mod$
+    case "%`" => mod$$
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    `a ^ b`. Throws error if result would be a complex number.
+     */
+    case "^" => pow
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    #{^} but `b` is coerced to `int`.
+     */
+    case "^~" => powi
+    case "^^" => ???
+    case "^`" => ???
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    `e ^ a`
+     */
+    case "e^" => exp
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Absolute value of `a`.
+     */
     case "abs" => abs
 
-    case "sin"    => sin
-    case "cos"    => cos
-    case "tan"    => tan
-    case "sin_"   => asin
-    case "cos_"   => acos
-    case "tan_"   => atan
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Sine of `a`.
+     */
+    case "sin" => sin
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Cosine of `a`.
+     */
+    case "cos" => cos
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Tangent of `a`.
+     */
+    case "tan" => tan
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Arcsine of `a`.
+     */
+    case "sin_" => asin
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Arccosine of `a`.
+     */
+    case "cos_" => acos
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Arctangent of `a`.
+     */
+    case "tan_" => atan
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    Arctangent of `a` with `b` as quadrant.
+     */
     case "tan_II" => atan2
-    case "sinh"   => sinh
-    case "cosh"   => cosh
-    case "tanh"   => tanh
-    case "sinh_"  => asinh
-    case "cosh_"  => acosh
-    case "tanh_"  => atanh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic sine of `a`.
+     */
+    case "sinh" => sinh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic cosine of `a`.
+     */
+    case "cosh" => cosh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic tangent of `a`.
+     */
+    case "tanh" => tanh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic arcsine of `a`.
+     */
+    case "sinh_" => asinh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic arccosine of `a`.
+     */
+    case "cosh_" => acosh
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Hyperbolic arctangent of `a`.
+     */
+    case "tanh_" => atanh
 
-    case "log"  => log
-    case "ln"   => ln
+    /*
+    @s (a >NUM)' (b >NUM)' -> (x NUM)'
+    Base `b` logarithm of `a`.
+     */
+    case "log" => log
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Natural logarithm of `a`.
+     */
+    case "ln" => ln
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Base-10 logarithm of `a`.
+     */
     case "logX" => log10
 
+    /*
+    @s (a >NUM)' -> (x NUM)'
+    Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance of being wrong.
+     */
     case "P?" => isPrime
+    /*
+    @s (a >NUM)' -> (x MAP[((y NUM) => (z NUM))*])'
+    Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
+     */
     case "P/" => factor
 
-    case "!"    => not
-    case "!`"   => not$$
-    case "&"    => min
-    case "&&"   => and
-    case "&`"   => and$$
-    case "|"    => max
-    case "||"   => or
-    case "|`"   => or$$
-    case "<=>"  => cmp
+    /*
+    @s a' -> (x NUM)'
+    Atomic #{!`}.
+     */
+    case "!" => not
+    /*
+    @s a -> (x NUM)
+    Logical NOT.
+     */
+    case "!`" => not$$
+    /*
+    @s a' b' -> (a | b)'
+    Atomic #{&`}.
+     */
+    case "&" => min
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{&&`}.
+     */
+    case "&&" => and
+    /*
+    @s a b -> a | b
+    Minimum of `a` and `b`.
+     */
+    case "&`" => min$$
+    /*
+    @s a b -> (x NUM)
+    Logical AND of `a` and `b`.
+     */
+    case "&&`" => and$$
+    /*
+    @s a' b' -> (a | b)'
+    Atomic #{|`}.
+     */
+    case "|" => max
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{||`}.
+     */
+    case "||" => or
+    /*
+    @s a b -> a | b
+    Maximum of `a` and `b`.
+     */
+    case "|`" => max$$
+    /*
+    @s a b -> (x NUM)
+    Logical OR of `a` and `b`.
+     */
+    case "||`" => or$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{<=>`}.
+     */
+    case "<=>" => cmp
+    /*
+    @s a b -> x
+    Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or greater than `b`).
+     */
     case "<=>`" => cmp$$
-    case "="    => eql
-    case "=`"   => eql$$
-    case "!="   => neq
-    case "!=`"  => neq$$
-    case "<"    => lt
-    case "<`"   => lt$$
-    case ">"    => gt
-    case ">`"   => gt$$
-    case "<="   => lteq
-    case "<=`"  => gt$$
-    case ">="   => gteq
-    case ">=`"  => gt$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{=`}.
+     */
+    case "=" => eql
+    /*
+    @s a b -> (x NUM)
+    Whether `a` equals `b`.
+     */
+    case "=`" => eql$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{!=`}.
+     */
+    case "!=" => neq
+    /*
+    @s a b -> (x NUM)
+    Whether `a` does not equals `b`.
+     */
+    case "!=`" => neq$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{<`}.
+     */
+    case "<" => lt
+    /*
+    @s a b -> (x NUM)
+    Whether `a` is less than `b`.
+     */
+    case "<`" => lt$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{>`}.
+     */
+    case ">" => gt
+    /*
+    @s a b -> (x NUM)
+    Whether `a` is greater than `b`.
+     */
+    case ">`" => gt$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{<=`}.
+     */
+    case "<=" => lteq
+    /*
+    @s a b -> (x NUM)
+    Whether `a` is less than or equal to `b`.
+     */
+    case "<=`" => gt$$
+    /*
+    @s a' b' -> (x NUM)'
+    Atomic #{>=`}.
+     */
+    case ">=" => gteq
+    /*
+    @s a b -> (x NUM)
+    Whether `a` is greater than or equal to `b`.
+     */
+    case ">=`" => gt$$
 
-    case ":"     => get
-    case ":r"    => getr
-    case ":`"    => get$$
-    case ":?"    => has
-    case ":?`"   => has$$
-    case "len"   => len
-    case ","     => wrap$
-    case ",,"    => wrap
-    case ",`"    => wrap$$
-    case ",_"    => unwrap
+    /*
+    @s a i' -> (a.x | UN)'
+    Value at atomic index `i` in `a`.
+     */
+    case ":" => get
+    /*
+    @s a -> a.x
+    Value at random index in `a`.
+     */
+    case ":r" => getr
+    /*
+    @s a i -> a.x | UN
+    Value at index `i` in `a`.
+     */
+    case ":`" => get$$
+    /*
+    @s a b' -> (x NUM)'
+    Whether `a` has atomic `b`.
+     */
+    case ":?" => has
+    /*
+    @s a b -> (x NUM)
+    Whether `a` has `b`. `MAP`s check `b` against keys; other types of `a` check `b` against values.
+     */
+    case ":?`" => has$$
+    /*
+    @s a -> (x NUM)
+    Length of `a`.
+     */
+    case "len" => len
+    /*
+    @s a b -> (x ARR[a b])
+    Pairs `a` and `b` in an `ARR`.
+     */
+    case "," => wrap$
+    /*
+    @s a -> (x ARR[a])
+    Wraps `a` in an `ARR`.
+     */
+    case ",," => wrap
+    /*
+    @s a* -> a
+    Wraps stack in an `ARR`.
+     */
+    case ",`" => wrap$$
+    /*
+    @s a -> a*
+    Unwraps `a`.
+     */
+    case ",_" => unwrap
+    /*
+    @s _* a -> a*
+    Replaces stack with `a` unwrapped.
+     */
     case ",,_"   => unwrap$
     case "tk"    => tk
     case "dp"    => dp

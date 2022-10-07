@@ -14,3 +14,7 @@ Download the [latest executable JAR from releases](https://github.com/molarmanfu
 ### Building from Scratch
 
 Clone this repo, `cd` into it, and run `./mill main.assembly` (use `mill.bat` instead of `mill` if on Windows). The built JAR can be found at `out/main/assembly.dest/out.jar`.
+
+## Licensing
+
+Made with ♥ by Ben Pang. Released under the MIT License.
