@@ -21,8 +21,6 @@ jobs:
       uses: crazy-max/ghaction-import-gpg@v5
       with:
         gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
-    - name: build
-      run: ./mill sclin.publishArtifacts
     - name: mvn release
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -30,7 +28,8 @@ jobs:
         SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
       run: |
         ./mill mill.scalalib.PublishModule/publishAll \
-          --sonatypeCreds $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
+          sclin.publishArtifacts \
+          $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
           --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
           --sonatypeUri https://s01.oss.sonatype.org/service/local \
           --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
