@@ -16,12 +16,9 @@ jobs:
         distribution: temurin
         java-version: 19
     - name: gpg
-      env:
-        SONATYPE_GPG_SECRET: ${{ secrets.SONATYPE_GPG_SECRET }}
-      run: |
-        echo $SONATYPE_GPG_SECRET | base64 --decode > gpg_key
-        && gpg --import --no-tty --batch --yes $SONATYPE_GPG_SECRET
-        && rm gpg_key
+      uses: crazy-max/ghaction-import-gpg@v5
+      with:
+        gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
     - name: build
       run: ./mill main.assembly
     - name: mvn release
