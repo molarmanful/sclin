@@ -28,7 +28,7 @@ jobs:
         SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
       run: |
         ./mill mill.scalalib.PublishModule/publishAll \
-          sclin.publishArtifacts \
+          __.publishArtifacts \
           $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
           --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
           --sonatypeUri https://s01.oss.sonatype.org/service/local \
