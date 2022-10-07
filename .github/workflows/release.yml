@@ -31,8 +31,8 @@ jobs:
           --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
           --sonatypeUri https://s01.oss.sonatype.org/service/local \
           --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
-          --readTimeout  3600000 \
-          --awaitTimeout 3600000 \
+          --readTimeout  600000 \
+          --awaitTimeout 600000 \
           --release true
   github:
     runs-on: ubuntu-latest
