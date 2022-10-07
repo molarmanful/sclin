@@ -4,12 +4,11 @@ import scalalib.publish._
 import scala.util.chaining._
 import scalalib._
 
-object main extends ScalaModule with PublishModule {
+object sclin extends ScalaModule with PublishModule {
 
   def scalaVersion   = "3.2.0"
   def publishVersion = "0.0.0-0"
   def pomSettings = PomSettings(
-    artifactName = "sclin",
     description = "Scala implementation of lin",
     organization = "io.github.molarmanful",
     url = "https://github.com/molarmanful/sclin",
