@@ -62,7 +62,6 @@ case class ENV(
     println(stack.map(_.toForm).mkString("\n"))
     this
 
-  /** Prints debug trace. */
   def trace: ENV = trace1.trace2
 
   /** Modifies `code` with function.
@@ -95,15 +94,15 @@ case class ENV(
     */
   def getStack(i: Int): ANY = stack.applyOrElse(iStack(i), _ => UN)
 
+  /** Converts index to stack index.
+    *
+    * @param i
+    *   index
+    */
   def iStack(i: Int): Int =
     val i1 = ~i
     if i1 < 0 then stack.length + i1 else i1
 
-  /** Sets `arr`.
-    *
-    * @param x
-    *   new value of `arr`
-    */
   def setArr(x: List[ARRW[ANY]]): ENV = copy(arr = x)
 
   /** Modifies line at path in `lines`.
@@ -126,7 +125,6 @@ case class ENV(
     *
     * @param i
     *   line number to retrieve
-    * @return
     */
   def getLine(i: Int): Option[(ANY, ANY)] = lines.get(PATH(code.p.f, i))
 
@@ -134,7 +132,6 @@ case class ENV(
     *
     * @param i
     *   line number to retrieve
-    * @return
     */
   def getLineS(i: Int): ANY = getLine(i) match
     case Some(x, _) => x
@@ -144,7 +141,6 @@ case class ENV(
     *
     * @param i
     *   line number to retrieve
-    * @return
     */
   def getLineF(i: Int): ANY = getLine(i) match
     case Some(x, y) =>
@@ -198,18 +194,7 @@ case class ENV(
     gscope += (k -> v)
     this
 
-  /** Pushes `ANY` to `stack`.
-    *
-    * @param x
-    *   `ANY` to push
-    */
-  def push(x: ANY): ENV = modStack(_ :+ x)
-
-  /** Pushes `ANY`s in vector to `stack`.
-    *
-    * @param xs
-    *   vector of `ANY`s to push
-    */
+  def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
 
   def arg(n: Int, f: (ARRW[ANY], ENV) => ENV) =

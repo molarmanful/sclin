@@ -7,6 +7,14 @@ Scala implementation of lin.
 
 - JRE/JDK 19+
 
+### Installation with [Coursier](https://get-coursier.io)
+
+(WIP)
+
+```
+cs install --contrib sclin
+```
+
 ### Prebuilt Installation
 
 Download the [latest executable JAR from releases](https://github.com/molarmanful/sclin/releases) and place it on your `$PATH`. Verify that it works with `sclin --help`.

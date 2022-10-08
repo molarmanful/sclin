@@ -279,8 +279,10 @@ extension (env: ENV)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
-      case (x: SEQ, _)      => LazyList.fill(y.toI)(x).toSEQ.flat
-      case (x: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
+      case (_: SEQ, _)      => LazyList.fill(y.toI)(x).toSEQ.flat
+      case (_: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
+      case (_: STR, _)      => loop(x.toARR, y).join("").pipe(STR.apply)
+      case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
 
@@ -298,6 +300,7 @@ extension (env: ENV)
       case SEQ(x)   => x.grouped(y.toI).map(_.toSEQ).toSEQ
       case ARR(x)   => x.grouped(y.toI).map(_.toARR).toSEQ
       case MAP(x)   => x.grouped(y.toI).map(_.toMAP).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.join("").pipe(STR.apply)).toSEQ
       case FN(p, x) => x.grouped(y.toI).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -311,12 +314,13 @@ extension (env: ENV)
   )
   def mod$ : ENV = env.strnuma((x, y) => x.sliding(y.intValue))
   def mod$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = (x, y) match
-      case (SEQ(x), _)   => x.sliding(y.toNUM.toI).map(_.toSEQ).toSEQ
-      case (ARR(x), _)   => x.sliding(y.toNUM.toI).map(_.toARR).toSEQ
-      case (MAP(x), _)   => x.sliding(y.toNUM.toI).map(_.toMAP).toSEQ
-      case (FN(p, x), _) => x.sliding(y.toNUM.toI).map(_.pFN(p)).pFN(p)
-      case _             => loop(Vector(x).toARR, y)
+    def loop(x: ANY, y: ANY): ANY = x match
+      case SEQ(x)   => x.sliding(y.toI).map(_.toSEQ).toSEQ
+      case ARR(x)   => x.sliding(y.toI).map(_.toARR).toSEQ
+      case MAP(x)   => x.sliding(y.toI).map(_.toMAP).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.join("").pipe(STR.apply)).toSEQ
+      case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).pFN(p)
+      case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
   def pow: ENV  = env.num2(_ fpow _, "bad ^")
@@ -600,7 +604,6 @@ extension (env: ENV)
     1 or 0 depending on truthiness of `a`.
      */
     case ">?" => toBool
-
     /*
     @s -> UN
     `UN`
@@ -681,7 +684,6 @@ extension (env: ENV)
     Previous line.
      */
     case "g;;" => getLPrev
-
     /*
     @s -> STR
     Line from STDIN.
@@ -702,7 +704,6 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
-
     /*
     @s a -> a a
      */
@@ -778,7 +779,6 @@ extension (env: ENV)
     #{pop}s `b`, executes `f`, and pushes `b`.
      */
     case "dip" => dip
-
     /*
     @s a -> FN[a]
     Wraps `a` in `FN`.
@@ -865,11 +865,10 @@ extension (env: ENV)
      */
     case "'" => evalArrSt
     /*
-    @s (a* >ARR) f -> x*
+    @s (a* >ARR) f -> _*
     #{#}s `f` on the stack as if it were an `ARR`.
      */
     case "'_" => evalStArr
-
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a * 10 ^ b`
@@ -903,12 +902,12 @@ extension (env: ENV)
      */
     case "_" => neg
     /*
-    @s (a >STR)' -> (x STR)'
+    @s (a >STR)' -> STR'
     Atom-reverses `a`.
      */
     case "__" => neg$
     /*
-    @s a -> x
+    @s a -> _
     Reverses `a`.
      */
     case "_`" => neg$$
@@ -918,12 +917,12 @@ extension (env: ENV)
      */
     case "+" => add
     /*
-    @s (a >STR)' (b >STR)' -> (x STR)'
+    @s (a >STR)' (b >STR)' -> STR'
     Atomic #{+`}.
      */
     case "++" => add$
     /*
-    @s a b -> x
+    @s a b -> _
     Concatenates `a` and `b`.
      */
     case "+`" => add$$
@@ -931,15 +930,33 @@ extension (env: ENV)
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a - b`
      */
-    case "-"  => sub
+    case "-" => sub
+    /*
+    @s (a >STR)' (b >STR)' -> STR'
+    Atomic #{-`}.
+     */
     case "--" => sub$
+    /*
+    @s a b -> _
+    Remove occurrences of `b` from `a`.
+    If `a` is `MAP`, then removal is performed on keys.
+     */
     case "-`" => sub$$
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a * b`
      */
-    case "*"  => mul
+    case "*" => mul
+    /*
+    @s (a >STR)' (b >NUM)' -> STR'
+    Atomic #{*`}.
+     */
     case "**" => mul$
+    /*
+    @s a b -> _
+    `a` replicated according to `b`.
+    If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
+     */
     case "*`" => mul$$
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -951,7 +968,15 @@ extension (env: ENV)
     Integer #{/}.
      */
     case "/~" => divi
+    /*
+    @s (a >STR)' (b >NUM)' -> ARR[STR]'
+    Atomic #{/`}.
+     */
     case "//" => div$
+    /*
+    @s a (b >NUM)' -> SEQ
+    `a` chunked to size `b`.
+     */
     case "/`" => div$$
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -959,11 +984,19 @@ extension (env: ENV)
      */
     case "%" => mod
     /*
-    @s (a >NUM)' (b >NUM)' -> NUM' (y NUM)'
+    @s (a >NUM)' (b >NUM)' -> NUM' NUM'
     Results of #{/~} and #{%} on `a` and `b`.
      */
     case "/%" => divmod
+    /*
+    @s (a >STR)' (b >NUM)' -> ARR[STR]'
+    Atomic #{%`}.
+     */
     case "%%" => mod$
+    /*
+    @s a (b >NUM)' -> SEQ
+    `a` windowed to size `b`.
+     */
     case "%`" => mod$$
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -987,7 +1020,6 @@ extension (env: ENV)
     Absolute value of `a`.
      */
     case "abs" => abs
-
     /*
     @s @s (a >NUM)' -> NUM'
     Sine of `a`.
@@ -1053,7 +1085,6 @@ extension (env: ENV)
     Hyperbolic arctangent of `a`.
      */
     case "tanh_" => atanh
-
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     Base `b` logarithm of `a`.
@@ -1069,7 +1100,6 @@ extension (env: ENV)
     Base-10 logarithm of `a`.
      */
     case "logX" => log10
-
     /*
     @s @s (a >NUM)' -> NUM'
     Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance of being wrong.
@@ -1080,7 +1110,6 @@ extension (env: ENV)
     Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
      */
     case "P/" => factor
-
     /*
     @s a' -> NUM'
     Atomic #{!`}.
@@ -1201,7 +1230,6 @@ extension (env: ENV)
     Whether `a` is greater than or equal to `b`.
      */
     case ">=`" => gt$$
-
     /*
     @s a i' -> (a._ | UN)'
     Value at atomic index `i` in `a`.
@@ -1358,25 +1386,23 @@ extension (env: ENV)
     @s a -> SEQ
     All subsets of `a`.
      */
-    case "^set" => powset
-
-    case "S>c" => ???
-    case "c>S" => ???
-    case "<>"  => split
-    case "<>:" => ???
-    case "c<>" => env.push(STR("")).split
-    case "w<>" => env.push(STR(" ")).split
-    case "n<>" => env.push(STR("\n")).split
-    case "s<>" => ssplit
-    case "<>`" => ???
-    case "><"  => join
-    case "c><" => env.push(STR("")).join
-    case "w><" => env.push(STR(" ")).join
-    case "n><" => env.push(STR("\n")).join
-    case "><`" => ???
-    case "A>a" => ???
-    case "a>A" => ???
-
+    case "^set"  => powset
+    case "S>c"   => ???
+    case "c>S"   => ???
+    case "<>"    => split
+    case "<>:"   => ???
+    case "c<>"   => env.push(STR("")).split
+    case "w<>"   => env.push(STR(" ")).split
+    case "n<>"   => env.push(STR("\n")).split
+    case "s<>"   => ssplit
+    case "<>`"   => ???
+    case "><"    => join
+    case "c><"   => env.push(STR("")).join
+    case "w><"   => env.push(STR(" ")).join
+    case "n><"   => env.push(STR("\n")).join
+    case "><`"   => ???
+    case "A>a"   => ???
+    case "a>A"   => ???
     case "map"   => map
     case "tap"   => tapMap
     case "zip"   => zip
@@ -1392,8 +1418,7 @@ extension (env: ENV)
     case "uniq"  => uniq
     case "sort"  => sort
     case "sort~" => sort$
-
-    case "." => dot
+    case "."     => dot
 
     // CMDOC END
 

@@ -17,10 +17,8 @@ enum ANY:
   case ERR(x: LinERR)
   case UN
 
-  /** Gets type name of `ANY`. */
   def getType: String = getClass.getSimpleName
 
-  /** `toString` override for `ANY`. */
   override def toString: String = this match
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
@@ -32,7 +30,6 @@ enum ANY:
     case UN     => ""
     case _      => join(" ")
 
-  /** Converts `ANY` to formatted string. */
   def toForm: String = this match
     case _: SEQ => s"[…]"
     case ARR(x) => s"[${x.map(_.toForm).mkString(" ")}]"
@@ -70,7 +67,6 @@ enum ANY:
     case (_: NUM, _: NUM) => cmp(t) == 0
     case _                => this == t
 
-  /** Converts `ANY` to boolean. */
   def toBool: Boolean = this match
     case SEQ(x)   => !x.isEmpty
     case ARR(x)   => !x.isEmpty
@@ -82,7 +78,6 @@ enum ANY:
     case _: ERR   => false
     case UN       => false
 
-  /** Gets length of `ANY`. */
   def length: Int = this match
     case SEQ(x)   => x.length
     case ARR(x)   => x.length
@@ -91,11 +86,6 @@ enum ANY:
     case FN(_, x) => x.length
     case _        => 0
 
-  /** Gets `ANY` from `ANY`.
-    *
-    * @param i
-    *   index to retrieve
-    */
   def get(i: ANY): ANY =
     val oi = i.optI
     this match
@@ -113,11 +103,6 @@ enum ANY:
           case _: CMD => toSTR.get(i)
           case _      => UN
 
-  /** Takes `n` items in `ANY`. Negative `n` takes from the end.
-    *
-    * @param n
-    *   number of items to take
-    */
   def take(n: Int): ANY = this match
     case SEQ(x)   => SEQ(if n < 0 then x.takeRight(-n) else x.take(n))
     case ARR(x)   => ARR(if n < 0 then x.takeRight(-n) else x.take(n))
@@ -126,11 +111,6 @@ enum ANY:
     case FN(p, x) => FN(p, if n < 0 then x.takeRight(-n) else x.take(n))
     case _        => toSEQ.take(n)
 
-  /** Drops `n` items from `ANY`. Negative `n` drops from the end.
-    *
-    * @param n
-    *   number of items to drop
-    */
   def drop(n: Int): ANY = this match
     case SEQ(x)   => SEQ(if n < 0 then x.dropRight(-n) else x.drop(n))
     case ARR(x)   => ARR(if n < 0 then x.dropRight(-n) else x.drop(n))
@@ -177,7 +157,6 @@ enum ANY:
     case STR(x)   => x.combinations(n).map(STR.apply).toSEQ
     case _        => toSEQ.combinations(n)
 
-  /** Converts `ANY` to `SEQ`. */
   def toSEQ: SEQ = this match
     case x: SEQ => x
     case ARR(x) => LazyList.from(x).toSEQ
@@ -188,13 +167,11 @@ enum ANY:
     case UN       => LazyList.empty.toSEQ
     case _        => LazyList(this).toSEQ
 
-  /** Converts `ANY` to `ARR`. */
   def toARR: ARR = this match
     case x: ARR => x
     case SEQ(x) => x.toARR
     case _      => toSEQ.toARR
 
-  /** Converts `ANY` to `MAP`. */
   def toMAP: MAP = this match
     case x: MAP => x
     case SEQ(x) =>
@@ -204,10 +181,8 @@ enum ANY:
       }.to(VectorMap).toMAP
     case _ => toSEQ.toMAP
 
-  /** Converts `ANY` to `STR`. */
   def toSTR: STR = STR(toString)
 
-  /** Converts `ANY` to `NUM`. */
   def toNUM: NUM = this match
     case x: NUM => x
     case STR(x) =>
@@ -218,15 +193,12 @@ enum ANY:
     case UN => NUM(0)
     case _  => toSTR.toNUM
 
-  /** Converts `ANY` to `NUM` without failing. */
   def optNUM: Option[NUM] =
     try Some(toNUM)
     catch _ => None
 
-  /** Converts `ANY` to int. */
   def toI: Int = toNUM.x.intValue
 
-  /** Converts `ANY` to int without failing. */
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
   /** Converts `ANY` to `FN` body. */
@@ -236,11 +208,6 @@ enum ANY:
     case SEQ(x)   => x.toList
     case _        => toSEQ.xFN
 
-  /** Converts `ANY` to `FN`.
-    *
-    * @param env
-    *   context `ENV` to wrap `FN`
-    */
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
 
   /** Converts `ANY` to `FN` at given line number.
@@ -261,11 +228,6 @@ enum ANY:
     */
   def pFN(p: PATH): FN = FN(p, xFN)
 
-  /** Applies function over each element of `ANY`.
-    *
-    * @param f
-    *   function to map with
-    */
   def map(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.map(f).toSEQ
     case ARR(x)   => x.map(f).toARR
@@ -275,11 +237,6 @@ enum ANY:
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
     case _      => map(g)
 
-  /** Applies function over each element of `ANY` and flatten.
-    *
-    * @param f
-    *   function to map with
-    */
   def flatMap(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.flatMap(f(_).toSEQ.x).toSEQ
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
@@ -290,14 +247,6 @@ enum ANY:
     case _      => flatMap(g)
   def flat: ANY = flatMap(x => x)
 
-  /** Zips 2 `ANY`s using function.
-    *
-    * @param t
-    *   second `ANY` to zip with
-    * @param f
-    *   function to zip with
-    * @return
-    */
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (MAP(x), Itr(_)) =>
       x.foldLeft(VectorMap[ANY, ANY]())((a, b) =>
@@ -324,11 +273,6 @@ enum ANY:
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
       case _      => foldLeft(a)(g)
 
-  /** Filters elements of `ANY` with function.
-    *
-    * @param f
-    *   function to filter with
-    */
   def filter(f: ANY => Boolean): ANY = this match
     case SEQ(x)   => x.filter(f).toSEQ
     case ARR(x)   => x.filter(f).toARR
@@ -338,11 +282,6 @@ enum ANY:
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
     case _      => filter(g)
 
-  /** Check if any elements of `ANY` satisfy function.
-    *
-    * @param f
-    *   function to check with
-    */
   def any(f: ANY => Boolean): Boolean = this match
     case SEQ(x)   => x.exists(f)
     case ARR(x)   => x.exists(f)
@@ -352,11 +291,6 @@ enum ANY:
     case MAP(x) => x.exists { case (a, b) => f(a, b) }
     case _      => any(g)
 
-  /** Check if all elements of `ANY` satisfy function.
-    *
-    * @param f
-    *   function to check with
-    */
   def all(f: ANY => Boolean): Boolean = this match
     case SEQ(x)   => x.forall(f)
     case ARR(x)   => x.forall(f)
@@ -366,11 +300,6 @@ enum ANY:
     case MAP(x) => x.forall { case (a, b) => f(a, b) }
     case _      => all(g)
 
-  /** Take elements of `ANY` until function is no longer satisified.
-    *
-    * @param f
-    *   function to check with
-    */
   def takeWhile(f: ANY => Boolean): ANY = this match
     case SEQ(x)   => x.takeWhile(f).toSEQ
     case ARR(x)   => x.takeWhile(f).toARR
@@ -380,11 +309,6 @@ enum ANY:
     case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
     case _      => takeWhile(g)
 
-  /** Drop elements of `ANY` until function is no longer satisified.
-    *
-    * @param f
-    *   function to check with
-    */
   def dropWhile(f: ANY => Boolean): ANY = this match
     case SEQ(x)   => x.dropWhile(f).toSEQ
     case ARR(x)   => x.dropWhile(f).toARR
