@@ -44,7 +44,7 @@ case class ENV(
       case c :: cs =>
         fansi.Str.join(
           Seq(
-            fansi.Bold.On(fansi.Color.Yellow(c.toString)),
+            fansi.Bold.On(fansi.Color.Yellow(c.toForm)),
             fansi.Color.DarkGray(
               if cs.length > 5 then
                 s"${cs.take(5).map(_.toForm).mkString(" ")} …"

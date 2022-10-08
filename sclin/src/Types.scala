@@ -1,6 +1,7 @@
+import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.util.Random
-import spire.math.Real
+import spire.math._
 import util.chaining._
 import ANY._
 
@@ -227,6 +228,17 @@ enum ANY:
     *   context `ENV` to wrap `FN`
     */
   def pFN(p: PATH): FN = FN(p, xFN)
+
+  def matchType(a: ANY): ANY = a match
+    case _: SEQ               => toSEQ
+    case _: ARR               => toARR
+    case _: MAP               => toMAP
+    case _: STR               => toSTR
+    case _: NUM               => toNUM
+    case _: CMD               => toString.pipe(CMD.apply)
+    case FN(p, _)             => pFN(p)
+    case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR.apply)
+    case UN                   => UN
 
   def map(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.map(f).toSEQ
@@ -473,3 +485,38 @@ object ANY:
     def unapply(a: ANY): Option[ANY] = a match
       case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
       case _                                => None
+
+  def fromDec(n: SafeLong, b: Int): Vector[SafeLong] =
+    def loop(n: SafeLong): Vector[SafeLong] =
+      if b == 1 then Vector.fill(n.toInt)(1)
+      else if n == 0 then Vector.empty
+      else loop(n / b) :+ n % b
+    if b < 1 then throw LinEx("MATH", s"bad base $b")
+    loop(n) match
+      case Vector() if b > 1 => Vector(0)
+      case x                 => x
+
+  def toDec(ns: Vector[SafeLong], b: SafeLong): SafeLong =
+    if b < 1 then throw LinEx("MATH", s"bad base $b")
+    if b == 1 then ns.length
+    else
+      ns.reverseIterator.zipWithIndex.foldLeft[SafeLong](0) {
+        case (a, (n, i)) =>
+          b ** i * n + a
+      }
+
+  def baseN[A](seed: Vector[A], n: Int) =
+    if n < 0 then throw LinEx("MATH", s"bad length $n")
+    val l = seed.length
+    LazyList.unfold(SafeLong(0))(i =>
+      if i < SafeLong(l) ** n then
+        Some(
+          seed
+            .map(_ => SafeLong(0))
+            .++(ANY.fromDec(i, seed.length))
+            .takeRight(n)
+            .map(_.toInt.pipe(seed)),
+          i + 1
+        )
+      else None
+    )

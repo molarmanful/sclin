@@ -1,3 +1,4 @@
+import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.io.StdIn._
 import scala.util.chaining._
@@ -122,7 +123,8 @@ extension (env: ENV)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-  def toBool: ENV = env.mod1(_.toBool.boolNUM)
+  def toBool: ENV    = env.mod1(_.toBool.boolNUM)
+  def matchType: ENV = env.mod2(_.matchType(_))
 
   def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
@@ -162,7 +164,7 @@ extension (env: ENV)
     env.modStack(s => s.patch(env.iStack(x.toI), Vector(a), 0)).pop
   )
 
-  def dip: ENV = env.arg1((x, env) => env.evale.push(x))
+  def dip: ENV = env.arg2((x, f, env) => env.push(f).evale.push(x))
 
   def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
   def get$$ : ENV = env.mod2(_.get(_))
@@ -207,6 +209,19 @@ extension (env: ENV)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
   def perm: ENV    = env.mod1(_.permutations)
   def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toI)))
+  def baseN: ENV =
+    env.mod2((x, y) =>
+      y.vec1(n =>
+        ANY
+          .baseN(x.toARR.x, n.toI)
+          .map(a =>
+            x match
+              case _: STR => a.mkString.pipe(STR.apply)
+              case _      => a.toARR.matchType(x)
+          )
+          .toSEQ
+      )
+    )
   def powset: ENV =
     env.dup.len.push(NUM(1)).add.push(NUM(0)).swap.range.comb.flat
 
@@ -229,6 +244,13 @@ extension (env: ENV)
   def floor: ENV = env.num1(_.floor)
   def round: ENV = env.num1(_.round)
   def ceil: ENV  = env.num1(_.ceil)
+
+  def fromDec: ENV =
+    env.num2a((x, y) => ANY.fromDec(x.toSafeLong, y.toInt).map(Real.apply))
+  def toDec: ENV = env.mod2((x, y) =>
+    val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
+    y.num1(n => ANY.toDec(x1, n.toInt))
+  )
 
   def neg: ENV   = env.num1(-_)
   def neg$ : ENV = env.str1(_.reverse)
@@ -605,6 +627,11 @@ extension (env: ENV)
      */
     case ">?" => toBool
     /*
+    @s a b -> _
+    Converts `a` to type of `b`.
+     */
+    case ">TT" => matchType
+    /*
     @s -> UN
     `UN`
      */
@@ -894,8 +921,8 @@ extension (env: ENV)
     Rounds `a` towards ∞.
      */
     case "|^"  => ceil
-    case "X>b" => ???
-    case "b>X" => ???
+    case "X>b" => fromDec
+    case "b>X" => toDec
     /*
     @s @s (a >NUM)' -> NUM'
     `-a`
@@ -1381,7 +1408,7 @@ extension (env: ENV)
     All length-`n` combinations of `a`.
      */
     case "comb" => comb
-    // TODO: add base-n gen
+    case "N+>"  => baseN
     /*
     @s a -> SEQ
     All subsets of `a`.
