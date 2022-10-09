@@ -557,14 +557,14 @@ extension (env: ENV)
 
     // CMDOC START
 
-    case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
     case s"#$k" if k != "" => env
+    case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
 
+    case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
+    case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" && env.gscope.contains(k) =>
       env.push(env.gscope(k))
-    case s"=$$$$$k" if k != ""                       => env.arg1((v, env) => env.addGlob(k, v))
     case s"$$$k" if k != "" && env.scope.contains(k) => env.push(env.scope(k))
-    case s"=$$$k" if k != ""                         => env.arg1((v, env) => env.addLoc(k, v))
 
     case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
     case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
@@ -1408,12 +1408,16 @@ extension (env: ENV)
     All length-`n` combinations of `a`.
      */
     case "comb" => comb
-    case "N+>"  => baseN
     /*
     @s a -> SEQ
     All subsets of `a`.
      */
-    case "^set"  => powset
+    case "^set" => powset
+    /*
+    @s a (n >NUM)' -> SEQ'
+    All length-`n` combinations of `a`.
+     */
+    case "N+>"   => baseN
     case "S>c"   => ???
     case "c>S"   => ???
     case "<>"    => split
@@ -1446,6 +1450,9 @@ extension (env: ENV)
     case "sort"  => sort
     case "sort~" => sort$
     case "."     => dot
+
+    case s"$$$$$k" if k != "" => env.push(UN)
+    case s"$$$k" if k != ""   => env.push(UN)
 
     // CMDOC END
 
