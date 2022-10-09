@@ -7,7 +7,7 @@ import scalalib._
 object sclin extends ScalaModule with PublishModule {
 
   def scalaVersion   = "3.2.0"
-  def publishVersion = "0.0.0-2"
+  def publishVersion = "0.0.0-3"
   def pomSettings = PomSettings(
     description = "Scala implementation of lin",
     organization = "io.github.molarmanful",

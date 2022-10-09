@@ -96,13 +96,30 @@ enum ANY:
         this match
           case SEQ(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
-          case STR(x) => if i2 < x.length then STR(x(i2).toString) else UN
-          case _      => toSEQ.get(NUM(i2))
-      case _ =>
-        this match
-          case MAP(x) => x.applyOrElse(i, _ => UN)
-          case _: CMD => toSTR.get(i)
-          case _      => UN
+          case STR(x) =>
+            if i2 < x.length then x(i2).toString.pipe(STR.apply) else UN
+          case _ => toSEQ.get(NUM(i2))
+      case MAP(x) => x.applyOrElse(i, _ => UN)
+      case _: CMD => toSTR.get(i)
+      case _      => UN
+
+  def set(i: ANY, t: ANY): ANY =
+    val oi = i.optI
+    this match
+      case Its(x) if oi != None =>
+        val i1 = oi.get
+        val i2 = if i1 < 0 then i1 + length else i1
+        try
+          this match
+            case SEQ(x) => x.updated(i2, t).toSEQ
+            case ARR(x) => x.updated(i2, t).toARR
+            case _      => toARR.set(NUM(i2), t).matchType(this)
+        catch
+          case _: java.lang.IndexOutOfBoundsException => this
+          case e                                      => throw e
+      case MAP(x) => x.+(i -> t).toMAP
+      case _: CMD => toSTR.set(i, t)
+      case _      => this
 
   def take(n: Int): ANY = this match
     case SEQ(x)   => SEQ(if n < 0 then x.takeRight(-n) else x.take(n))
@@ -191,8 +208,7 @@ enum ANY:
       catch
         case e: java.lang.NumberFormatException =>
           throw LinEx("NUM", s"""bad cast "$x"""")
-    case UN => NUM(0)
-    case _  => toSTR.toNUM
+    case _ => toSTR.toNUM
 
   def optNUM: Option[NUM] =
     try Some(toNUM)

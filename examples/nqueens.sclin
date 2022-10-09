@@ -1,0 +1,12 @@
+[ \Gen \Disp ] @$.
+8=$n Gen Disp
+
+#Gen.
+  $n O>a perm ( =$p. ) fltr
+    $n O>a ( =$y. ) all
+      $y 1+ $n a>b ( =$x. ) all
+        $x $y , $p over : ( ,_ - ).map '_ abs !=
+
+#Disp.
+  ( \; map >A ""n>o ) map >A
+    0 $n *` swap 1, := ".Q" swap : n>o

@@ -68,6 +68,7 @@ extension (env: ENV)
     case Some(x) => STR(x.toString)
     case _       => UN
   )
+  def getLns: ENV    = env.push(env.lines.map { case (_, (l, _)) => l }.toARR)
   def evalLRel: ENV  = getLNum.add.evalLine
   def evalLHere: ENV = env.push(NUM(0)).evalLRel
   def evalLNext: ENV = env.push(NUM(1)).evalLRel
@@ -126,6 +127,11 @@ extension (env: ENV)
   def toBool: ENV    = env.mod1(_.toBool.boolNUM)
   def matchType: ENV = env.mod2(_.matchType(_))
 
+  def locId: ENV =
+    env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.toString)))
+  def globId: ENV =
+    env.arg1((x, env) => x.vef1(env)((env, c) => env.addGlobId(c.toString)))
+
   def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
@@ -169,6 +175,12 @@ extension (env: ENV)
   def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
   def get$$ : ENV = env.mod2(_.get(_))
 
+  def set: ENV = env.mod2((x, y) =>
+    val z0 = y.get(NUM(0))
+    val z1 = y.get(NUM(1))
+    x.set(z0, z1)
+  )
+
   def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolNUM))
   def has$$ : ENV = env.mod2(_.has(_).boolNUM)
 
@@ -202,7 +214,7 @@ extension (env: ENV)
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
   def range: ENV = env.num2q((x, y) =>
-    Range(x.intValue, y.intValue, (y - x).compare(0)).iterator.map(Real(_))
+    Range(x.intValue, y.intValue, (y > x).boolI * 2 - 1).iterator.map(Real(_))
   )
 
   def shuffle: ENV = env.mod1(_.shuffle)
@@ -564,10 +576,19 @@ extension (env: ENV)
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" && env.gscope.contains(k) =>
       env.push(env.gscope(k))
+    case s"$$$$$k" if k != "" && env.gids.contains(k) =>
+      env.push(NUM(env.gids(k).l)).getLn
     case s"$$$k" if k != "" && env.scope.contains(k) => env.push(env.scope(k))
+    case s"$$$k" if k != "" && env.ids.contains(k) =>
+      env.push(NUM(env.ids(k).l)).getLn
+    case s"$$$k" if k != "" && env.gscope.contains(k) => env.push(env.gscope(k))
+    case s"$$$k" if k != "" && env.gids.contains(k) =>
+      env.push(NUM(env.gids(k).l)).getLn
 
     case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
+    case x if env.ids.contains(x)    => env.push(NUM(env.ids(x).l)).evalLine
     case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
+    case x if env.gids.contains(x)   => env.push(NUM(env.gids(x).l)).evalLine
 
     case "(" => startFN
     case ")" => env
@@ -631,6 +652,7 @@ extension (env: ENV)
     Converts `a` to type of `b`.
      */
     case ">TT" => matchType
+
     /*
     @s -> UN
     `UN`
@@ -697,6 +719,11 @@ extension (env: ENV)
      */
     case "$P" => env.push(prime.lazyList.map(NUM(_)).toSEQ)
     /*
+    @s -> ARR[STR*]
+    `ARR` of lines of currently-executing file.
+     */
+    case "$L*" => getLns
+    /*
     @s -> STR | UN
     Current line.
      */
@@ -711,6 +738,18 @@ extension (env: ENV)
     Previous line.
      */
     case "g;;" => getLPrev
+
+    /*
+    @s (a >STR) ->
+    Loads ID `a` into local scope.
+     */
+    case "@$" => locId
+    /*
+    @s (a >STR) ->
+    Loads ID `a` into global scope.
+     */
+    case "@$$" => globId
+
     /*
     @s -> STR
     Line from STDIN.
@@ -896,35 +935,44 @@ extension (env: ENV)
     #{#}s `f` on the stack as if it were an `ARR`.
      */
     case "'_" => evalStArr
+
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a * 10 ^ b`
      */
     case "E" => scale
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Rounds `a` towards 0.
      */
     case "I" => trunc
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Rounds `a` towards -∞.
      */
     case "|_" => floor
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Rounds `a` to nearest integer.
      */
     case "|~" => round
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Rounds `a` towards ∞.
      */
-    case "|^"  => ceil
+    case "|^" => ceil
+    /*
+    @s (a >NUM)' (b >NUM)' -> ARR[NUM]'
+    Converts `a` from decimal to `ARR` of base-`b` digits.
+     */
     case "X>b" => fromDec
+    /*
+    @s (a >ARR[>NUM]) (b >NUM)' -> NUM'
+    Converts base-`b` digits to decimal.
+     */
     case "b>X" => toDec
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     `-a`
      */
     case "_" => neg
@@ -1037,6 +1085,7 @@ extension (env: ENV)
     case "^~" => powi
     case "^^" => ???
     case "^`" => ???
+
     /*
     @s @s (a >NUM)' -> NUM'
     `e ^ a`
@@ -1141,6 +1190,7 @@ extension (env: ENV)
     @s a' -> NUM'
     Atomic #{!`}.
      */
+
     case "!" => not
     /*
     @s a -> NUM
@@ -1257,6 +1307,7 @@ extension (env: ENV)
     Whether `a` is greater than or equal to `b`.
      */
     case ">=`" => gt$$
+
     /*
     @s a i' -> (a._ | UN)'
     Value at atomic index `i` in `a`.
@@ -1272,6 +1323,11 @@ extension (env: ENV)
     Value at index `i` in `a`.
      */
     case ":`" => get$$
+    /*
+    @s a >ARR[i b] -> x
+    Value at index `i` in `a`.
+     */
+    case ":=" => set
     /*
     @s a b' -> NUM'
     Whether `a` has atomic `b`.
@@ -1417,23 +1473,25 @@ extension (env: ENV)
     @s a (n >NUM)' -> SEQ'
     All length-`n` combinations of `a`.
      */
-    case "N+>"   => baseN
-    case "S>c"   => ???
-    case "c>S"   => ???
-    case "<>"    => split
-    case "<>:"   => ???
-    case "c<>"   => env.push(STR("")).split
-    case "w<>"   => env.push(STR(" ")).split
-    case "n<>"   => env.push(STR("\n")).split
-    case "s<>"   => ssplit
-    case "<>`"   => ???
-    case "><"    => join
-    case "c><"   => env.push(STR("")).join
-    case "w><"   => env.push(STR(" ")).join
-    case "n><"   => env.push(STR("\n")).join
-    case "><`"   => ???
-    case "A>a"   => ???
-    case "a>A"   => ???
+    case "N+>" => baseN
+
+    case "S>c" => ???
+    case "c>S" => ???
+    case "<>"  => split
+    case "<>:" => ???
+    case "c<>" => env.push(STR("")).split
+    case "w<>" => env.push(STR(" ")).split
+    case "n<>" => env.push(STR("\n")).split
+    case "s<>" => ssplit
+    case "<>`" => ???
+    case "><"  => join
+    case "c><" => env.push(STR("")).join
+    case "w><" => env.push(STR(" ")).join
+    case "n><" => env.push(STR("\n")).join
+    case "><`" => ???
+    case "A>a" => ???
+    case "a>A" => ???
+
     case "map"   => map
     case "tap"   => tapMap
     case "zip"   => zip
@@ -1450,9 +1508,6 @@ extension (env: ENV)
     case "sort"  => sort
     case "sort~" => sort$
     case "."     => dot
-
-    case s"$$$$$k" if k != "" => env.push(UN)
-    case s"$$$k" if k != ""   => env.push(UN)
 
     // CMDOC END
 

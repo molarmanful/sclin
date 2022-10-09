@@ -30,6 +30,8 @@ case class ENV(
     stack: ARRW[ANY] = Vector(),
     scope: Map[String, ANY] = Map(),
     gscope: TrieMap[String, ANY] = TrieMap(),
+    ids: Map[String, PATH] = Map(),
+    gids: TrieMap[String, PATH] = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
     eS: Boolean = false,
     eV: Boolean = false,
@@ -175,6 +177,33 @@ case class ENV(
       case x: FN => x
       case _     => FN(code.p, List())
     )
+
+  /** Retrieves `PATH` from ID.
+    * @param c
+    *   ID name
+    */
+  def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
+    s.x.trim.startsWith("#" + c)
+  } match
+    case Some(p, _) => p
+    case _          => throw LinEx("ID", "unknown id")
+
+  def optId(c: String): Option[PATH] = try Some(getId(c))
+  catch e => None
+
+  /** Adds ID to `ids`.
+    * @param c
+    *   ID name
+    */
+  def addLocId(c: String): ENV = copy(ids = ids + (c -> getId(c)))
+
+  /** Adds ID to `gids`.
+    * @param c
+    *   ID name
+    */
+  def addGlobId(c: String): ENV =
+    gids += (c -> getId(c))
+    this
 
   /** Adds variable to `scope`.
     * @param k
