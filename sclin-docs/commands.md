@@ -72,6 +72,13 @@ Stack: ``` a -> NUM ```
 1 or 0 depending on truthiness of `a`.
 
 
+## CMD: [``` >TT ```](#cmd-tt)
+
+Stack: ``` a b -> _ ```
+
+Converts `a` to type of `b`.
+
+
 ## CMD: [``` UN ```](#cmd-un)
 
 Stack: ``` -> UN ```
