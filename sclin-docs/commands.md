@@ -1170,3 +1170,10 @@ Stack: ``` a -> SEQ ```
 
 All subsets of `a`.
 
+
+## CMD: [``` N+> ```](#cmd-n-2)
+
+Stack: ``` a (n >NUM)' -> SEQ' ```
+
+All length-`n` combinations of `a`.
+
