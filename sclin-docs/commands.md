@@ -170,6 +170,13 @@ Stack: ``` -> SEQ[NUM*] ```
 Infinite `SEQ` of primes.
 
 
+## CMD: [``` $L* ```](#cmd-l-1)
+
+Stack: ``` -> ARR[STR*] ```
+
+`ARR` of lines of currently-executing file.
+
+
 ## CMD: [``` g@ ```](#cmd-g)
 
 Stack: ``` -> STR | UN ```
@@ -189,6 +196,20 @@ Next line.
 Stack: ``` -> STR | UN ```
 
 Previous line.
+
+
+## CMD: [``` @$ ```](#cmd--4)
+
+Stack: ``` (a >STR) -> ```
+
+Loads ID `a` into local scope.
+
+
+## CMD: [``` @$$ ```](#cmd--5)
+
+Stack: ``` (a >STR) -> ```
+
+Loads ID `a` into global scope.
 
 
 ## CMD: [``` i> ```](#cmd-i)
@@ -338,14 +359,14 @@ Stack: ``` a* b (f >FN) -> _* b ```
 [``` pop ```](#cmd-pop)s `b`, executes `f`, and pushes `b`.
 
 
-## CMD: [``` \ ```](#cmd--4)
+## CMD: [``` \ ```](#cmd--6)
 
 Stack: ``` a -> FN[a] ```
 
 Wraps `a` in `FN`.
 
 
-## CMD: [``` # ```](#cmd--5)
+## CMD: [``` # ```](#cmd--7)
 
 Stack: ``` a* f -> _* ```
 
@@ -356,42 +377,42 @@ Executes `f`.
 
 Stack: ``` f' -> _' ```
 
-Evaluates `f` ([``` # ```](#cmd--5) but only preserves resulting top of stack).
+Evaluates `f` ([``` # ```](#cmd--7) but only preserves resulting top of stack).
 
 
-## CMD: [``` @@ ```](#cmd--6)
-
-Stack: ``` a* (n >NUM) -> _* ```
-
-[``` # ```](#cmd--5)s `n`th line.
-
-
-## CMD: [``` @~ ```](#cmd--7)
+## CMD: [``` @@ ```](#cmd--8)
 
 Stack: ``` a* (n >NUM) -> _* ```
 
-[``` # ```](#cmd--5)s `n`th line relative to current line.
+[``` # ```](#cmd--7)s `n`th line.
 
 
-## CMD: [``` @ ```](#cmd--8)
+## CMD: [``` @~ ```](#cmd--9)
 
-Stack: ``` a* -> _* ```
+Stack: ``` a* (n >NUM) -> _* ```
 
-[``` # ```](#cmd--5)s current line.
-
-
-## CMD: [``` ; ```](#cmd--9)
-
-Stack: ``` a* -> _* ```
-
-[``` # ```](#cmd--5)s next line.
+[``` # ```](#cmd--7)s `n`th line relative to current line.
 
 
-## CMD: [``` ;; ```](#cmd--10)
+## CMD: [``` @ ```](#cmd--10)
 
 Stack: ``` a* -> _* ```
 
-[``` # ```](#cmd--5)s previous line.
+[``` # ```](#cmd--7)s current line.
+
+
+## CMD: [``` ; ```](#cmd--11)
+
+Stack: ``` a* -> _* ```
+
+[``` # ```](#cmd--7)s next line.
+
+
+## CMD: [``` ;; ```](#cmd--12)
+
+Stack: ``` a* -> _* ```
+
+[``` # ```](#cmd--7)s previous line.
 
 
 ## CMD: [``` g@@ ```](#cmd-g-3)
@@ -408,60 +429,60 @@ Stack: ``` (n >NUM) -> STR | UN ```
 `n`th line relative to current line.
 
 
-## CMD: [``` &# ```](#cmd--11)
+## CMD: [``` &# ```](#cmd--13)
 
 Stack: ``` a* b f -> _* ```
 
-[``` # ```](#cmd--5)s `f` if `b` is truthy.
+[``` # ```](#cmd--7)s `f` if `b` is truthy.
 
 
-## CMD: [``` |# ```](#cmd--12)
+## CMD: [``` |# ```](#cmd--14)
 
 Stack: ``` a* b f -> _* ```
 
-[``` # ```](#cmd--5)s `f` if `b` is falsy.
+[``` # ```](#cmd--7)s `f` if `b` is falsy.
 
 
-## CMD: [``` ?# ```](#cmd--13)
+## CMD: [``` ?# ```](#cmd--15)
 
 Stack: ``` a* b f g -> _* ```
 
-[``` # ```](#cmd--5)s `f` if `b` is truthy; else [``` # ```](#cmd--5)s `g`.
+[``` # ```](#cmd--7)s `f` if `b` is truthy; else [``` # ```](#cmd--7)s `g`.
 
 
-## CMD: [``` *# ```](#cmd--14)
+## CMD: [``` *# ```](#cmd--16)
 
 Stack: ``` a* f (n >NUM) -> _* ```
 
-[``` # ```](#cmd--5)s `f` `n` times.
+[``` # ```](#cmd--7)s `f` `n` times.
 
 
-## CMD: [``` !# ```](#cmd--15)
+## CMD: [``` !# ```](#cmd--17)
 
 Stack: ``` a* f g -> _* ```
 
-Tries to [``` # ```](#cmd--5) `f`; on error, pushes caught `ERR` and [``` # ```](#cmd--5)s `g`.
+Tries to [``` # ```](#cmd--7) `f`; on error, pushes caught `ERR` and [``` # ```](#cmd--7)s `g`.
 
 
-## CMD: [``` >! ```](#cmd--16)
+## CMD: [``` >! ```](#cmd--18)
 
 Stack: ``` (e ERR) -> ```
 
 Throws `e`.
 
 
-## CMD: [``` ' ```](#cmd--17)
+## CMD: [``` ' ```](#cmd--19)
 
 Stack: ``` (a >ARR) f -> ARR ```
 
-[``` # ```](#cmd--5)s `f` on `a` as if it were a stack.
+[``` # ```](#cmd--7)s `f` on `a` as if it were a stack.
 
 
 ## CMD: [``` '_ ```](#cmd-_)
 
 Stack: ``` (a* >ARR) f -> _* ```
 
-[``` # ```](#cmd--5)s `f` on the stack as if it were an `ARR`.
+[``` # ```](#cmd--7)s `f` on the stack as if it were an `ARR`.
 
 
 ## CMD: [``` E ```](#cmd-e-2)
@@ -473,35 +494,49 @@ Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 ## CMD: [``` I ```](#cmd-i-1)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Rounds `a` towards 0.
 
 
 ## CMD: [``` |_ ```](#cmd-_-1)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Rounds `a` towards -∞.
 
 
-## CMD: [``` |~ ```](#cmd--18)
+## CMD: [``` |~ ```](#cmd--20)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Rounds `a` to nearest integer.
 
 
-## CMD: [``` |^ ```](#cmd--19)
+## CMD: [``` |^ ```](#cmd--21)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Rounds `a` towards ∞.
 
 
+## CMD: [``` X>b ```](#cmd-xb)
+
+Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM]' ```
+
+Converts `a` from decimal to `ARR` of base-`b` digits.
+
+
+## CMD: [``` b>X ```](#cmd-bx)
+
+Stack: ``` (a >ARR[>NUM]) (b >NUM)' -> NUM' ```
+
+Converts base-`b` digits to decimal.
+
+
 ## CMD: [``` _ ```](#cmd-_-2)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 `-a`
 
@@ -520,21 +555,21 @@ Stack: ``` a -> _ ```
 Reverses `a`.
 
 
-## CMD: [``` + ```](#cmd--20)
+## CMD: [``` + ```](#cmd--22)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 `a + b`
 
 
-## CMD: [``` ++ ```](#cmd--21)
+## CMD: [``` ++ ```](#cmd--23)
 
 Stack: ``` (a >STR)' (b >STR)' -> STR' ```
 
-Atomic [``` +` ```](#cmd--22).
+Atomic [``` +` ```](#cmd--24).
 
 
-## CMD: [``` +` ```](#cmd--22)
+## CMD: [``` +` ```](#cmd--24)
 
 Stack: ``` a b -> _ ```
 
@@ -562,149 +597,149 @@ Stack: ``` a b -> _ ```
 Remove occurrences of `b` from `a`.If `a` is `MAP`, then removal is performed on keys.
 
 
-## CMD: [``` * ```](#cmd--23)
+## CMD: [``` * ```](#cmd--25)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 `a * b`
 
 
-## CMD: [``` ** ```](#cmd--24)
+## CMD: [``` ** ```](#cmd--26)
 
 Stack: ``` (a >STR)' (b >NUM)' -> STR' ```
 
-Atomic [``` *` ```](#cmd--25).
+Atomic [``` *` ```](#cmd--27).
 
 
-## CMD: [``` *` ```](#cmd--25)
+## CMD: [``` *` ```](#cmd--27)
 
 Stack: ``` a b -> _ ```
 
 `a` replicated according to `b`.If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
 
 
-## CMD: [``` / ```](#cmd--26)
+## CMD: [``` / ```](#cmd--28)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 `a / b`. Throws error if `b` is 0.
 
 
-## CMD: [``` /~ ```](#cmd--27)
+## CMD: [``` /~ ```](#cmd--29)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
-Integer [``` / ```](#cmd--26).
+Integer [``` / ```](#cmd--28).
 
 
-## CMD: [``` // ```](#cmd--28)
+## CMD: [``` // ```](#cmd--30)
 
 Stack: ``` (a >STR)' (b >NUM)' -> ARR[STR]' ```
 
-Atomic [``` /` ```](#cmd--29).
+Atomic [``` /` ```](#cmd--31).
 
 
-## CMD: [``` /` ```](#cmd--29)
+## CMD: [``` /` ```](#cmd--31)
 
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` chunked to size `b`.
 
 
-## CMD: [``` % ```](#cmd--30)
+## CMD: [``` % ```](#cmd--32)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 `a (mod b)`
 
 
-## CMD: [``` /% ```](#cmd--31)
+## CMD: [``` /% ```](#cmd--33)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' NUM' ```
 
-Results of [``` /~ ```](#cmd--27) and [``` % ```](#cmd--30) on `a` and `b`.
+Results of [``` /~ ```](#cmd--29) and [``` % ```](#cmd--32) on `a` and `b`.
 
 
-## CMD: [``` %% ```](#cmd--32)
+## CMD: [``` %% ```](#cmd--34)
 
 Stack: ``` (a >STR)' (b >NUM)' -> ARR[STR]' ```
 
-Atomic [``` %` ```](#cmd--33).
+Atomic [``` %` ```](#cmd--35).
 
 
-## CMD: [``` %` ```](#cmd--33)
+## CMD: [``` %` ```](#cmd--35)
 
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` windowed to size `b`.
 
 
-## CMD: [``` ^ ```](#cmd--34)
+## CMD: [``` ^ ```](#cmd--36)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 `a ^ b`. Throws error if result would be a complex number.
 
 
-## CMD: [``` ^~ ```](#cmd--35)
+## CMD: [``` ^~ ```](#cmd--37)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
-[``` ^ ```](#cmd--34) but `b` is coerced to `int`.
+[``` ^ ```](#cmd--36) but `b` is coerced to `int`.
 
 
 ## CMD: [``` e^ ```](#cmd-e-3)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 `e ^ a`
 
 
 ## CMD: [``` abs ```](#cmd-abs)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Absolute value of `a`.
 
 
 ## CMD: [``` sin ```](#cmd-sin)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Sine of `a`.
 
 
 ## CMD: [``` cos ```](#cmd-cos)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Cosine of `a`.
 
 
 ## CMD: [``` tan ```](#cmd-tan)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Tangent of `a`.
 
 
 ## CMD: [``` sin_ ```](#cmd-sin_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Arcsine of `a`.
 
 
 ## CMD: [``` cos_ ```](#cmd-cos_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Arccosine of `a`.
 
 
 ## CMD: [``` tan_ ```](#cmd-tan_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Arctangent of `a`.
 
@@ -718,42 +753,42 @@ Arctangent of `a` with `b` as quadrant.
 
 ## CMD: [``` sinh ```](#cmd-sinh)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic sine of `a`.
 
 
 ## CMD: [``` cosh ```](#cmd-cosh)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic cosine of `a`.
 
 
 ## CMD: [``` tanh ```](#cmd-tanh)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic tangent of `a`.
 
 
 ## CMD: [``` sinh_ ```](#cmd-sinh_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic arcsine of `a`.
 
 
 ## CMD: [``` cosh_ ```](#cmd-cosh_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic arccosine of `a`.
 
 
 ## CMD: [``` tanh_ ```](#cmd-tanh_)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Hyperbolic arctangent of `a`.
 
@@ -767,21 +802,21 @@ Base `b` logarithm of `a`.
 
 ## CMD: [``` ln ```](#cmd-ln)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Natural logarithm of `a`.
 
 
 ## CMD: [``` logX ```](#cmd-logx)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Base-10 logarithm of `a`.
 
 
 ## CMD: [``` P? ```](#cmd-p-1)
 
-Stack: ``` @s (a >NUM)' -> NUM' ```
+Stack: ``` (a >NUM)' -> NUM' ```
 
 Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance of being wrong.
 
@@ -793,175 +828,175 @@ Stack: ``` (a >NUM)' -> MAP[(NUM => NUM)*] ```
 Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
 
 
-## CMD: [``` ! ```](#cmd--36)
+## CMD: [``` ! ```](#cmd--38)
 
 Stack: ``` a' -> NUM' ```
 
-Atomic [``` !` ```](#cmd--37).
+Atomic [``` !` ```](#cmd--39).
 
 
-## CMD: [``` !` ```](#cmd--37)
+## CMD: [``` !` ```](#cmd--39)
 
 Stack: ``` a -> NUM ```
 
 Logical NOT.
 
 
-## CMD: [``` & ```](#cmd--38)
+## CMD: [``` & ```](#cmd--40)
 
 Stack: ``` a' b' -> (a | b)' ```
 
-Atomic [``` &` ```](#cmd--40).
+Atomic [``` &` ```](#cmd--42).
 
 
-## CMD: [``` && ```](#cmd--39)
+## CMD: [``` && ```](#cmd--41)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` &&` ```](#cmd--41).
+Atomic [``` &&` ```](#cmd--43).
 
 
-## CMD: [``` &` ```](#cmd--40)
+## CMD: [``` &` ```](#cmd--42)
 
 Stack: ``` a b -> a | b ```
 
 Minimum of `a` and `b`.
 
 
-## CMD: [``` &&` ```](#cmd--41)
+## CMD: [``` &&` ```](#cmd--43)
 
 Stack: ``` a b -> NUM ```
 
 Logical AND of `a` and `b`.
 
 
-## CMD: [``` | ```](#cmd--42)
+## CMD: [``` | ```](#cmd--44)
 
 Stack: ``` a' b' -> (a | b)' ```
 
-Atomic [``` |` ```](#cmd--44).
+Atomic [``` |` ```](#cmd--46).
 
 
-## CMD: [``` || ```](#cmd--43)
+## CMD: [``` || ```](#cmd--45)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` ||` ```](#cmd--45).
+Atomic [``` ||` ```](#cmd--47).
 
 
-## CMD: [``` |` ```](#cmd--44)
+## CMD: [``` |` ```](#cmd--46)
 
 Stack: ``` a b -> a | b ```
 
 Maximum of `a` and `b`.
 
 
-## CMD: [``` ||` ```](#cmd--45)
+## CMD: [``` ||` ```](#cmd--47)
 
 Stack: ``` a b -> NUM ```
 
 Logical OR of `a` and `b`.
 
 
-## CMD: [``` <=> ```](#cmd--46)
+## CMD: [``` <=> ```](#cmd--48)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` <=>` ```](#cmd--47).
+Atomic [``` <=>` ```](#cmd--49).
 
 
-## CMD: [``` <=>` ```](#cmd--47)
+## CMD: [``` <=>` ```](#cmd--49)
 
 Stack: ``` a b -> NUM ```
 
 Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or greater than `b`).
 
 
-## CMD: [``` = ```](#cmd--48)
+## CMD: [``` = ```](#cmd--50)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` =` ```](#cmd--49).
+Atomic [``` =` ```](#cmd--51).
 
 
-## CMD: [``` =` ```](#cmd--49)
+## CMD: [``` =` ```](#cmd--51)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` equals `b`.
 
 
-## CMD: [``` != ```](#cmd--50)
+## CMD: [``` != ```](#cmd--52)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` !=` ```](#cmd--51).
+Atomic [``` !=` ```](#cmd--53).
 
 
-## CMD: [``` !=` ```](#cmd--51)
+## CMD: [``` !=` ```](#cmd--53)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` does not equals `b`.
 
 
-## CMD: [``` < ```](#cmd--52)
+## CMD: [``` < ```](#cmd--54)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` <` ```](#cmd--53).
+Atomic [``` <` ```](#cmd--55).
 
 
-## CMD: [``` <` ```](#cmd--53)
+## CMD: [``` <` ```](#cmd--55)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` is less than `b`.
 
 
-## CMD: [``` > ```](#cmd--54)
+## CMD: [``` > ```](#cmd--56)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` >` ```](#cmd--55).
+Atomic [``` >` ```](#cmd--57).
 
 
-## CMD: [``` >` ```](#cmd--55)
+## CMD: [``` >` ```](#cmd--57)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` is greater than `b`.
 
 
-## CMD: [``` <= ```](#cmd--56)
+## CMD: [``` <= ```](#cmd--58)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` <=` ```](#cmd--57).
+Atomic [``` <=` ```](#cmd--59).
 
 
-## CMD: [``` <=` ```](#cmd--57)
+## CMD: [``` <=` ```](#cmd--59)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` is less than or equal to `b`.
 
 
-## CMD: [``` >= ```](#cmd--58)
+## CMD: [``` >= ```](#cmd--60)
 
 Stack: ``` a' b' -> NUM' ```
 
-Atomic [``` >=` ```](#cmd--59).
+Atomic [``` >=` ```](#cmd--61).
 
 
-## CMD: [``` >=` ```](#cmd--59)
+## CMD: [``` >=` ```](#cmd--61)
 
 Stack: ``` a b -> NUM ```
 
 Whether `a` is greater than or equal to `b`.
 
 
-## CMD: [``` : ```](#cmd--60)
+## CMD: [``` : ```](#cmd--62)
 
 Stack: ``` a i' -> (a._ | UN)' ```
 
@@ -975,21 +1010,28 @@ Stack: ``` a -> a._ ```
 Value at random index in `a`.
 
 
-## CMD: [``` :` ```](#cmd--61)
+## CMD: [``` :` ```](#cmd--63)
 
 Stack: ``` a i -> a._ | UN ```
 
 Value at index `i` in `a`.
 
 
-## CMD: [``` :? ```](#cmd--62)
+## CMD: [``` := ```](#cmd--64)
+
+Stack: ``` a >ARR[i b] -> x ```
+
+Value at index `i` in `a`.
+
+
+## CMD: [``` :? ```](#cmd--65)
 
 Stack: ``` a b' -> NUM' ```
 
 Whether `a` has atomic `b`.
 
 
-## CMD: [``` :?` ```](#cmd--63)
+## CMD: [``` :?` ```](#cmd--66)
 
 Stack: ``` a b -> NUM ```
 
@@ -1003,21 +1045,21 @@ Stack: ``` a -> NUM ```
 Length of `a`.
 
 
-## CMD: [``` , ```](#cmd--64)
+## CMD: [``` , ```](#cmd--67)
 
 Stack: ``` a b -> ARR[a b] ```
 
 Pairs `a` and `b` in an `ARR`.
 
 
-## CMD: [``` ,, ```](#cmd--65)
+## CMD: [``` ,, ```](#cmd--68)
 
 Stack: ``` a -> ARR[a] ```
 
 Wraps `a` in an `ARR`.
 
 
-## CMD: [``` ,` ```](#cmd--66)
+## CMD: [``` ,` ```](#cmd--69)
 
 Stack: ``` a* -> a ```
 

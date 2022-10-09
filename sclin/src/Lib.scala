@@ -1087,42 +1087,42 @@ extension (env: ENV)
     case "^`" => ???
 
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     `e ^ a`
      */
     case "e^" => exp
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Absolute value of `a`.
      */
     case "abs" => abs
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Sine of `a`.
      */
     case "sin" => sin
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Cosine of `a`.
      */
     case "cos" => cos
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Tangent of `a`.
      */
     case "tan" => tan
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Arcsine of `a`.
      */
     case "sin_" => asin
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Arccosine of `a`.
      */
     case "cos_" => acos
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Arctangent of `a`.
      */
     case "tan_" => atan
@@ -1132,32 +1132,32 @@ extension (env: ENV)
      */
     case "tan_II" => atan2
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic sine of `a`.
      */
     case "sinh" => sinh
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic cosine of `a`.
      */
     case "cosh" => cosh
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic tangent of `a`.
      */
     case "tanh" => tanh
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic arcsine of `a`.
      */
     case "sinh_" => asinh
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic arccosine of `a`.
      */
     case "cosh_" => acosh
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Hyperbolic arctangent of `a`.
      */
     case "tanh_" => atanh
@@ -1167,17 +1167,17 @@ extension (env: ENV)
      */
     case "log" => log
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Natural logarithm of `a`.
      */
     case "ln" => ln
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Base-10 logarithm of `a`.
      */
     case "logX" => log10
     /*
-    @s @s (a >NUM)' -> NUM'
+    @s (a >NUM)' -> NUM'
     Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance of being wrong.
      */
     case "P?" => isPrime
@@ -1186,11 +1186,11 @@ extension (env: ENV)
     Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
      */
     case "P/" => factor
+
     /*
     @s a' -> NUM'
     Atomic #{!`}.
      */
-
     case "!" => not
     /*
     @s a -> NUM
