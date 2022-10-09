@@ -1,12 +1,12 @@
-[ \Gen \Disp ] @$.
-8=$n Gen Disp
+[ \solve \show ] @$.
+8=$n solve show
 
-#Gen.
+#solve.
   $n O>a perm ( =$p. ) fltr
     $n O>a ( =$y. ) all
       $y 1+ $n a>b ( =$x. ) all
-        $x $y , $p over : ( ,_ - ).map '_ abs !=
+        $x $y , $p over : ( ,_ - abs ).map '_ !=
 
-#Disp.
+#show ; len "solutions found for n =" $n ,` n>o
   ( \; map >A ""n>o ) map >A
     0 $n *` swap 1, := ".Q" swap : n>o
