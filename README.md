@@ -9,8 +9,6 @@ Scala implementation of lin.
 
 ### Installation with [Coursier](https://get-coursier.io)
 
-(WIP)
-
 ```
 cs install --contrib sclin
 ```
