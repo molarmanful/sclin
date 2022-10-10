@@ -1,11 +1,10 @@
-[ \solve \show ] @$.
-8=$n solve show
+[ \queens \show ] @$.
+8=$n queens show
 
-#solve.
-  $n O>a perm ( =$p. ) fltr
-    $n O>a ( =$y. ) all
-      $y 1+ $n a>b ( =$x. ) all
-        $x $y , $p over : ( ,_ - abs ).map '_ !=
+#queens.
+  $n O>a perm \; fltr
+    >kv \; mapf () uniq len $n 2* =
+      dup ,_ + $n + swap ,_ - ,
 
 #show ; len "solutions found for n =" $n ,` n>o
   ( \; map >A ""n>o ) map >A
