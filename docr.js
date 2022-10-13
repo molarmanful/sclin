@@ -10,7 +10,7 @@ fs.readFile(f, (e, data) => {
       let e = ex.pop()
       let o = '```\n' + `${x}\n${e}${ex.length ? '\n' + ex.join`\n` : ''}` + '\n```'
       console.log(o)
-      o
+      return o
     })
     fs.writeFile(f, res, _ => { })
   }
