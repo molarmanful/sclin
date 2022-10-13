@@ -1239,14 +1239,14 @@ All length-`n` combinations of `a`.
 
 Stack: ``` (a >STR)' -> ARR[NUM]' ```
 
-convert `a` to codepoints.
+Converts `a` to codepoints.
 
 
 ## CMD: [``` c>S ```](#cmd-cs)
 
-Stack: ``` a[>NUM] -> (a >STR) ```
+Stack: ``` (a >ARR[NUM]) -> (a >STR) ```
 
-Convert `ARR` of codepoints `a` to `STR`.
+Converts collection of codepoints to `STR`.
 
 
 ## CMD: [``` A>a ```](#cmd-aa)
@@ -1272,6 +1272,10 @@ If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
 where `k` is the key and `v` is the value.
 Otherwise, the signature of `f` is `x -> _ |`,
 where `x` is the element.
+```
+[1 2 3 4] ( 1+ ) map
+-> [2 3 4 5]
+```
 
 
 ## CMD: [``` tap ```](#cmd-tap)
@@ -1279,6 +1283,14 @@ where `x` is the element.
 Stack: ``` a f' -> a ```
 
 [``` map ```](#cmd-map) but `a` is preserved (i.e. leaving only side effects of `f`).
+```
+[1 2 3 4] \n>o tap
+-> [1 2 3 4]
+1
+2
+3
+4
+```
 
 
 ## CMD: [``` zip ```](#cmd-zip)
