@@ -862,7 +862,7 @@ Stack: ``` (a >NUM)' -> MAP[(NUM => NUM)*] ```
 Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
 ```
 340P/
--> {5=>1 17=>1 2=>2}
+-> {17=>1 5=>1 2=>2}
 ```
 
 
