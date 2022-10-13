@@ -11,7 +11,7 @@ fs.readFile(fl, (e, data) => {
   if (e) throw e
   else {
     replaceAsync(data + '', /```sclin\s*?\n([^]+?)\n```/g, (_, x) => new Promise(resolve => {
-      cp.exec(`./mill sclin --doceval '${x.replace(/'/g, `'\\''`)}'`, (e, res) => {
+      cp.exec(`./mill sclin.run --doceval '${x.replace(/'/g, `'\\''`)}'`, (e, res) => {
         if (e) throw e
         else {
           let ex = res.trim().split`\n`

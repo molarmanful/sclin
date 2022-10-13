@@ -12,7 +12,9 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-node@v3
       with:
-        version: '*'
+        node-version: '*'
+    - name: build
+      run: ./mill sclin.compile
     - name: generate docs
       run: ./mill sclin.cmdoc
     - name: run examples
