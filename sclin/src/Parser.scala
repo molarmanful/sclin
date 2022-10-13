@@ -1,3 +1,5 @@
+package sclin
+
 import scala.util.chaining._
 import ANY._
 

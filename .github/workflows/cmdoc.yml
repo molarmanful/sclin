@@ -10,8 +10,13 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
+    - uses: actions/setup-node@v3
+      with:
+        version: '*'
     - name: generate docs
       run: ./mill sclin.cmdoc
+    - name: run examples
+      run: node docr.js sclin-docs/commands.md
     - name: commit + push
       uses: actions-js/push@master
       with:

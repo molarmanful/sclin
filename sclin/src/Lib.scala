@@ -1,3 +1,5 @@
+package sclin
+
 import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.io.StdIn._
@@ -980,13 +982,26 @@ extension (env: ENV)
     /*
     @s (a >NUM)' (b >NUM)' -> ARR[NUM]'
     Converts `a` from decimal to `ARR` of base-`b` digits.
+    ```sclin
+    153 2X>b
+    ```
+    ```sclin
+    153 16X>b
+    ```
      */
     case "X>b" => fromDec
     /*
     @s (a >ARR[>NUM]) (b >NUM)' -> NUM'
     Converts base-`b` digits to decimal.
+    ```sclin
+    [1 0 0 1 1 0 0 1] 2b>X
+    ```
+    ```sclin
+    [9 9] 16b>X
+    ```
      */
     case "b>X" => toDec
+
     /*
     @s (a >NUM)' -> NUM'
     `-a`
@@ -994,7 +1009,7 @@ extension (env: ENV)
     case "_" => neg
     /*
     @s (a >STR)' -> STR'
-    Atom-reverses `a`.
+    Atomic #{_`}.
      */
     case "__" => neg$
     /*
@@ -1047,6 +1062,12 @@ extension (env: ENV)
     @s a b -> _
     `a` replicated according to `b`.
     If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
+    ```sclin
+    [1 2 3 4] [0 2 0 3] *` >A
+    ```
+    ```sclin
+    [1 2 3 4] 3*` >A
+    ```
      */
     case "*`" => mul$$
     /*
@@ -1067,6 +1088,9 @@ extension (env: ENV)
     /*
     @s a (b >NUM)' -> SEQ
     `a` chunked to size `b`.
+    ```sclin
+    [1 2 3 4 5] 2/` >A
+    ```
      */
     case "/`" => div$$
     /*
@@ -1087,6 +1111,9 @@ extension (env: ENV)
     /*
     @s a (b >NUM)' -> SEQ
     `a` windowed to size `b`.
+    ```sclin
+    [1 2 3 4 5] 3%` >A
+    ```
      */
     case "%`" => mod$$
     /*
@@ -1200,6 +1227,9 @@ extension (env: ENV)
     /*
     @s (a >NUM)' -> MAP[(NUM => NUM)*]
     Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
+    ```sclin
+    340P/
+    ```
      */
     case "P/" => factor
 
@@ -1536,22 +1566,16 @@ extension (env: ENV)
     where `k` is the key and `v` is the value.
     Otherwise, the signature of `f` is `x -> _ |`,
     where `x` is the element.
-    ```
+    ```sclin
     [1 2 3 4] ( 1+ ) map
-    -> [2 3 4 5]
     ```
      */
     case "map" => map
     /*
     @s a f' -> a
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
-    ```
+    ```sclin
     [1 2 3 4] \n>o tap
-    -> [1 2 3 4]
-    1
-    2
-    3
-    4
     ```
      */
     case "tap" => tapMap
@@ -1577,13 +1601,11 @@ extension (env: ENV)
     where `k` is the key, `x` is the accumulator, and `v` is the value.
     Otherwise, the signature of `f` is `x y -> _ |`,
     where `x` is the accumulator and `y` is the value.
-    ```
+    ```sclin
     [1 2 3 4] 0 \+ fold
-    -> 10
     ```
-    ```
+    ```sclin
     "1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
-    -> 11
     ```
      */
     case "fold"  => fold

@@ -1,3 +1,5 @@
+package sclin
+
 import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.util.Random

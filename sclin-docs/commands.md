@@ -525,6 +525,8 @@ Rounds `a` towards ∞.
 Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM]' ```
 
 Converts `a` from decimal to `ARR` of base-`b` digits.
+undefined
+undefined
 
 
 ## CMD: [``` b>X ```](#cmd-bx)
@@ -532,6 +534,8 @@ Converts `a` from decimal to `ARR` of base-`b` digits.
 Stack: ``` (a >ARR[>NUM]) (b >NUM)' -> NUM' ```
 
 Converts base-`b` digits to decimal.
+undefined
+undefined
 
 
 ## CMD: [``` _ ```](#cmd-_-2)
@@ -545,7 +549,7 @@ Stack: ``` (a >NUM)' -> NUM' ```
 
 Stack: ``` (a >STR)' -> STR' ```
 
-Atom-reverses `a`.
+Atomic [``` _` ```](#cmd-_-3).
 
 
 ## CMD: [``` _` ```](#cmd-_-3)
@@ -618,6 +622,8 @@ Stack: ``` a b -> _ ```
 
 `a` replicated according to `b`.
 If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
+undefined
+undefined
 
 
 ## CMD: [``` / ```](#cmd--28)
@@ -646,6 +652,7 @@ Atomic [``` /` ```](#cmd--31).
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` chunked to size `b`.
+undefined
 
 
 ## CMD: [``` % ```](#cmd--32)
@@ -674,6 +681,7 @@ Atomic [``` %` ```](#cmd--35).
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` windowed to size `b`.
+undefined
 
 
 ## CMD: [``` ^ ```](#cmd--36)
@@ -828,6 +836,7 @@ Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance o
 Stack: ``` (a >NUM)' -> MAP[(NUM => NUM)*] ```
 
 Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
+undefined
 
 
 ## CMD: [``` ! ```](#cmd--38)
@@ -1239,14 +1248,14 @@ All length-`n` combinations of `a`.
 
 Stack: ``` (a >STR)' -> ARR[NUM]' ```
 
-convert `a` to codepoints.
+Converts `a` to codepoints.
 
 
 ## CMD: [``` c>S ```](#cmd-cs)
 
-Stack: ``` a[>NUM] -> (a >STR) ```
+Stack: ``` (a >ARR[NUM]) -> (a >STR) ```
 
-Convert `ARR` of codepoints `a` to `STR`.
+Converts collection of codepoints to `STR`.
 
 
 ## CMD: [``` A>a ```](#cmd-aa)
@@ -1272,6 +1281,7 @@ If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
 where `k` is the key and `v` is the value.
 Otherwise, the signature of `f` is `x -> _ |`,
 where `x` is the element.
+undefined
 
 
 ## CMD: [``` tap ```](#cmd-tap)
@@ -1279,6 +1289,7 @@ where `x` is the element.
 Stack: ``` a f' -> a ```
 
 [``` map ```](#cmd-map) but `a` is preserved (i.e. leaving only side effects of `f`).
+undefined
 
 
 ## CMD: [``` zip ```](#cmd-zip)
@@ -1311,12 +1322,6 @@ If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
 where `k` is the key, `x` is the accumulator, and `v` is the value.
 Otherwise, the signature of `f` is `x y -> _ |`,
 where `x` is the accumulator and `y` is the value.
-```
-[1 2 3 4] 0 \+ fold
--> 10
-```
-```
-"1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
--> 11
-```
+undefined
+undefined
 

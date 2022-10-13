@@ -1,3 +1,5 @@
+package sclin
+
 import scala.annotation._
 import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
@@ -309,14 +311,18 @@ object ENV:
 
   /** Creates a new `ENV` around given code and executes it.
     *
-    * @param o
-    *   debug flags
-    * @param f
-    *   file path
     * @param l
     *   code to run
+    * @param f
+    *   file path
+    * @param o
+    *   debug flags
     */
-  def run(o: (Boolean, Boolean, Boolean), f: FILE, l: String): ENV =
+  def run(
+      l: String,
+      f: FILE = None,
+      o: (Boolean, Boolean, Boolean) = (false, false, false)
+  ): ENV =
     val (s, v, i) = o
     ENV(
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
@@ -330,3 +336,7 @@ object ENV:
       .loadLine(0)
       .exec
       .tap(env => if env.eS || env.eV || env.eI then env.trace)
+
+  def docRun(l: String): Unit =
+    val s = ENV.run(l).stack.map(_.toForm).mkString(" ")
+    println("-> " + s)
