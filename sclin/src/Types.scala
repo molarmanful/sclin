@@ -29,7 +29,7 @@ enum ANY:
     case CMD(x) => x
     case ERR(x) => x.toString
     case UN     => ""
-    case _      => join(" ")
+    case _      => join("")
 
   def toForm: String = this match
     case _: SEQ => s"[…]"
@@ -300,6 +300,16 @@ enum ANY:
     this match
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
       case _      => foldLeft(a)(g)
+
+  def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
+    case SEQ(x) => x.scanLeft(a)(f).toSEQ
+    case ARR(x) => x.scanLeft(a)(f).toARR
+    case _      => toSEQ.scanLeft(a)(f)
+  def scanLeftM(
+      a: ANY
+  )(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY = this match
+    case MAP(x) => x.scanLeft(a)((b, c) => f(b, c)).toARR
+    case _      => scanLeft(a)(g)
 
   def filter(f: ANY => Boolean): ANY = this match
     case SEQ(x)   => x.filter(f).toSEQ

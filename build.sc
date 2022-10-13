@@ -26,7 +26,7 @@ object sclin extends ScalaModule with PublishModule {
     ivy"com.lihaoyi::fansi:0.4.0"
   )
 
-  def cmdoc = T {
+  def cmdoc() = T.command {
     os.read
       .lines(os.pwd / "sclin" / "src" / "Lib.scala")
       .dropWhile(_.trim != "// CMDOC START")

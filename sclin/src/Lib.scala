@@ -105,7 +105,7 @@ extension (env: ENV)
       case _      => throw LinEx("_", x.toString).toERR(env)
   )
   def evalArrSt: ENV = env.arg2((x, f, env) =>
-    env.push(env.push(x).unwrap$.push(f).evale.stack.toARR)
+    env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
   )
   def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
 
@@ -221,25 +221,32 @@ extension (env: ENV)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
   def perm: ENV    = env.mod1(_.permutations)
   def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toI)))
-  def baseN: ENV =
-    env.mod2((x, y) =>
-      y.vec1(n =>
-        ANY
-          .baseN(x.toARR.x, n.toI)
-          .map(a =>
-            x match
-              case _: STR => a.mkString.pipe(STR.apply)
-              case _      => a.toARR.matchType(x)
-          )
-          .toSEQ
-      )
+  def baseN: ENV = env.mod2((x, y) =>
+    y.vec1(n =>
+      ANY
+        .baseN(x.toARR.x, n.toI)
+        .map(a =>
+          x match
+            case _: STR => a.mkString.pipe(STR.apply)
+            case _      => a.toARR.matchType(x)
+        )
+        .toSEQ
     )
+  )
   def powset: ENV =
     env.dup.len.push(NUM(1)).add.push(NUM(0)).swap.range.comb.flat
 
-  def split: ENV  = env.str2a(_.split(_))
-  def ssplit: ENV = env.str1a(_.split(raw"\s"))
-  def join: ENV   = env.mod2((x, y) => y.vec1(s => STR(x.join(s.toString))))
+  def toCodePt: ENV =
+    env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
+  def fromCodePt: ENV = env.mod1(
+    _.map(_.toI.toChar.toString.pipe(STR.apply)).toString.pipe(STR.apply)
+  )
+
+  def split: ENV   = env.str2a(_.split(_))
+  def ssplit: ENV  = env.str1a(_.split(raw"\s"))
+  def join: ENV    = env.mod2((x, y) => y.vec1(s => STR(x.join(s.toString))))
+  def toUpper: ENV = env.str1(_.toUpperCase)
+  def toLower: ENV = env.str1(_.toLowerCase)
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
@@ -315,7 +322,7 @@ extension (env: ENV)
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
       case (_: SEQ, _)      => LazyList.fill(y.toI)(x).toSEQ.flat
       case (_: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
-      case (_: STR, _)      => loop(x.toARR, y).join("").pipe(STR.apply)
+      case (_: STR, _)      => loop(x.toARR, y).toString.pipe(STR.apply)
       case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
@@ -334,7 +341,7 @@ extension (env: ENV)
       case SEQ(x)   => x.grouped(y.toI).map(_.toSEQ).toSEQ
       case ARR(x)   => x.grouped(y.toI).map(_.toARR).toSEQ
       case MAP(x)   => x.grouped(y.toI).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.join("").pipe(STR.apply)).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
       case FN(p, x) => x.grouped(y.toI).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -352,7 +359,7 @@ extension (env: ENV)
       case SEQ(x)   => x.sliding(y.toI).map(_.toSEQ).toSEQ
       case ARR(x)   => x.sliding(y.toI).map(_.toARR).toSEQ
       case MAP(x)   => x.sliding(y.toI).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.join("").pipe(STR.apply)).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
       case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -445,6 +452,7 @@ extension (env: ENV)
         a => env.evalA1(Vector(a), f).pipe(_ => a)
       )
     )
+    x
   )
   def flatMap: ENV = env.mod2((x, y) =>
     y.vec1(f =>
@@ -466,6 +474,15 @@ extension (env: ENV)
   def fold: ENV = env.mod3((x, y, z) =>
     z.vec1(f =>
       x.foldLeftM(y)(
+        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
+        (a, b) => env.evalA1(Vector(a, b), f)
+      )
+    )
+  )
+
+  def scan: ENV = env.mod3((x, y, z) =>
+    z.vec1(f =>
+      x.scanLeftM(y)(
         (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
         (a, b) => env.evalA1(Vector(a, b), f)
       )
@@ -552,22 +569,19 @@ extension (env: ENV)
     )
   )
 
-  def dot: ENV =
-    env.code.x match
-      case c :: cs =>
-        env
-          .modCode(_ => cs)
-          .pipe(env =>
-            c match
-              case STR(x) => env.push(STR(StringContext.processEscapes(x)))
-              case CMD(x) => env.wrapFN.push(CMD(x)).add$$
-              case _      => env.push(c)
-          )
-      case _ => evalLNext
+  def dot: ENV = env.code.x match
+    case c :: cs =>
+      env
+        .modCode(_ => cs)
+        .pipe(env =>
+          c match
+            case STR(x) => env.push(STR(StringContext.processEscapes(x)))
+            case CMD(x) => env.wrapFN.push(CMD(x)).add$$
+            case _      => env.push(c)
+        )
+    case _ => evalLNext
 
   def cmd(x: String): ENV = x match
-
-    // CMDOC START
 
     case s"#$k" if k != "" => env
     case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
@@ -596,6 +610,8 @@ extension (env: ENV)
     case "]" => endARR
     case "{" => startARR
     case "}" => endMAP
+
+    // CMDOC START
 
     /*
     @s a -> STR
@@ -842,7 +858,7 @@ extension (env: ENV)
     case "roll_" => rollu
     /*
     @s a* b (f >FN) -> _* b
-    #{pop}s `b`, executes `f`, and pushes `b`.
+    #{pop}s `b`, #{#}s `f`, and pushes `b`.
      */
     case "dip" => dip
     /*
@@ -1415,6 +1431,11 @@ extension (env: ENV)
      */
     case ">kv" => enumL
     /*
+    @s a -> MAP[(_ => _)*]
+    #{>kv} and #{>M}.
+     */
+    case "=>kv" => enumL.toMAP
+    /*
     @s a -> SEQ
     `SEQ` of keys in `a`.
      */
@@ -1475,8 +1496,16 @@ extension (env: ENV)
      */
     case "N+>" => baseN
 
-    case "S>c" => ???
-    case "c>S" => ???
+    /*
+    @s (a >STR)' -> ARR[NUM]'
+    Converts `a` to codepoints.
+     */
+    case "S>c" => toCodePt
+    /*
+    @s (a >ARR[NUM]) -> (a >STR)
+    Converts collection of codepoints to `STR`.
+     */
+    case "c>S" => fromCodePt
     case "<>"  => split
     case "<>:" => ???
     case "c<>" => env.push(STR("")).split
@@ -1489,15 +1518,76 @@ extension (env: ENV)
     case "w><" => env.push(STR(" ")).join
     case "n><" => env.push(STR("\n")).join
     case "><`" => ???
-    case "A>a" => ???
-    case "a>A" => ???
+    /*
+    @s (a >STR)' -> STR'
+    Convert `STR` to lowercase.
+     */
+    case "A>a" => toLower
+    /*
+    @s (a >STR)' -> STR'
+    Convert `STR` to UPPERCASE.
+     */
+    case "a>A" => toUpper
 
-    case "map"   => map
-    case "tap"   => tapMap
-    case "zip"   => zip
-    case "tbl"   => tbl
-    case "mapf"  => flatMap
+    /*
+    @s a f' -> _'
+    #{Q}s `f` on each element of `a`.
+    If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
+    where `k` is the key and `v` is the value.
+    Otherwise, the signature of `f` is `x -> _ |`,
+    where `x` is the element.
+    ```
+    [1 2 3 4] ( 1+ ) map
+    -> [2 3 4 5]
+    ```
+     */
+    case "map" => map
+    /*
+    @s a f' -> a
+    #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
+    ```
+    [1 2 3 4] \n>o tap
+    -> [1 2 3 4]
+    1
+    2
+    3
+    4
+    ```
+     */
+    case "tap" => tapMap
+    /*
+    @s a b (f: x y -> _ |)' -> _'
+    #{Q}s `f` over each element-wise pair of `a` and `b`.
+     */
+    case "zip" => zip
+    /*
+    @s a b (f: x y -> _ |)' -> _'
+    #{Q}s `f` over each table-wise pair of `a` and `b`.
+     */
+    case "tbl" => tbl
+    /*
+    @s a f' -> _'
+    #{map} and #{flat}.
+     */
+    case "mapf" => flatMap
+    /*
+    @s a b f' -> _'
+    #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
+    If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
+    where `k` is the key, `x` is the accumulator, and `v` is the value.
+    Otherwise, the signature of `f` is `x y -> _ |`,
+    where `x` is the accumulator and `y` is the value.
+    ```
+    [1 2 3 4] 0 \+ fold
+    -> 10
+    ```
+    ```
+    "1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
+    -> 11
+    ```
+     */
     case "fold"  => fold
+    case "scan"  => scan
     case "fltr"  => fltr
     case "any"   => any
     case "all"   => all

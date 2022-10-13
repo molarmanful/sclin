@@ -23,7 +23,7 @@ ${body.map(
             s"[``` $a ```](#${cs(a)})"
           }
         )
-      ).mkString}
+      ).mkString("\n")}
 """
   }
 

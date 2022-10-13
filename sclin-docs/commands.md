@@ -356,7 +356,7 @@ Stack: ``` b* c (n >NUM) -> (c @ n) b* ```
 
 Stack: ``` a* b (f >FN) -> _* b ```
 
-[``` pop ```](#cmd-pop)s `b`, executes `f`, and pushes `b`.
+[``` pop ```](#cmd-pop)s `b`, [``` # ```](#cmd--7)s `f`, and pushes `b`.
 
 
 ## CMD: [``` \ ```](#cmd--6)
@@ -594,7 +594,8 @@ Atomic [``` -` ```](#cmd---1).
 
 Stack: ``` a b -> _ ```
 
-Remove occurrences of `b` from `a`.If `a` is `MAP`, then removal is performed on keys.
+Remove occurrences of `b` from `a`.
+If `a` is `MAP`, then removal is performed on keys.
 
 
 ## CMD: [``` * ```](#cmd--25)
@@ -615,7 +616,8 @@ Atomic [``` *` ```](#cmd--27).
 
 Stack: ``` a b -> _ ```
 
-`a` replicated according to `b`.If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
+`a` replicated according to `b`.
+If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
 
 
 ## CMD: [``` / ```](#cmd--28)
@@ -1035,7 +1037,8 @@ Whether `a` has atomic `b`.
 
 Stack: ``` a b -> NUM ```
 
-Whether `a` has `b`.`MAP`s check `b` against keys; other types of `a` check `b` against values.
+Whether `a` has `b`.
+`MAP`s check `b` against keys; other types of `a` check `b` against values.
 
 
 ## CMD: [``` len ```](#cmd-len)
@@ -1084,14 +1087,16 @@ Replaces stack with `a` unwrapped.
 
 Stack: ``` a (n >NUM)' -> _ ```
 
-Takes up to `n` items from `a`.Negative `n` takes from the end instead of the start.
+Takes up to `n` items from `a`.
+Negative `n` takes from the end instead of the start.
 
 
 ## CMD: [``` dp ```](#cmd-dp)
 
 Stack: ``` a (n >NUM)' -> _ ```
 
-Drops up to `n` items from `a`.Negative `n` drops from the end instead of the start.
+Drops up to `n` items from `a`.
+Negative `n` drops from the end instead of the start.
 
 
 ## CMD: [``` flat ```](#cmd-flat)
@@ -1119,14 +1124,17 @@ Infinite `SEQ` with items of `a` cycled.
 
 Stack: ``` a (f: b -> _) -> SEQ ```
 
-Infinite `SEQ` of `f` successively [``` Q ```](#cmd-q-1)ed to `a`.i.e. `a f(a) f(f(a)) ...`
+Infinite `SEQ` of `f` successively [``` Q ```](#cmd-q-1)ed to `a`.
+i.e. `a f(a) f(f(a)) ...`
 
 
 ## CMD: [``` fold_ ```](#cmd-fold_)
 
 Stack: ``` a (f: b -> _ _ | ) -> SEQ ```
 
-`SEQ` generated from `f` successively [``` Q ```](#cmd-q-1)ed to `a`,where `x` is the new current item and `y` is the next `b` to be subsequently [``` Q ```](#cmd-q-1)ed to `f`.Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack.
+`SEQ` generated from `f` successively [``` Q ```](#cmd-q-1)ed to `a`,
+where `x` is the new current item and `y` is the next `b` to be subsequently [``` Q ```](#cmd-q-1)ed to `f`.
+Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack.
 
 
 ## CMD: [``` >kv ```](#cmd-kv)
@@ -1134,6 +1142,13 @@ Stack: ``` a (f: b -> _ _ | ) -> SEQ ```
 Stack: ``` a -> SEQ[ARR[k v]*] ```
 
 `SEQ` of key/value pairs in `a`.
+
+
+## CMD: [``` =>kv ```](#cmd-kv-1)
+
+Stack: ``` a -> MAP[(_ => _)*] ```
+
+[``` >kv ```](#cmd-kv) and [``` >M ```](#cmd-m).
 
 
 ## CMD: [``` >k ```](#cmd-k)
@@ -1218,4 +1233,90 @@ All subsets of `a`.
 Stack: ``` a (n >NUM)' -> SEQ' ```
 
 All length-`n` combinations of `a`.
+
+
+## CMD: [``` S>c ```](#cmd-sc)
+
+Stack: ``` (a >STR)' -> ARR[NUM]' ```
+
+convert `a` to codepoints.
+
+
+## CMD: [``` c>S ```](#cmd-cs)
+
+Stack: ``` a[>NUM] -> (a >STR) ```
+
+Convert `ARR` of codepoints `a` to `STR`.
+
+
+## CMD: [``` A>a ```](#cmd-aa)
+
+Stack: ``` (a >STR)' -> STR' ```
+
+Convert `STR` to lowercase.
+
+
+## CMD: [``` a>A ```](#cmd-aa-1)
+
+Stack: ``` (a >STR)' -> STR' ```
+
+Convert `STR` to UPPERCASE.
+
+
+## CMD: [``` map ```](#cmd-map)
+
+Stack: ``` a f' -> _' ```
+
+[``` Q ```](#cmd-q-1)s `f` on each element of `a`.
+If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
+where `k` is the key and `v` is the value.
+Otherwise, the signature of `f` is `x -> _ |`,
+where `x` is the element.
+
+
+## CMD: [``` tap ```](#cmd-tap)
+
+Stack: ``` a f' -> a ```
+
+[``` map ```](#cmd-map) but `a` is preserved (i.e. leaving only side effects of `f`).
+
+
+## CMD: [``` zip ```](#cmd-zip)
+
+Stack: ``` a b (f: x y -> _ |)' -> _' ```
+
+[``` Q ```](#cmd-q-1)s `f` over each element-wise pair of `a` and `b`.
+
+
+## CMD: [``` tbl ```](#cmd-tbl)
+
+Stack: ``` a b (f: x y -> _ |)' -> _' ```
+
+[``` Q ```](#cmd-q-1)s `f` over each table-wise pair of `a` and `b`.
+
+
+## CMD: [``` mapf ```](#cmd-mapf)
+
+Stack: ``` a f' -> _' ```
+
+[``` map ```](#cmd-map) and [``` flat ```](#cmd-flat).
+
+
+## CMD: [``` fold ```](#cmd-fold)
+
+Stack: ``` a b f' -> _' ```
+
+[``` Q ```](#cmd-q-1)s `f` to combine each accumulator and element starting from initial accumulator `b`.
+If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
+where `k` is the key, `x` is the accumulator, and `v` is the value.
+Otherwise, the signature of `f` is `x y -> _ |`,
+where `x` is the accumulator and `y` is the value.
+```
+[1 2 3 4] 0 \+ fold
+-> 10
+```
+```
+"1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
+-> 11
+```
 
