@@ -403,6 +403,7 @@ extension (env: ENV)
       .to(VectorMap)
       .map { case (x, y) => (NUM(x), NUM(y)) }
       .toMAP
+      .sortByM((a, b) => a, a => a)
   )
 
   def not: ENV    = env.vec1(_.toBool.unary_!.boolNUM)
