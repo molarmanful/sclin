@@ -1195,7 +1195,7 @@ Infinite `SEQ` with `a` repeated.
 
 Stack: ``` a -> SEQ ```
 
-Infinite `SEQ` with items of `a` cycled.
+Infinite `SEQ` with elements of `a` cycled.
 ```
 [1 2 3] cyc 10tk >A
 -> [1 2 3 1 2 3 1 2 3 1]
@@ -1224,6 +1224,10 @@ Stack: ``` a (f: b -> _ _ | ) -> SEQ ```
 `SEQ` generated from `f` successively [``` Q ```](#cmd-q-1)ed to `a`,
 where `x` is the new current item and `y` is the next `b` to be subsequently [``` Q ```](#cmd-q-1)ed to `f`.
 Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack.
+```
+0 1, ( ,_ tuck + dups \swap dip ) fold_ 10tk >A
+-> [1 1 2 3 5 8 13 21 34 55]
+```
 
 
 ## CMD: [``` >kv ```](#cmd-kv)
@@ -1316,7 +1320,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [9 5 7 1 2 3 6 0 8 4]
+-> [6 8 3 5 0 2 9 7 1 4]
 ```
 
 
@@ -1504,5 +1508,60 @@ Stack: ``` a b f' -> _' ```
 ```
 [1 2 3 4] 0 \+ scan
 -> [0 1 3 6 10]
+```
+
+
+## CMD: [``` fltr ```](#cmd-fltr)
+
+Stack: ``` a f' -> _' ```
+
+Keeps elements of `a` that are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+```
+[5 1 2 4 3] 2.> fltr
+-> [5 4 3]
+```
+
+
+## CMD: [``` any ```](#cmd-any)
+
+Stack: ``` a f' -> NUM' ```
+
+0 or 1 depending on whether any elements of `a` are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+```
+[5 1 2 4 3] 2.> any
+-> 1
+```
+
+
+## CMD: [``` all ```](#cmd-all)
+
+Stack: ``` a f' -> NUM' ```
+
+0 or 1 depending on whether all elements of `a` are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+```
+[5 1 2 4 3] 2.> all
+-> 0
+```
+
+
+## CMD: [``` tk* ```](#cmd-tk-1)
+
+Stack: ``` a f' -> _' ```
+
+Takes elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
+```
+[5 1 2 4 3] 4.!= tk*
+-> [5 1 2]
+```
+
+
+## CMD: [``` dp* ```](#cmd-dp-1)
+
+Stack: ``` a f' -> _' ```
+
+Drops elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
+```
+[5 1 2 4 3] 4.!= dp*
+-> [4 3]
 ```
 
