@@ -18,6 +18,10 @@ jobs:
       with:
         node-version: '*'
     - run: npm ci
+    - uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 19
     - name: build
       run: ./mill sclin.assembly
     - name: generate docs
