@@ -1477,7 +1477,7 @@ extension (env: ENV)
     case "rep" => rep
     /*
     @s a -> SEQ
-    Infinite `SEQ` with items of `a` cycled.
+    Infinite `SEQ` with elements of `a` cycled.
     ```sclin
     [1 2 3] cyc 10tk >A
     ```
@@ -1499,6 +1499,9 @@ extension (env: ENV)
     `SEQ` generated from `f` successively #{Q}ed to `a`,
     where `x` is the new current item and `y` is the next `b` to be subsequently #{Q}ed to `f`.
     Generation stops if `f` #{Q}ed to `a` results in an empty stack.
+    ```sclin
+    0 1, ( ,_ tuck + dups \swap dip ) fold_ 10tk >A
+    ```
      */
     case "fold_" => unfold
     /*
@@ -1718,16 +1721,53 @@ extension (env: ENV)
     [1 2 3 4] 0 \+ scan
     ```
      */
-    case "scan"  => scan
-    case "fltr"  => fltr
-    case "any"   => any
-    case "all"   => all
+    case "scan" => scan
+    /*
+    @s a f' -> _'
+    Keeps elements of `a` that are truthy when #{Q}ed with `f`.
+    ```sclin
+    [5 1 2 4 3] 2.> fltr
+    ```
+     */
+    case "fltr" => fltr
+    /*
+    @s a f' -> NUM'
+    0 or 1 depending on whether any elements of `a` are truthy when #{Q}ed with `f`.
+    ```sclin
+    [5 1 2 4 3] 2.> any
+    ```
+     */
+    case "any" => any
+    /*
+    @s a f' -> NUM'
+    0 or 1 depending on whether all elements of `a` are truthy when #{Q}ed with `f`.
+    ```sclin
+    [5 1 2 4 3] 2.> all
+    ```
+     */
+    case "all" => all
+    /*
+    @s a f' -> _'
+    Takes elements of `a` until #{Q}ing `f` is falsy.
+    ```sclin
+    [5 1 2 4 3] 4.!= tk*
+    ```
+     */
     case "tk*"   => tkwl
+    /*
+    @s a f' -> _'
+    Drops elements of `a` until #{Q}ing `f` is falsy.
+    ```sclin
+    [5 1 2 4 3] 4.!= dp*
+    ```
+     */
     case "dp*"   => dpwl
     case "find"  => find
     case "uniq"  => uniq
     case "sort"  => sort
     case "sort~" => sort$
+    case "part"  => ???
+    case "group" => ???
     case "."     => dot
 
     // CMDOC END
