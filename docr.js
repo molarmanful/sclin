@@ -1,8 +1,10 @@
 import { readFile, writeFile } from 'fs'
 import { exec } from 'child_process'
+import plim from 'p-limit'
 
+let lim = plim(5)
 let replaceAsync = async (s, r, f) => {
-  let all = await Promise.all(Array.from(s.matchAll(r), a => f(...a)))
+  let all = await Promise.all(Array.from(s.matchAll(r), a => lim(_ => f(...a))))
   let i = 0
   return s.replace(r, _ => all[i++])
 }
