@@ -366,7 +366,12 @@ extension (env: ENV)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
-  def pow: ENV  = env.num2(_ fpow _, "bad ^")
+  def pow: ENV = env.num2(
+    (x, y) =>
+      if x < 0 && y.reciprocal.fmod(2) == 0 then throw ArithmeticException()
+      else x.fpow(y),
+    "bad ^"
+  )
   def powi: ENV = env.num2(_ ** _.intValue)
 
   def exp: ENV = env.num1(_.exp)
@@ -761,11 +766,19 @@ extension (env: ENV)
     /*
     @s (a >STR) ->
     Loads ID `a` into local scope.
+    ```sclin
+    "outer"=$a ( \a @$ a ) # $a
+    #a "inner"
+    ```
      */
     case "@$" => locId
     /*
     @s (a >STR) ->
     Loads ID `a` into global scope.
+    ```sclin
+    \a @$$ ( "inner" =$a $a ) # a
+    #a "outer"
+    ```
      */
     case "@$$" => globId
 
@@ -872,11 +885,17 @@ extension (env: ENV)
     /*
     @s a* f -> _*
     Executes `f`.
+    ```sclin
+    1 2 ( 3 + 4 ) #
+    ```
      */
     case "#" => eval
     /*
     @s f' -> _'
     Evaluates `f` (#{#} but only preserves resulting top of stack).
+    ```sclin
+    1 2 ( dups 3+` ) Q
+    ```
      */
     case "Q" => quar
     /*
@@ -947,11 +966,17 @@ extension (env: ENV)
     /*
     @s (a >ARR) f -> ARR
     #{#}s `f` on `a` as if it were a stack.
+    ```sclin
+    [1 2 3 4] ( 5 swap ) '
+    ```
      */
     case "'" => evalArrSt
     /*
     @s (a* >ARR) f -> _*
     #{#}s `f` on the stack as if it were an `ARR`.
+    ```sclin
+    1 2 3 4 1.+.map '_
+    ```
      */
     case "'_" => evalStArr
 
@@ -1046,7 +1071,13 @@ extension (env: ENV)
     /*
     @s a b -> _
     Remove occurrences of `b` from `a`.
-    If `a` is `MAP`, then removal is performed on keys.
+    If `a` is `MAP`, then removal is performed on keys instead of values.
+    ```sclin
+    [1 2 3 4] 2-`
+    ```
+    ```sclin
+    {0 1, 2 3, } 2-`
+    ```
      */
     case "-`" => sub$$
     /*
@@ -1372,7 +1403,7 @@ extension (env: ENV)
     case ":`" => get$$
     /*
     @s a >ARR[i b] -> x
-    Value at index `i` in `a`.
+    Sets value at index `i` in `a` to `b`.
      */
     case ":=" => set
     /*
@@ -1430,23 +1461,37 @@ extension (env: ENV)
     case "dp" => dp
     /*
     @s a -> _
-    Flattens `a`.
+    Flattens `a` by one depth.
      */
     case "flat" => flat
     /*
     @s a -> SEQ
     Infinite `SEQ` with `a` repeated.
+    ```sclin
+    5rep 10tk >A
+    ```
+    ```sclin
+    [1 2 3] rep 10tk >A
+    ```
      */
     case "rep" => rep
     /*
     @s a -> SEQ
     Infinite `SEQ` with items of `a` cycled.
+    ```sclin
+    [1 2 3] cyc 10tk >A
+    ```
      */
     case "cyc" => cyc
     /*
     @s a (f: b -> _) -> SEQ
     Infinite `SEQ` of `f` successively #{Q}ed to `a`.
-    i.e. `a f(a) f(f(a)) ...`
+    ```sclin
+    1 1.+ itr 10tk >A
+    ```
+    ```sclin
+    1 ( 1+ 1 swap / ) itr 10tk >A
+    ```
      */
     case "itr" => itr
     /*
@@ -1459,21 +1504,36 @@ extension (env: ENV)
     /*
     @s a -> SEQ[ARR[k v]*]
     `SEQ` of key/value pairs in `a`.
+    ```sclin
+    ["a" "b" "c" "d"] >kv >A
+    ```
+    ```sclin
+    {"x""a", "y""b", "z""c", } >kv >A
+    ```
      */
     case ">kv" => enumL
     /*
     @s a -> MAP[(_ => _)*]
     #{>kv} and #{>M}.
+    ```sclin
+    ["a" "b" "c" "d"] =>kv
+    ```
      */
     case "=>kv" => enumL.toMAP
     /*
     @s a -> SEQ
     `SEQ` of keys in `a`.
+    ```sclin
+    {"x" "a", "y" "b", "z" "c", } >k >A
+    ```
      */
     case ">k" => keys
     /*
     @s a -> SEQ
     `SEQ` of values in `a`.
+    ```sclin
+    {"x""a", "y""b", "z""c", } >v >A
+    ```
      */
     case ">v" => vals
     /*
@@ -1504,37 +1564,58 @@ extension (env: ENV)
     /*
     @s a -> _
     Shuffles `a`.
+    ```sclin
+    10O>a shuf >A
+    ```
      */
     case "shuf" => shuffle
     /*
     @s a -> SEQ
     All permutations of `a`.
+    ```sclin
+    [1 2 3] perm
+    ```
      */
     case "perm" => perm
     /*
     @s a (n >NUM)' -> SEQ'
     All length-`n` combinations of `a`.
+    ```sclin
+    [1 2 3] 2comb
+    ```
      */
     case "comb" => comb
     /*
     @s a -> SEQ
     All subsets of `a`.
+    ```sclin
+    [1 2 3] ^set >A
+    ```
      */
     case "^set" => powset
     /*
     @s a (n >NUM)' -> SEQ'
-    All length-`n` combinations of `a`.
+    Length-`n` increments of digits `a`.
+    ```sclin
+    "abc" 3N+> >A
+    ```
      */
     case "N+>" => baseN
 
     /*
     @s (a >STR)' -> ARR[NUM]'
     Converts `a` to codepoints.
+    ```sclin
+    "hello"S>c
+    ```
      */
     case "S>c" => toCodePt
     /*
     @s (a >ARR[NUM]) -> (a >STR)
-    Converts collection of codepoints to `STR`.
+    Converts iterable of codepoints to `STR`.
+    ```sclin
+    [104 101 108 108 111] c>S
+    ```
      */
     case "c>S" => fromCodePt
     case "<>"  => split
@@ -1551,12 +1632,12 @@ extension (env: ENV)
     case "><`" => ???
     /*
     @s (a >STR)' -> STR'
-    Convert `STR` to lowercase.
+    Convert `STR` to `lowercase`.
      */
     case "A>a" => toLower
     /*
     @s (a >STR)' -> STR'
-    Convert `STR` to UPPERCASE.
+    Convert `STR` to `UPPERCASE`.
      */
     case "a>A" => toUpper
 
@@ -1568,7 +1649,10 @@ extension (env: ENV)
     Otherwise, the signature of `f` is `x -> _ |`,
     where `x` is the element.
     ```sclin
-    [1 2 3 4] ( 1+ ) map
+    [1 2 3 4] 1.+ map
+    ```
+    ```sclin
+    {0 1, 2 3, 4 5, } ( over + ) map
     ```
      */
     case "map" => map
@@ -1576,23 +1660,40 @@ extension (env: ENV)
     @s a f' -> a
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
     ```sclin
-    [1 2 3 4] \n>o tap
+    [1 2 3 4] ( 1+ n>o ) tap
     ```
      */
     case "tap" => tapMap
     /*
     @s a b (f: x y -> _ |)' -> _'
     #{Q}s `f` over each element-wise pair of `a` and `b`.
+    Iterables of differing length truncate to the shorter length when zipped.
+    `MAP` zips with other iterables into an intersection of the two iterables' indices.
+    ```sclin
+    [1 2 3 4] [2 3 4 5] \, zip
+    ```
+    ```sclin
+    [1 2 3 4] [2 3] \+ zip
+    ```
+    ```sclin
+    [1 2 3 4] {1 "a", 3 "b", "x" "c", } \, zip
+    ```
      */
     case "zip" => zip
     /*
     @s a b (f: x y -> _ |)' -> _'
     #{Q}s `f` over each table-wise pair of `a` and `b`.
+    ```sclin
+    [1 2 3 4] [2 3 4 5] \++ tbl
+    ```
      */
     case "tbl" => tbl
     /*
     @s a f' -> _'
     #{map} and #{flat}.
+    ```sclin
+    1224P/ \*` mapf
+    ```
      */
     case "mapf" => flatMap
     /*
@@ -1609,7 +1710,14 @@ extension (env: ENV)
     "1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
     ```
      */
-    case "fold"  => fold
+    case "fold" => fold
+    /*
+    @s a b f' -> _'
+    #{fold} with intermediate values.
+    ```sclin
+    [1 2 3 4] 0 \+ scan
+    ```
+     */
     case "scan"  => scan
     case "fltr"  => fltr
     case "any"   => any

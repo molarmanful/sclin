@@ -203,6 +203,11 @@ Previous line.
 Stack: ``` (a >STR) -> ```
 
 Loads ID `a` into local scope.
+```
+"outer"=$a ( \a @$ a ) # $a
+#a "inner"
+-> "inner" "outer"
+```
 
 
 ## CMD: [``` @$$ ```](#cmd--5)
@@ -210,6 +215,11 @@ Loads ID `a` into local scope.
 Stack: ``` (a >STR) -> ```
 
 Loads ID `a` into global scope.
+```
+\a @$$ ( "inner" =$a $a ) # a
+#a "outer"
+-> "inner" "outer"
+```
 
 
 ## CMD: [``` i> ```](#cmd-i)
@@ -371,6 +381,10 @@ Wraps `a` in `FN`.
 Stack: ``` a* f -> _* ```
 
 Executes `f`.
+```
+1 2 ( 3 + 4 ) #
+-> 1 5 4
+```
 
 
 ## CMD: [``` Q ```](#cmd-q-1)
@@ -378,6 +392,10 @@ Executes `f`.
 Stack: ``` f' -> _' ```
 
 Evaluates `f` ([``` # ```](#cmd--7) but only preserves resulting top of stack).
+```
+1 2 ( dups 3+` ) Q
+-> 1 2 [1 2 3]
+```
 
 
 ## CMD: [``` @@ ```](#cmd--8)
@@ -476,6 +494,10 @@ Throws `e`.
 Stack: ``` (a >ARR) f -> ARR ```
 
 [``` # ```](#cmd--7)s `f` on `a` as if it were a stack.
+```
+[1 2 3 4] ( 5 swap ) '
+-> [1 2 3 5 4]
+```
 
 
 ## CMD: [``` '_ ```](#cmd-_)
@@ -483,6 +505,10 @@ Stack: ``` (a >ARR) f -> ARR ```
 Stack: ``` (a* >ARR) f -> _* ```
 
 [``` # ```](#cmd--7)s `f` on the stack as if it were an `ARR`.
+```
+1 2 3 4 1.+.map '_
+-> 2 3 4 5
+```
 
 
 ## CMD: [``` E ```](#cmd-e-2)
@@ -611,7 +637,15 @@ Atomic [``` -` ```](#cmd---1).
 Stack: ``` a b -> _ ```
 
 Remove occurrences of `b` from `a`.
-If `a` is `MAP`, then removal is performed on keys.
+If `a` is `MAP`, then removal is performed on keys instead of values.
+```
+[1 2 3 4] 2-`
+-> [1 3 4]
+```
+```
+{0 1, 2 3, } 2-`
+-> {0=>1}
+```
 
 
 ## CMD: [``` * ```](#cmd--25)
@@ -1059,7 +1093,7 @@ Value at index `i` in `a`.
 
 Stack: ``` a >ARR[i b] -> x ```
 
-Value at index `i` in `a`.
+Sets value at index `i` in `a` to `b`.
 
 
 ## CMD: [``` :? ```](#cmd--65)
@@ -1139,7 +1173,7 @@ Negative `n` drops from the end instead of the start.
 
 Stack: ``` a -> _ ```
 
-Flattens `a`.
+Flattens `a` by one depth.
 
 
 ## CMD: [``` rep ```](#cmd-rep)
@@ -1147,6 +1181,14 @@ Flattens `a`.
 Stack: ``` a -> SEQ ```
 
 Infinite `SEQ` with `a` repeated.
+```
+5rep 10tk >A
+-> [5 5 5 5 5 5 5 5 5 5]
+```
+```
+[1 2 3] rep 10tk >A
+-> [[1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
+```
 
 
 ## CMD: [``` cyc ```](#cmd-cyc)
@@ -1154,6 +1196,10 @@ Infinite `SEQ` with `a` repeated.
 Stack: ``` a -> SEQ ```
 
 Infinite `SEQ` with items of `a` cycled.
+```
+[1 2 3] cyc 10tk >A
+-> [1 2 3 1 2 3 1 2 3 1]
+```
 
 
 ## CMD: [``` itr ```](#cmd-itr)
@@ -1161,7 +1207,14 @@ Infinite `SEQ` with items of `a` cycled.
 Stack: ``` a (f: b -> _) -> SEQ ```
 
 Infinite `SEQ` of `f` successively [``` Q ```](#cmd-q-1)ed to `a`.
-i.e. `a f(a) f(f(a)) ...`
+```
+1 1.+ itr 10tk >A
+-> [1 2 3 4 5 6 7 8 9 10]
+```
+```
+1 ( 1+ 1 swap / ) itr 10tk >A
+-> [1 1/2 2/3 3/5 5/8 8/13 13/21 21/34 34/55 55/89]
+```
 
 
 ## CMD: [``` fold_ ```](#cmd-fold_)
@@ -1178,6 +1231,14 @@ Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack
 Stack: ``` a -> SEQ[ARR[k v]*] ```
 
 `SEQ` of key/value pairs in `a`.
+```
+["a" "b" "c" "d"] >kv >A
+-> [[0 "a"] [1 "b"] [2 "c"] [3 "d"]]
+```
+```
+{"x""a", "y""b", "z""c", } >kv >A
+-> [["x" "a"] ["y" "b"] ["z" "c"]]
+```
 
 
 ## CMD: [``` =>kv ```](#cmd-kv-1)
@@ -1185,6 +1246,10 @@ Stack: ``` a -> SEQ[ARR[k v]*] ```
 Stack: ``` a -> MAP[(_ => _)*] ```
 
 [``` >kv ```](#cmd-kv) and [``` >M ```](#cmd-m).
+```
+["a" "b" "c" "d"] =>kv
+-> {0=>"a" 1=>"b" 2=>"c" 3=>"d"}
+```
 
 
 ## CMD: [``` >k ```](#cmd-k)
@@ -1192,6 +1257,10 @@ Stack: ``` a -> MAP[(_ => _)*] ```
 Stack: ``` a -> SEQ ```
 
 `SEQ` of keys in `a`.
+```
+{"x" "a", "y" "b", "z" "c", } >k >A
+-> ["x" "y" "z"]
+```
 
 
 ## CMD: [``` >v ```](#cmd-v)
@@ -1199,6 +1268,10 @@ Stack: ``` a -> SEQ ```
 Stack: ``` a -> SEQ ```
 
 `SEQ` of values in `a`.
+```
+{"x""a", "y""b", "z""c", } >v >A
+-> ["a" "b" "c"]
+```
 
 
 ## CMD: [``` a>b ```](#cmd-ab)
@@ -1241,6 +1314,10 @@ Exclusive range from `a` to 1.
 Stack: ``` a -> _ ```
 
 Shuffles `a`.
+```
+10O>a shuf >A
+-> [5 6 0 2 4 8 9 1 3 7]
+```
 
 
 ## CMD: [``` perm ```](#cmd-perm)
@@ -1248,6 +1325,10 @@ Shuffles `a`.
 Stack: ``` a -> SEQ ```
 
 All permutations of `a`.
+```
+[1 2 3] perm
+-> […]
+```
 
 
 ## CMD: [``` comb ```](#cmd-comb)
@@ -1255,6 +1336,10 @@ All permutations of `a`.
 Stack: ``` a (n >NUM)' -> SEQ' ```
 
 All length-`n` combinations of `a`.
+```
+[1 2 3] 2comb
+-> […]
+```
 
 
 ## CMD: [``` ^set ```](#cmd-set)
@@ -1262,13 +1347,21 @@ All length-`n` combinations of `a`.
 Stack: ``` a -> SEQ ```
 
 All subsets of `a`.
+```
+[1 2 3] ^set >A
+-> [[] [1] [2] [3] [1 2] [1 3] [2 3] [1 2 3]]
+```
 
 
 ## CMD: [``` N+> ```](#cmd-n-2)
 
 Stack: ``` a (n >NUM)' -> SEQ' ```
 
-All length-`n` combinations of `a`.
+Length-`n` increments of digits `a`.
+```
+"abc" 3N+> >A
+-> ["aaa" "aab" "aac" "aba" "abb" "abc" "aca" "acb" "acc" "baa" "bab" "bac" "bba" "bbb" "bbc" "bca" "bcb" "bcc" "caa" "cab" "cac" "cba" "cbb" "cbc" "cca" "ccb" "ccc"]
+```
 
 
 ## CMD: [``` S>c ```](#cmd-sc)
@@ -1276,27 +1369,35 @@ All length-`n` combinations of `a`.
 Stack: ``` (a >STR)' -> ARR[NUM]' ```
 
 Converts `a` to codepoints.
+```
+"hello"S>c
+-> [104 101 108 108 111]
+```
 
 
 ## CMD: [``` c>S ```](#cmd-cs)
 
 Stack: ``` (a >ARR[NUM]) -> (a >STR) ```
 
-Converts collection of codepoints to `STR`.
+Converts iterable of codepoints to `STR`.
+```
+[104 101 108 108 111] c>S
+-> "hello"
+```
 
 
 ## CMD: [``` A>a ```](#cmd-aa)
 
 Stack: ``` (a >STR)' -> STR' ```
 
-Convert `STR` to lowercase.
+Convert `STR` to `lowercase`.
 
 
 ## CMD: [``` a>A ```](#cmd-aa-1)
 
 Stack: ``` (a >STR)' -> STR' ```
 
-Convert `STR` to UPPERCASE.
+Convert `STR` to `UPPERCASE`.
 
 
 ## CMD: [``` map ```](#cmd-map)
@@ -1309,8 +1410,12 @@ where `k` is the key and `v` is the value.
 Otherwise, the signature of `f` is `x -> _ |`,
 where `x` is the element.
 ```
-[1 2 3 4] ( 1+ ) map
+[1 2 3 4] 1.+ map
 -> [2 3 4 5]
+```
+```
+{0 1, 2 3, 4 5, } ( over + ) map
+-> {0=>1 2=>5 4=>9}
 ```
 
 
@@ -1320,12 +1425,12 @@ Stack: ``` a f' -> a ```
 
 [``` map ```](#cmd-map) but `a` is preserved (i.e. leaving only side effects of `f`).
 ```
-[1 2 3 4] \n>o tap
+[1 2 3 4] ( 1+ n>o ) tap
 -> [1 2 3 4]
-1
 2
 3
 4
+5
 ```
 
 
@@ -1334,6 +1439,20 @@ Stack: ``` a f' -> a ```
 Stack: ``` a b (f: x y -> _ |)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each element-wise pair of `a` and `b`.
+Iterables of differing length truncate to the shorter length when zipped.
+`MAP` zips with other iterables into an intersection of the two iterables' indices.
+```
+[1 2 3 4] [2 3 4 5] \, zip
+-> [[1 2] [2 3] [3 4] [4 5]]
+```
+```
+[1 2 3 4] [2 3] \+ zip
+-> [3 5]
+```
+```
+[1 2 3 4] {1 "a", 3 "b", "x" "c", } \, zip
+-> {1=>[2 "a"] 3=>[4 "b"]}
+```
 
 
 ## CMD: [``` tbl ```](#cmd-tbl)
@@ -1341,6 +1460,10 @@ Stack: ``` a b (f: x y -> _ |)' -> _' ```
 Stack: ``` a b (f: x y -> _ |)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each table-wise pair of `a` and `b`.
+```
+[1 2 3 4] [2 3 4 5] \++ tbl
+-> [["12" "13" "14" "15"] ["22" "23" "24" "25"] ["32" "33" "34" "35"] ["42" "43" "44" "45"]]
+```
 
 
 ## CMD: [``` mapf ```](#cmd-mapf)
@@ -1348,6 +1471,10 @@ Stack: ``` a b (f: x y -> _ |)' -> _' ```
 Stack: ``` a f' -> _' ```
 
 [``` map ```](#cmd-map) and [``` flat ```](#cmd-flat).
+```
+1224P/ \*` mapf
+-> [2 2 2 3 3 17]
+```
 
 
 ## CMD: [``` fold ```](#cmd-fold)
@@ -1366,5 +1493,16 @@ where `x` is the accumulator and `y` is the value.
 ```
 "1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
 -> 11
+```
+
+
+## CMD: [``` scan ```](#cmd-scan)
+
+Stack: ``` a b f' -> _' ```
+
+[``` fold ```](#cmd-fold) with intermediate values.
+```
+[1 2 3 4] 0 \+ scan
+-> [0 1 3 6 10]
 ```
 

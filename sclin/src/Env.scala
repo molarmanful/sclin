@@ -197,7 +197,8 @@ case class ENV(
     * @param c
     *   ID name
     */
-  def addLocId(c: String): ENV = copy(ids = ids + (c -> getId(c)))
+  def addLocId(c: String): ENV =
+    copy(ids = ids + (c -> getId(c)), scope = scope - c)
 
   /** Adds ID to `gids`.
     * @param c
@@ -205,6 +206,7 @@ case class ENV(
     */
   def addGlobId(c: String): ENV =
     gids += (c -> getId(c))
+    gscope -= c
     this
 
   /** Adds variable to `scope`.

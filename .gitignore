@@ -37,3 +37,4 @@ out
 
 *.sclin
 !examples/*.sclin
+node_modules

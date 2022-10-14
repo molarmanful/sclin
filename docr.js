@@ -1,28 +1,32 @@
-let fs = require('fs')
-let cp = require('child_process')
+import { readFile, writeFile } from 'fs'
+import { exec } from 'child_process'
 
-async function replaceAsync(s, r, f) {
+let replaceAsync = async (s, r, f) => {
   let all = await Promise.all(Array.from(s.matchAll(r), a => f(...a)))
-  return s.replace(r, _ => all.shift())
+  let i = 0
+  return s.replace(r, _ => all[i++])
 }
 
 let fl = process.argv[2]
-fs.readFile(fl, (e, data) => {
+readFile(fl, (e, data) => {
   if (e) throw e
   else {
-    replaceAsync(data + '', /```sclin\s*?\n([^]+?)\n```/g, (_, x) => new Promise(resolve => {
-      cp.exec(`./mill sclin.run --doceval '${x.replace(/'/g, `'\\''`)}'`, (e, res) => {
-        if (e) throw e
-        else {
-          let ex = res.trim().split`\n`
-          let e = ex.pop()
-          let o = '```\n' + `${x}\n${e}${ex.length ? '\n' + ex.join`\n` : ''}` + '\n```'
-          console.log(o)
-          resolve(o)
-        }
+    replaceAsync(data + '', /```sclin\s*?\n([^]+?)\n```/g, (_, x) => {
+      console.log('EXEC:', x)
+      return new Promise(resolve => {
+        exec(`out/sclin/assembly.dest/out.jar --doceval '${x.replace(/'/g, `'\\''`)}'`, (e, res) => {
+          if (e) throw e
+          else {
+            let ex = res.trim().split`\n`
+            let e = ex.pop()
+            let o = '```\n' + `${x}\n${e}${ex.length ? '\n' + ex.join`\n` : ''}` + '\n```'
+            console.log('DONE:', o)
+            resolve(o)
+          }
+        })
       })
-    })).then(res => {
-      fs.writeFile(fl, res, _ => { })
+    }).then(res => {
+      writeFile(fl, res, _ => { })
     })
   }
 })

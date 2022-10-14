@@ -17,8 +17,9 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: '*'
+    - run: npm ci
     - name: build
-      run: ./mill sclin.compile
+      run: ./mill sclin.assembly
     - name: generate docs
       run: ./mill sclin.cmdoc
     - name: run examples
