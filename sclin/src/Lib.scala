@@ -61,7 +61,7 @@ extension (env: ENV)
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
   def evalLine: ENV = env.arg1((x, env) =>
-    val i    = x.toI
+    val i    = x.toInt
     val env1 = env.fnLine(i)
     env1.push(env1.getLineF(i)).eval
   )
@@ -145,14 +145,14 @@ extension (env: ENV)
   def dups: ENV = env.push(env.stack.toARR)
   def over: ENV = env.mods2((x, y) => Vector(x, y, x))
   def pick: ENV =
-    env.arg1((x, env) => env.push(x.vec1(n => env.getStack(n.toI))))
+    env.arg1((x, env) => env.push(x.vec1(n => env.getStack(n.toInt))))
 
   def pop: ENV = env.mods1(_ => Vector())
   def clr: ENV = env.modStack(_ => Vector())
   def nip: ENV = env.mod2((_, x) => x)
   def nix: ENV = env.arg1((x, env) =>
     env.modStack(s =>
-      val i = env.iStack(x.toI)
+      val i = env.iStack(x.toInt)
       if 0 < i && i < s.length then s.patch(i, Nil, 1) else s
     )
   )
@@ -169,7 +169,7 @@ extension (env: ENV)
     env.arg1((x, env) => env.push(x).pick.push(x).push(NUM(1)).add.nix)
   def rollu: ENV = env.arg1((x, env) =>
     val a = env.getStack(0)
-    env.modStack(s => s.patch(env.iStack(x.toI), Vector(a), 0)).pop
+    env.modStack(s => s.patch(env.iStack(x.toInt), Vector(a), 0)).pop
   )
 
   def dip: ENV = env.arg2((x, f, env) => env.push(f).evale.push(x))
@@ -222,11 +222,11 @@ extension (env: ENV)
   def shuffle: ENV = env.mod1(_.shuffle)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
   def perm: ENV    = env.mod1(_.permutations)
-  def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toI)))
+  def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toInt)))
   def baseN: ENV = env.mod2((x, y) =>
     y.vec1(n =>
       ANY
-        .baseN(x.toARR.x, n.toI)
+        .baseN(x.toARR.x, n.toInt)
         .map(a =>
           x match
             case _: STR => a.mkString.pipe(STR.apply)
@@ -241,7 +241,7 @@ extension (env: ENV)
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
   def fromCodePt: ENV = env.mod1(
-    _.map(_.toI.toChar.toString.pipe(STR.apply)).toString.pipe(STR.apply)
+    _.map(_.toInt.toChar.toString.pipe(STR.apply)).toString.pipe(STR.apply)
   )
 
   def split: ENV   = env.str2a(_.split(_))
@@ -257,8 +257,8 @@ extension (env: ENV)
   def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
   def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
 
-  def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toI)))
-  def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toI)))
+  def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toInt)))
+  def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
 
   def scale: ENV = env.push(NUM(10)).swap.pow.mul
   def trunc: ENV = env.num1(_.toBigInt)
@@ -322,8 +322,8 @@ extension (env: ENV)
   def mul$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
-      case (_: SEQ, _)      => LazyList.fill(y.toI)(x).toSEQ.flat
-      case (_: ARR, _)      => Vector.fill(y.toI)(x).toARR.flat
+      case (_: SEQ, _)      => LazyList.fill(y.toInt)(x).toSEQ.flat
+      case (_: ARR, _)      => Vector.fill(y.toInt)(x).toARR.flat
       case (_: STR, _)      => loop(x.toARR, y).toString.pipe(STR.apply)
       case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
       case _                => loop(Vector(x).toARR, y)
@@ -340,11 +340,11 @@ extension (env: ENV)
   def div$ : ENV = env.strnuma((x, y) => x.grouped(y.intValue))
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
-      case SEQ(x)   => x.grouped(y.toI).map(_.toSEQ).toSEQ
-      case ARR(x)   => x.grouped(y.toI).map(_.toARR).toSEQ
-      case MAP(x)   => x.grouped(y.toI).map(_.toMAP).toSEQ
+      case SEQ(x)   => x.grouped(y.toInt).map(_.toSEQ).toSEQ
+      case ARR(x)   => x.grouped(y.toInt).map(_.toARR).toSEQ
+      case MAP(x)   => x.grouped(y.toInt).map(_.toMAP).toSEQ
       case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
-      case FN(p, x) => x.grouped(y.toI).map(_.pFN(p)).pFN(p)
+      case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
@@ -358,9 +358,9 @@ extension (env: ENV)
   def mod$ : ENV = env.strnuma((x, y) => x.sliding(y.intValue))
   def mod$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
-      case SEQ(x)   => x.sliding(y.toI).map(_.toSEQ).toSEQ
-      case ARR(x)   => x.sliding(y.toI).map(_.toARR).toSEQ
-      case MAP(x)   => x.sliding(y.toI).map(_.toMAP).toSEQ
+      case SEQ(x)   => x.sliding(y.toInt).map(_.toSEQ).toSEQ
+      case ARR(x)   => x.sliding(y.toInt).map(_.toARR).toSEQ
+      case MAP(x)   => x.sliding(y.toInt).map(_.toMAP).toSEQ
       case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
       case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
@@ -474,6 +474,14 @@ extension (env: ENV)
 
   def zip: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
+  )
+  def zip$ : ENV = env.modx(
+    5,
+    {
+      case Vector(x, y, v, w, z) =>
+        z.vec1(f => x.zipAll(y, v, w, (a, b) => env.evalA1(Vector(a, b), f)))
+      case _ => ???
+    }
   )
   def tbl: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.table(y, (a, b) => env.evalA1(Vector(a, b), f)))
@@ -1576,7 +1584,7 @@ extension (env: ENV)
     @s a -> SEQ
     All permutations of `a`.
     ```sclin
-    [1 2 3] perm
+    [1 2 3] perm >A
     ```
      */
     case "perm" => perm
@@ -1584,7 +1592,7 @@ extension (env: ENV)
     @s a (n >NUM)' -> SEQ'
     All length-`n` combinations of `a`.
     ```sclin
-    [1 2 3] 2comb
+    [1 2 3] 2comb >A
     ```
      */
     case "comb" => comb
@@ -1648,7 +1656,7 @@ extension (env: ENV)
     @s a f' -> _'
     #{Q}s `f` on each element of `a`.
     If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
-    where `k` is the key and `v` is the value.
+    where `k=>v` is the key-value pair.
     Otherwise, the signature of `f` is `x -> _ |`,
     where `x` is the element.
     ```sclin
@@ -1671,7 +1679,6 @@ extension (env: ENV)
     @s a b (f: x y -> _ |)' -> _'
     #{Q}s `f` over each element-wise pair of `a` and `b`.
     Iterables of differing length truncate to the shorter length when zipped.
-    `MAP` zips with other iterables into an intersection of the two iterables' indices.
     ```sclin
     [1 2 3 4] [2 3 4 5] \, zip
     ```
@@ -1683,6 +1690,21 @@ extension (env: ENV)
     ```
      */
     case "zip" => zip
+    /*
+    @s a b c d (f: x y -> _ |)' -> _'
+    #{zip} but instead of truncating,
+    uses `c` and `d` as fill elements for `a` and `b` respectively.
+    ```sclin
+    [1 2 3 4] [2 3 4 5] UN UN \, zip~
+    ```
+    ```sclin
+    [1 2 3 4] [2 3] UN UN \+ zip~
+    ```
+    ```sclin
+    [1 2 3 4] {1 "a", 3 "b", "x" "c", } UN UN \, zip~
+    ```
+     */
+    case "zip~" => zip$
     /*
     @s a b (f: x y -> _ |)' -> _'
     #{Q}s `f` over each table-wise pair of `a` and `b`.
@@ -1703,7 +1725,7 @@ extension (env: ENV)
     @s a b f' -> _'
     #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
     If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
-    where `k` is the key, `x` is the accumulator, and `v` is the value.
+    where `k=>v` is the key-value pair and `x` is the accumulator.
     Otherwise, the signature of `f` is `x y -> _ |`,
     where `x` is the accumulator and `y` is the value.
     ```sclin
@@ -1724,7 +1746,11 @@ extension (env: ENV)
     case "scan" => scan
     /*
     @s a f' -> _'
-    Keeps elements of `a` that are truthy when #{Q}ed with `f`.
+    Keeps elements of `a` that satisfy predicate `f`.
+    If `a` is `MAP`, then the signature of `f` is `k v -> >(0 | 1)`,
+    where `k=>v` is the key-value pair.
+    Otherwise, the signature of `f` is `x -> >(0 | 1)`,
+    where `x` is the element.
     ```sclin
     [5 1 2 4 3] 2.> fltr
     ```
@@ -1732,7 +1758,8 @@ extension (env: ENV)
     case "fltr" => fltr
     /*
     @s a f' -> NUM'
-    0 or 1 depending on whether any elements of `a` are truthy when #{Q}ed with `f`.
+    0 or 1 depending on whether any elements of `a` satisfy predicate `f`.
+    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> any
     ```
@@ -1740,7 +1767,8 @@ extension (env: ENV)
     case "any" => any
     /*
     @s a f' -> NUM'
-    0 or 1 depending on whether all elements of `a` are truthy when #{Q}ed with `f`.
+    0 or 1 depending on whether all elements of `a` satisfy predicate `f`.
+    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> all
     ```
@@ -1749,22 +1777,65 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Takes elements of `a` until #{Q}ing `f` is falsy.
+    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 4.!= tk*
     ```
      */
-    case "tk*"   => tkwl
+    case "tk*" => tkwl
     /*
     @s a f' -> _'
-    Drops elements of `a` until #{Q}ing `f` is falsy.
+    Drops elements of `a` while predicate `f` is truthy.
+    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 4.!= dp*
     ```
      */
-    case "dp*"   => dpwl
-    case "find"  => find
-    case "uniq"  => uniq
-    case "sort"  => sort
+    case "dp*" => dpwl
+    /*
+    @s a f' -> _'
+    Finds first element of `a` where predicate `f` is truthy.
+    See #{fltr} for the signature of `f`.
+    ```sclin
+    [5 1 2 4 3] ( 2% ! ) find
+    ```
+     */
+    case "find" => find
+    /*
+    @s a f' -> _'
+    Uniquifies elements of `a` with mapper `f`.
+    See #{map} for the signature of `f`.
+    ```sclin
+    [5 1 2 4 3] 3.% uniq
+    ```
+     */
+    case "uniq" => uniq
+    /*
+    @s a f' -> _'
+    Sorts elements of `a` with mapper `f`.
+    See #{map} for the signature of `f`.
+    ```sclin
+    ["a" "" "abc" "ab"] \len sort
+    ```
+    ```sclin
+    [1 2 3 4 5] \$rng sort
+    ```
+     */
+    case "sort" => sort
+    /*
+    @s a f' -> _'
+    Sorts elements of `a` with comparator `f`.
+    If `a` is `MAP`, then the signature of `f` is `j k v w -> >(0 | 1) |`,
+    where `j=>v` and `k=>w` are key-value pairs to compare.
+    Otherwise, the signature of `f` is `x y -> >(0 | 1) |`,
+    where `x` and `y` are elements to compare.
+    ```sclin
+    [1 5 2 3 4] \< sort~
+    ```
+    ```sclin
+    [1 5 2 3 4] \> sort~
+    ```
+     */
     case "sort~" => sort$
     case "part"  => ???
     case "group" => ???

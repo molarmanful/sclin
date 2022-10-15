@@ -54,17 +54,22 @@ enum ANY:
     case _      => toString
 
   def cmp(t: ANY): Int = (this, t) match
-    case (SEQ(x), SEQ(y)) => x.sizeCompare(y)
-    case (SEQ(x), Itr(y)) => x.sizeCompare(y.length)
-    case (Itr(x), SEQ(y)) => -y.sizeCompare(x.length)
-    case (SEQ(x), NUM(y)) => x.sizeCompare(y.intValue)
-    case (NUM(x), SEQ(y)) => -y.sizeCompare(x.intValue)
-    case (Itr(x), Itr(y)) => x.length.compare(y.length)
+    case (Itr(x), _) if !x.toBool => UN.cmp(t)
+    case (_, Itr(x)) if !x.toBool => cmp(UN)
+    case (Itr(x), _) =>
+      val x1 = x.toSEQ.x
+      val t1 = t.toSEQ.x
+      x1.zip(t1)
+        .map { case (a, b) => a.cmp(b) }
+        .find(_ != 0)
+        .getOrElse(x1.sizeCompare(t1))
+    case (_, Itr(_))      => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
-    case (STR(x), STR(y)) => x.compareTo(y)
-    case (NUM(x), STR(y)) => x.compare(y.codePointAt(0))
-    case (_: STR, _: NUM) => -t.cmp(this)
-    case _                => ???
+    case (NUM(x), _) =>
+      x.compare(t.toSTR.x.map(_.toInt).applyOrElse(0, _ => 0))
+    case (_, _: NUM)      => -t.cmp(this)
+    case (STR(x), STR(y)) => x.compare(y).sign
+    case _                => toSTR.cmp(t.toSTR)
 
   def eql(t: ANY): Boolean = (this, t) match
     case (_: NUM, _: NUM) => cmp(t) == 0
@@ -216,7 +221,7 @@ enum ANY:
     try Some(toNUM)
     catch _ => None
 
-  def toI: Int = toNUM.x.intValue
+  def toInt: Int = toNUM.x.intValue
 
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
@@ -278,19 +283,17 @@ enum ANY:
   def flat: ANY = flatMap(x => x)
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (MAP(x), Itr(_)) =>
-      x.foldLeft(VectorMap[ANY, ANY]())((a, b) =>
-        val (k, v) = b
-        t.get(k) match
-          case UN => a
-          case w  => a + (k -> f(v, w))
-      ).toMAP
-    case (Itr(_), _: MAP) => t.zip(this, (x, y) => f(y, x))
-    case (_: MAP, _)      => zip(t.toSEQ, f)
-    case (_, _: MAP)      => toSEQ.zip(t, f)
-    case (ARR(x), _)      => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toARR
-    case (_, _: ARR)      => t.zip(this, (x, y) => f(y, x)).toARR
-    case _                => toSEQ.x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
+    case (SEQ(x), _) => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
+    case (_, _: SEQ) => t.zip(this, (x, y) => f(y, x)).toSEQ
+    case _           => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
+
+  def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
+    (this, t) match
+      case (SEQ(x), _) =>
+        x.zipAll(t.toSEQ.x, d1, d2).map { case (x, y) => f(x, y) }.toSEQ
+      case (_, _: SEQ) => t.zipAll(this, d1, d2, (x, y) => f(y, x)).toSEQ
+      case _ =>
+        toARR.x.zipAll(t.toARR.x, d1, d2).map { case (x, y) => f(x, y) }.toARR
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
 
