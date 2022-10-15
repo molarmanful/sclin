@@ -6,6 +6,6 @@
     >kv \; mapf () uniq len $n 2* =
       dup ,_ + $n + swap ,_ - ,
 
-#show ; len "solutions found for n =" $n ,` n>o
+#show ; len " solutions found for n = " $n ,` n>o
   ( \; map >A ""n>o ) map >A
     0 $n *` swap 1, := ".Q" swap : n>o

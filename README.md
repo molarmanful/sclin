@@ -1,11 +1,16 @@
 # sclin
-Scala implementation of lin.
+
+Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
+
+## Browser Interface
+
+[Try sclin in your browser!](https://replit.com/@molarmanful/try-sclin)
 
 ## Installation
 
 ### Requirements
 
-- JRE/JDK 19+
+- JRE/JDK 11+
 
 ### Installation with [Coursier](https://get-coursier.io)
 
