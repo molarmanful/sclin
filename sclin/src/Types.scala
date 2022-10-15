@@ -208,14 +208,17 @@ enum ANY:
 
   def toSTR: STR = STR(toString)
 
-  def toNUM: NUM = this match
-    case x: NUM => x
-    case STR(x) =>
-      try x.toNUM
-      catch
-        case e: java.lang.NumberFormatException =>
-          throw LinEx("NUM", s"""bad cast "$x"""")
-    case _ => toSTR.toNUM
+  def toNUM: NUM =
+    try
+      this match
+        case UN     => NUM(0)
+        case x: NUM => x
+        case STR(x) => x.toNUM
+        case _      => toSTR.x.toNUM
+    catch
+      case e: java.lang.NumberFormatException =>
+        throw LinEx("CAST", "bad NUM cast " + toForm)
+      case e => throw e
 
   def optNUM: Option[NUM] =
     try Some(toNUM)
