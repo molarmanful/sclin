@@ -1320,7 +1320,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [3 2 0 7 8 6 4 1 9 5]
+-> [5 0 6 8 1 9 3 2 4 7]
 ```
 
 
@@ -1330,8 +1330,8 @@ Stack: ``` a -> SEQ ```
 
 All permutations of `a`.
 ```
-[1 2 3] perm
--> […]
+[1 2 3] perm >A
+-> [[1 2 3] [1 3 2] [2 1 3] [2 3 1] [3 1 2] [3 2 1]]
 ```
 
 
@@ -1341,8 +1341,8 @@ Stack: ``` a (n >NUM)' -> SEQ' ```
 
 All length-`n` combinations of `a`.
 ```
-[1 2 3] 2comb
--> […]
+[1 2 3] 2comb >A
+-> [[1 2] [1 3] [2 3]]
 ```
 
 
@@ -1410,7 +1410,7 @@ Stack: ``` a f' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` on each element of `a`.
 If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
-where `k` is the key and `v` is the value.
+where `k=>v` is the key-value pair.
 Otherwise, the signature of `f` is `x -> _ |`,
 where `x` is the element.
 ```
@@ -1444,7 +1444,6 @@ Stack: ``` a b (f: x y -> _ |)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each element-wise pair of `a` and `b`.
 Iterables of differing length truncate to the shorter length when zipped.
-`MAP` zips with other iterables into an intersection of the two iterables' indices.
 ```
 [1 2 3 4] [2 3 4 5] \, zip
 -> [[1 2] [2 3] [3 4] [4 5]]
@@ -1455,7 +1454,27 @@ Iterables of differing length truncate to the shorter length when zipped.
 ```
 ```
 [1 2 3 4] {1 "a", 3 "b", "x" "c", } \, zip
--> {1=>[2 "a"] 3=>[4 "b"]}
+-> [[1 [1 "a"]] [2 [3 "b"]] [3 ["x" "c"]]]
+```
+
+
+## CMD: [``` zip~ ```](#cmd-zip-1)
+
+Stack: ``` a b c d (f: x y -> _ |)' -> _' ```
+
+[``` zip ```](#cmd-zip) but instead of truncating,
+uses `c` and `d` as fill elements for `a` and `b` respectively.
+```
+[1 2 3 4] [2 3 4 5] UN UN \, zip~
+-> [[1 2] [2 3] [3 4] [4 5]]
+```
+```
+[1 2 3 4] [2 3] UN UN \+ zip~
+-> [3 5 3 4]
+```
+```
+[1 2 3 4] {1 "a", 3 "b", "x" "c", } UN UN \, zip~
+-> [[1 [1 "a"]] [2 [3 "b"]] [3 ["x" "c"]] [4 UN]]
 ```
 
 
@@ -1487,7 +1506,7 @@ Stack: ``` a b f' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` to combine each accumulator and element starting from initial accumulator `b`.
 If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
-where `k` is the key, `x` is the accumulator, and `v` is the value.
+where `k=>v` is the key-value pair and `x` is the accumulator.
 Otherwise, the signature of `f` is `x y -> _ |`,
 where `x` is the accumulator and `y` is the value.
 ```
@@ -1515,7 +1534,11 @@ Stack: ``` a b f' -> _' ```
 
 Stack: ``` a f' -> _' ```
 
-Keeps elements of `a` that are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+Keeps elements of `a` that satisfy predicate `f`.
+If `a` is `MAP`, then the signature of `f` is `k v -> >(0 | 1)`,
+where `k=>v` is the key-value pair.
+Otherwise, the signature of `f` is `x -> >(0 | 1)`,
+where `x` is the element.
 ```
 [5 1 2 4 3] 2.> fltr
 -> [5 4 3]
@@ -1526,7 +1549,8 @@ Keeps elements of `a` that are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
 
 Stack: ``` a f' -> NUM' ```
 
-0 or 1 depending on whether any elements of `a` are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+0 or 1 depending on whether any elements of `a` satisfy predicate `f`.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 2.> any
 -> 1
@@ -1537,7 +1561,8 @@ Stack: ``` a f' -> NUM' ```
 
 Stack: ``` a f' -> NUM' ```
 
-0 or 1 depending on whether all elements of `a` are truthy when [``` Q ```](#cmd-q-1)ed with `f`.
+0 or 1 depending on whether all elements of `a` satisfy predicate `f`.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 2.> all
 -> 0
@@ -1549,6 +1574,7 @@ Stack: ``` a f' -> NUM' ```
 Stack: ``` a f' -> _' ```
 
 Takes elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 4.!= tk*
 -> [5 1 2]
@@ -1559,9 +1585,69 @@ Takes elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
 
 Stack: ``` a f' -> _' ```
 
-Drops elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
+Drops elements of `a` while predicate `f` is truthy.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 4.!= dp*
 -> [4 3]
+```
+
+
+## CMD: [``` find ```](#cmd-find)
+
+Stack: ``` a f' -> _' ```
+
+Finds first element of `a` where predicate `f` is truthy.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+```
+[5 1 2 4 3] ( 2% ! ) find
+-> 2
+```
+
+
+## CMD: [``` uniq ```](#cmd-uniq)
+
+Stack: ``` a f' -> _' ```
+
+Uniquifies elements of `a` with mapper `f`.
+See [``` map ```](#cmd-map) for the signature of `f`.
+```
+[5 1 2 4 3] 3.% uniq
+-> [5 1 3]
+```
+
+
+## CMD: [``` sort ```](#cmd-sort)
+
+Stack: ``` a f' -> _' ```
+
+Sorts elements of `a` with mapper `f`.
+See [``` map ```](#cmd-map) for the signature of `f`.
+```
+["a" "" "abc" "ab"] \len sort
+-> ["" "a" "ab" "abc"]
+```
+```
+[1 2 3 4 5] \$rng sort
+-> [3 2 1 4 5]
+```
+
+
+## CMD: [``` sort~ ```](#cmd-sort-1)
+
+Stack: ``` a f' -> _' ```
+
+Sorts elements of `a` with comparator `f`.
+If `a` is `MAP`, then the signature of `f` is `j k v w -> >(0 | 1) |`,
+where `j=>v` and `k=>w` are key-value pairs to compare.
+Otherwise, the signature of `f` is `x y -> >(0 | 1) |`,
+where `x` and `y` are elements to compare.
+```
+[1 5 2 3 4] \< sort~
+-> [1 2 3 4 5]
+```
+```
+[1 5 2 3 4] \> sort~
+-> [5 4 3 2 1]
 ```
 
