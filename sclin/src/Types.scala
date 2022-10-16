@@ -104,7 +104,7 @@ enum ANY:
           case SEQ(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case STR(x) =>
-            if i2 < x.length then x(i2).toString.pipe(STR.apply) else UN
+            if i2 < x.length then x(i2).toString.pipe(STR(_)) else UN
           case _ => toSEQ.get(NUM(i2))
       case MAP(x) => x.applyOrElse(i, _ => UN)
       case _: CMD => toSTR.get(i)
@@ -126,6 +126,22 @@ enum ANY:
           case e                                      => throw e
       case MAP(x) => x.+(i -> t).toMAP
       case _: CMD => toSTR.set(i, t)
+      case _      => this
+
+  def remove(i: ANY): ANY =
+    val oi = i.optI
+    this match
+      case Its(x) if oi != None =>
+        val i1 = oi.get
+        val i2 = if i1 < 0 then i1 + length else i1
+        if i2 >= 0 then
+          this match
+            case SEQ(x) => x.patch(i2, Nil, 1).toSEQ
+            case ARR(x) => x.patch(i2, Nil, 1).toARR
+            case _      => toARR.remove(NUM(i2)).matchType(this)
+        else this
+      case MAP(x) => (x - i).toMAP
+      case _: CMD => toSTR.remove(i)
       case _      => this
 
   def take(n: Int): ANY = this match
@@ -171,7 +187,7 @@ enum ANY:
     case ARR(x)   => x.permutations.map(_.toARR).toSEQ
     case _: MAP   => toARR.permutations.map(_.toMAP).toSEQ
     case FN(p, x) => x.permutations.map(_.pFN(p)).toSEQ
-    case STR(x)   => x.permutations.map(STR.apply).toSEQ
+    case STR(x)   => x.permutations.map(STR(_)).toSEQ
     case _        => toARR.permutations
 
   def combinations(n: Int): SEQ = this match
@@ -179,7 +195,7 @@ enum ANY:
     case ARR(x)   => x.combinations(n).map(_.toARR).toSEQ
     case _: MAP   => toARR.combinations(n).map(_.toMAP).toSEQ
     case FN(p, x) => x.combinations(n).map(_.pFN(p)).toSEQ
-    case STR(x)   => x.combinations(n).map(STR.apply).toSEQ
+    case STR(x)   => x.combinations(n).map(STR(_)).toSEQ
     case _        => toARR.combinations(n)
 
   def toSEQ: SEQ = this match
@@ -261,9 +277,9 @@ enum ANY:
     case _: MAP               => toMAP
     case _: STR               => toSTR
     case _: NUM               => toNUM
-    case _: CMD               => toString.pipe(CMD.apply)
+    case _: CMD               => toString.pipe(CMD(_))
     case FN(p, _)             => pFN(p)
-    case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR.apply)
+    case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR(_))
     case UN                   => UN
 
   def map(f: ANY => ANY): ANY = this match
@@ -452,7 +468,7 @@ enum ANY:
   def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
     vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
 
-  def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR.apply))
+  def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR(_)))
 
   def str1a(f: String => Iterable[String]): ANY = vec1(
     _.toString.pipe(f).map(STR(_)).toARR
@@ -470,7 +486,7 @@ enum ANY:
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
-  def strnuma(t: ANY, f: (String, NUMF) => Iterator[String]): ANY =
+  def strnumq(t: ANY, f: (String, NUMF) => Iterator[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
 
 object OrdANY extends Ordering[ANY]:
@@ -521,7 +537,7 @@ object ANY:
       case _                                => None
 
   def fromDec(n: SafeLong, b: Int): Vector[SafeLong] =
-    def loop(n: SafeLong): Vector[SafeLong] =
+    def loop(n: SafeLong): ARRW[SafeLong] =
       if b == 1 then Vector.fill(n.toInt)(1)
       else if n == 0 then Vector.empty
       else loop(n / b) :+ n % b
@@ -530,7 +546,7 @@ object ANY:
       case Vector() if b > 1 => Vector(0)
       case x                 => x
 
-  def toDec(ns: Vector[SafeLong], b: SafeLong): SafeLong =
+  def toDec(ns: ARRW[SafeLong], b: SafeLong): SafeLong =
     if b < 1 then throw LinEx("MATH", s"bad base $b")
     if b == 1 then ns.length
     else
@@ -539,18 +555,13 @@ object ANY:
           b ** i * n + a
       }
 
-  def baseN[A](seed: Vector[A], n: Int) =
-    if n < 0 then throw LinEx("MATH", s"bad length $n")
-    val l = seed.length
-    LazyList.unfold(SafeLong(0))(i =>
-      if i < SafeLong(l) ** n then
-        Some(
-          seed
-            .map(_ => SafeLong(0))
-            .++(ANY.fromDec(i, seed.length))
-            .takeRight(n)
-            .map(_.toInt.pipe(seed)),
-          i + 1
-        )
-      else None
-    )
+  def cProd[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] = ls match
+    case LazyList()       => LazyList.empty
+    case x #:: LazyList() => x.map(LazyList(_))
+    case x #:: xs =>
+      val y = cProd(xs)
+      x.flatMap(a => y.map(b => a #:: b))
+
+  def cPow[A](seed: LazyList[A], n: Int): LazyList[LazyList[A]] = cProd(
+    LazyList.fill(n)(seed)
+  )

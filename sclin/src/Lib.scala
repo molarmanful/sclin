@@ -117,7 +117,7 @@ extension (env: ENV)
     case x :: xs => env.setArr(xs).modStack(_ => x).push(env.stack.toARR)
   def endMAP: ENV = endARR.toMAP
 
-  def getType: ENV = env.mod1(_.getType.pipe(STR.apply))
+  def getType: ENV = env.mod1(_.getType.pipe(STR(_)))
   def toSEQ: ENV   = env.mod1(_.toSEQ)
   def toARR: ENV   = env.mod1(_.toARR)
   def toMAP: ENV   = env.mod1(_.toMAP)
@@ -138,7 +138,7 @@ extension (env: ENV)
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
 
-  def form: ENV = env.mod1(_.toForm.pipe(STR.apply))
+  def form: ENV = env.mod1(_.toForm.pipe(STR(_)))
   def outf: ENV = env.form.outn
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
@@ -183,13 +183,15 @@ extension (env: ENV)
     x.set(z0, z1)
   )
 
+  def del: ENV = env.mod2(_.remove(_))
+
   def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolNUM))
   def has$$ : ENV = env.mod2(_.has(_).boolNUM)
 
-  def len: ENV = env.mod1(x => NUM(x.length))
+  def len: ENV = env.mod1(_.length.pipe(NUM(_)))
 
-  def rep: ENV = env.mod1(x => LazyList.continually(x).toSEQ)
-  def cyc: ENV = env.mod1(x => LazyList.continually(x).toSEQ.flat)
+  def rep: ENV = env.mod1(LazyList.continually(_).toSEQ)
+  def cyc: ENV = env.mod1(LazyList.continually(_).toSEQ.flat)
   def itr: ENV = env.mod2((x, y) =>
     y.vec1(f => LazyList.iterate(x)(s => env.evalA1(Vector(s), f)).toSEQ)
   )
@@ -223,17 +225,12 @@ extension (env: ENV)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
   def perm: ENV    = env.mod1(_.permutations)
   def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toInt)))
-  def baseN: ENV = env.mod2((x, y) =>
-    y.vec1(n =>
-      ANY
-        .baseN(x.toARR.x, n.toInt)
-        .map(a =>
-          x match
-            case _: STR => a.mkString.pipe(STR.apply)
-            case _      => a.toARR.matchType(x)
-        )
-        .toSEQ
-    )
+  def cProd: ENV = env.mod1(x =>
+    x.toSEQ.x
+      .map(_.toSEQ.x)
+      .pipe(ANY.cProd(_))
+      .map(_.toSEQ.matchType(x.get(NUM(0))))
+      .toSEQ
   )
   def powset: ENV =
     env.dup.len.push(NUM(1)).add.push(NUM(0)).swap.range.comb.flat
@@ -241,7 +238,7 @@ extension (env: ENV)
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
   def fromCodePt: ENV = env.mod1(
-    _.map(_.toInt.toChar.toString.pipe(STR.apply)).toString.pipe(STR.apply)
+    _.map(_.toInt.toChar.toString.pipe(STR(_))).toString.pipe(STR(_))
   )
 
   def split: ENV   = env.str2a(_.split(_))
@@ -267,7 +264,7 @@ extension (env: ENV)
   def ceil: ENV  = env.num1(_.ceil)
 
   def fromDec: ENV =
-    env.num2a((x, y) => ANY.fromDec(x.toSafeLong, y.toInt).map(Real.apply))
+    env.num2a((x, y) => ANY.fromDec(x.toSafeLong, y.toInt).map(Real(_)))
   def toDec: ENV = env.mod2((x, y) =>
     val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
     y.num1(n => ANY.toDec(x1, n.toInt))
@@ -324,7 +321,7 @@ extension (env: ENV)
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
       case (_: SEQ, _)      => LazyList.fill(y.toInt)(x).toSEQ.flat
       case (_: ARR, _)      => Vector.fill(y.toInt)(x).toARR.flat
-      case (_: STR, _)      => loop(x.toARR, y).toString.pipe(STR.apply)
+      case (_: STR, _)      => loop(x.toARR, y).toString.pipe(STR(_))
       case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
@@ -337,13 +334,13 @@ extension (env: ENV)
     (x, y) => if y == 0 then throw ArithmeticException() else x.fquot(y),
     "bad /~"
   )
-  def div$ : ENV = env.strnuma((x, y) => x.grouped(y.intValue))
+  def div$ : ENV = env.strnumq((x, y) => x.grouped(y.intValue))
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
       case SEQ(x)   => x.grouped(y.toInt).map(_.toSEQ).toSEQ
       case ARR(x)   => x.grouped(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.grouped(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
       case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -355,13 +352,13 @@ extension (env: ENV)
   def divmod: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
   )
-  def mod$ : ENV = env.strnuma((x, y) => x.sliding(y.intValue))
+  def mod$ : ENV = env.strnumq((x, y) => x.sliding(y.intValue))
   def mod$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
       case SEQ(x)   => x.sliding(y.toInt).map(_.toSEQ).toSEQ
       case ARR(x)   => x.sliding(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.sliding(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR.apply)).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
       case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).pFN(p)
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -373,6 +370,12 @@ extension (env: ENV)
     "bad ^"
   )
   def powi: ENV = env.num2(_ ** _.intValue)
+  def pow$ : ENV = env.vec2((x, y) =>
+    ANY.cPow(x.toSTR.toSEQ.x, y.toInt).map(_.toARR.toSTR).toSEQ
+  )
+  def pow$$ : ENV = env.mod2((x, y) =>
+    y.vec1(n => ANY.cPow(x.toSEQ.x, n.toInt).map(_.toARR.matchType(x)).toSEQ)
+  )
 
   def exp: ENV = env.num1(_.exp)
   def abs: ENV = env.num1(_.abs)
@@ -601,6 +604,7 @@ extension (env: ENV)
 
     case s"#$k" if k != "" => env
     case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
+    case s"`$k" if k != "" => ???
 
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
@@ -675,7 +679,7 @@ extension (env: ENV)
      */
     case ">E" => toERR
     /*
-    @s a -> NUM
+    @s a -> 0 | 1
     1 or 0 depending on truthiness of `a`.
      */
     case ">?" => toBool
@@ -755,6 +759,16 @@ extension (env: ENV)
     `ARR` of lines of currently-executing file.
      */
     case "$L*" => getLns
+    /*
+    @s -> STR
+    `UPPERCASE` alphabet.
+     */
+    case "$ABC" => env.push(STR("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+    /*
+    @s -> STR
+    `lowercase` alphabet.
+     */
+    case "$abc" => env.push(STR("abcdefghijklmnopqrstuvwxyz"))
     /*
     @s -> STR | UN
     Current line.
@@ -942,17 +956,17 @@ extension (env: ENV)
      */
     case "g@~" => getLRel
     /*
-    @s a* b f -> _*
+    @s a* (b >(0 | 1)) f -> _*
     #{#}s `f` if `b` is truthy.
      */
     case "&#" => evalAnd
     /*
-    @s a* b f -> _*
+    @s a* (b >(0 | 1)) f -> _*
     #{#}s `f` if `b` is falsy.
      */
     case "|#" => evalOr
     /*
-    @s a* b f g -> _*
+    @s a* (b >(0 | 1)) f g -> _*
     #{#}s `f` if `b` is truthy; else #{#}s `g`.
      */
     case "?#" => evalIf
@@ -1121,7 +1135,7 @@ extension (env: ENV)
      */
     case "/~" => divi
     /*
-    @s (a >STR)' (b >NUM)' -> ARR[STR]'
+    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
     Atomic #{/`}.
      */
     case "//" => div$
@@ -1144,7 +1158,7 @@ extension (env: ENV)
      */
     case "/%" => divmod
     /*
-    @s (a >STR)' (b >NUM)' -> ARR[STR]'
+    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
     Atomic #{%`}.
      */
     case "%%" => mod$
@@ -1166,8 +1180,19 @@ extension (env: ENV)
     #{^} but `b` is coerced to `int`.
      */
     case "^~" => powi
-    case "^^" => ???
-    case "^`" => ???
+    /*
+    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
+    Atomic #{^`}.
+     */
+    case "^^" => pow$
+    /*
+    @s a (n >NUM)' -> SEQ'
+    Cartesian power of seed `a` to `n`.
+    ```sclin
+    "abc" 3^` >A
+    ```
+     */
+    case "^`" => pow$$
 
     /*
     @s (a >NUM)' -> NUM'
@@ -1274,12 +1299,12 @@ extension (env: ENV)
     case "P/" => factor
 
     /*
-    @s a' -> NUM'
+    @s a' -> (0 | 1)'
     Atomic #{!`}.
      */
     case "!" => not
     /*
-    @s a -> NUM
+    @s a -> 0 | 1
     Logical NOT.
      */
     case "!`" => not$$
@@ -1289,7 +1314,7 @@ extension (env: ENV)
      */
     case "&" => min
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{&&`}.
      */
     case "&&" => and
@@ -1299,7 +1324,7 @@ extension (env: ENV)
      */
     case "&`" => min$$
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Logical AND of `a` and `b`.
      */
     case "&&`" => and$$
@@ -1309,7 +1334,7 @@ extension (env: ENV)
      */
     case "|" => max
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{||`}.
      */
     case "||" => or
@@ -1319,77 +1344,77 @@ extension (env: ENV)
      */
     case "|`" => max$$
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Logical OR of `a` and `b`.
      */
     case "||`" => or$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (-1 | 0 | 1)'
     Atomic #{<=>`}.
      */
     case "<=>" => cmp
     /*
-    @s a b -> NUM
+    @s a b -> -1 | 0 | 1
     Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or greater than `b`).
      */
     case "<=>`" => cmp$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{=`}.
      */
     case "=" => eql
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` equals `b`.
      */
     case "=`" => eql$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{!=`}.
      */
     case "!=" => neq
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` does not equals `b`.
      */
     case "!=`" => neq$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{<`}.
      */
     case "<" => lt
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` is less than `b`.
      */
     case "<`" => lt$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{>`}.
      */
     case ">" => gt
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` is greater than `b`.
      */
     case ">`" => gt$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{<=`}.
      */
     case "<=" => lteq
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` is less than or equal to `b`.
      */
     case "<=`" => gt$$
     /*
-    @s a' b' -> NUM'
+    @s a' b' -> (0 | 1)'
     Atomic #{>=`}.
      */
     case ">=" => gteq
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` is greater than or equal to `b`.
      */
     case ">=`" => gt$$
@@ -1415,12 +1440,17 @@ extension (env: ENV)
      */
     case ":=" => set
     /*
-    @s a b' -> NUM'
+    @s a i -> x
+    Removes index `i` from `a`.
+     */
+    case ":-" => del
+    /*
+    @s a b' -> (0 | 1)'
     Whether `a` has atomic `b`.
      */
     case ":?" => has
     /*
-    @s a b -> NUM
+    @s a b -> 0 | 1
     Whether `a` has `b`.
     `MAP`s check `b` against keys; other types of `a` check `b` against values.
      */
@@ -1605,13 +1635,13 @@ extension (env: ENV)
      */
     case "^set" => powset
     /*
-    @s a (n >NUM)' -> SEQ'
-    Length-`n` increments of digits `a`.
+    @s a[_*] -> SEQ'
+    Cartesian product of iterable-of-iterables `a` to `n`.
     ```sclin
-    "abc" 3N+> >A
+    ["abc" "def" "ghi"] Q* >A
     ```
      */
-    case "N+>" => baseN
+    case "Q*" => cProd
 
     /*
     @s (a >STR)' -> ARR[NUM]'
@@ -1747,9 +1777,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> >(0 | 1)`,
+    If `a` is `MAP`, then the signature of `f` is `k v -> 0 | 1 |`,
     where `k=>v` is the key-value pair.
-    Otherwise, the signature of `f` is `x -> >(0 | 1)`,
+    Otherwise, the signature of `f` is `x -> 0 | 1 |`,
     where `x` is the element.
     ```sclin
     [5 1 2 4 3] 2.> fltr
@@ -1757,8 +1787,8 @@ extension (env: ENV)
      */
     case "fltr" => fltr
     /*
-    @s a f' -> NUM'
-    0 or 1 depending on whether any elements of `a` satisfy predicate `f`.
+    @s a f' -> (0 | 1)'
+    Whether any elements of `a` satisfy predicate `f`.
     See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> any
@@ -1766,8 +1796,8 @@ extension (env: ENV)
      */
     case "any" => any
     /*
-    @s a f' -> NUM'
-    0 or 1 depending on whether all elements of `a` satisfy predicate `f`.
+    @s a f' -> (0 | 1)'
+    Whether all elements of `a` satisfy predicate `f`.
     See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> all
@@ -1825,9 +1855,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Sorts elements of `a` with comparator `f`.
-    If `a` is `MAP`, then the signature of `f` is `j k v w -> >(0 | 1) |`,
+    If `a` is `MAP`, then the signature of `f` is `j k v w -> 0 | 1 |`,
     where `j=>v` and `k=>w` are key-value pairs to compare.
-    Otherwise, the signature of `f` is `x y -> >(0 | 1) |`,
+    Otherwise, the signature of `f` is `x y -> 0 | 1 |`,
     where `x` and `y` are elements to compare.
     ```sclin
     [1 5 2 3 4] \< sort~

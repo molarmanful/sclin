@@ -205,7 +205,7 @@ case class ENV(
     *   ID name
     */
   def addGlobId(c: String): ENV =
-    gids += (c -> getId(c))
+    gids   += (c -> getId(c))
     gscope -= c
     this
 
@@ -279,8 +279,8 @@ case class ENV(
   def str2a(f: (String, String) => Iterable[String]): ENV = mod2(_.str2a(_, f))
 
   def strnum(f: (String, NUMF) => String): ENV = mod2(_.strnum(_, f))
-  def strnuma(f: (String, NUMF) => Iterator[String]): ENV = mod2(
-    _.strnuma(_, f)
+  def strnumq(f: (String, NUMF) => Iterator[String]): ENV = mod2(
+    _.strnumq(_, f)
   )
 
   /** Executes `CMD`s and pushes other `ANY`s.
@@ -297,11 +297,21 @@ case class ENV(
   final def exec: ENV = code.x match
     case List() => this
     case c :: cs =>
+      if eS then print("\u001b[2J\u001b[;H")
       if eS || eV then trace1
       try
         return modCode(_ => cs)
           .execA(c)
           .tap(e => if eS || eV then e.trace2)
+          .pipe(e =>
+            if eS then
+              print(fansi.Color.DarkGray("———? "))
+              io.StdIn.readLine match
+                case "v" => e.copy(eS = false, eV = true)
+                case _   => e
+            else e
+          )
+          .tap(_ => if eS then print("\u001b[2J\u001b[;H"))
           .exec
       catch
         case e: LinEx => throw e.toERR(this)
