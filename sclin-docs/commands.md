@@ -67,7 +67,7 @@ Converts `a` to `ERR` with message `b`.
 
 ## CMD: [``` >? ```](#cmd-)
 
-Stack: ``` a -> NUM ```
+Stack: ``` a -> 0 | 1 ```
 
 1 or 0 depending on truthiness of `a`.
 
@@ -175,6 +175,20 @@ Infinite `SEQ` of primes.
 Stack: ``` -> ARR[STR*] ```
 
 `ARR` of lines of currently-executing file.
+
+
+## CMD: [``` $ABC ```](#cmd-abc)
+
+Stack: ``` -> STR ```
+
+`UPPERCASE` alphabet.
+
+
+## CMD: [``` $abc ```](#cmd-abc-1)
+
+Stack: ``` -> STR ```
+
+`lowercase` alphabet.
 
 
 ## CMD: [``` g@ ```](#cmd-g)
@@ -449,21 +463,21 @@ Stack: ``` (n >NUM) -> STR | UN ```
 
 ## CMD: [``` &# ```](#cmd--13)
 
-Stack: ``` a* b f -> _* ```
+Stack: ``` a* (b >(0 | 1)) f -> _* ```
 
 [``` # ```](#cmd--7)s `f` if `b` is truthy.
 
 
 ## CMD: [``` |# ```](#cmd--14)
 
-Stack: ``` a* b f -> _* ```
+Stack: ``` a* (b >(0 | 1)) f -> _* ```
 
 [``` # ```](#cmd--7)s `f` if `b` is falsy.
 
 
 ## CMD: [``` ?# ```](#cmd--15)
 
-Stack: ``` a* b f g -> _* ```
+Stack: ``` a* (b >(0 | 1)) f g -> _* ```
 
 [``` # ```](#cmd--7)s `f` if `b` is truthy; else [``` # ```](#cmd--7)s `g`.
 
@@ -694,7 +708,7 @@ Integer [``` / ```](#cmd--28).
 
 ## CMD: [``` // ```](#cmd--30)
 
-Stack: ``` (a >STR)' (b >NUM)' -> ARR[STR]' ```
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
 
 Atomic [``` /` ```](#cmd--31).
 
@@ -726,7 +740,7 @@ Results of [``` /~ ```](#cmd--29) and [``` % ```](#cmd--32) on `a` and `b`.
 
 ## CMD: [``` %% ```](#cmd--34)
 
-Stack: ``` (a >STR)' (b >NUM)' -> ARR[STR]' ```
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
 
 Atomic [``` %` ```](#cmd--35).
 
@@ -754,6 +768,24 @@ Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 [``` ^ ```](#cmd--36) but `b` is coerced to `int`.
+
+
+## CMD: [``` ^^ ```](#cmd--38)
+
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
+
+Atomic [``` ^` ```](#cmd--39).
+
+
+## CMD: [``` ^` ```](#cmd--39)
+
+Stack: ``` a (n >NUM)' -> SEQ' ```
+
+Cartesian power of seed `a` to `n`.
+```
+"abc" 3^` >A
+-> ["aaa" "aab" "aac" "aba" "abb" "abc" "aca" "acb" "acc" "baa" "bab" "bac" "bba" "bbb" "bbc" "bca" "bcb" "bcc" "caa" "cab" "cac" "cba" "cbb" "cbc" "cca" "ccb" "ccc"]
+```
 
 
 ## CMD: [``` e^ ```](#cmd-e-3)
@@ -900,175 +932,175 @@ Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
 ```
 
 
-## CMD: [``` ! ```](#cmd--38)
+## CMD: [``` ! ```](#cmd--40)
 
-Stack: ``` a' -> NUM' ```
+Stack: ``` a' -> (0 | 1)' ```
 
-Atomic [``` !` ```](#cmd--39).
+Atomic [``` !` ```](#cmd--41).
 
 
-## CMD: [``` !` ```](#cmd--39)
+## CMD: [``` !` ```](#cmd--41)
 
-Stack: ``` a -> NUM ```
+Stack: ``` a -> 0 | 1 ```
 
 Logical NOT.
 
 
-## CMD: [``` & ```](#cmd--40)
+## CMD: [``` & ```](#cmd--42)
 
 Stack: ``` a' b' -> (a | b)' ```
 
-Atomic [``` &` ```](#cmd--42).
+Atomic [``` &` ```](#cmd--44).
 
 
-## CMD: [``` && ```](#cmd--41)
+## CMD: [``` && ```](#cmd--43)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` &&` ```](#cmd--43).
+Atomic [``` &&` ```](#cmd--45).
 
 
-## CMD: [``` &` ```](#cmd--42)
+## CMD: [``` &` ```](#cmd--44)
 
 Stack: ``` a b -> a | b ```
 
 Minimum of `a` and `b`.
 
 
-## CMD: [``` &&` ```](#cmd--43)
+## CMD: [``` &&` ```](#cmd--45)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Logical AND of `a` and `b`.
 
 
-## CMD: [``` | ```](#cmd--44)
+## CMD: [``` | ```](#cmd--46)
 
 Stack: ``` a' b' -> (a | b)' ```
 
-Atomic [``` |` ```](#cmd--46).
+Atomic [``` |` ```](#cmd--48).
 
 
-## CMD: [``` || ```](#cmd--45)
+## CMD: [``` || ```](#cmd--47)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` ||` ```](#cmd--47).
+Atomic [``` ||` ```](#cmd--49).
 
 
-## CMD: [``` |` ```](#cmd--46)
+## CMD: [``` |` ```](#cmd--48)
 
 Stack: ``` a b -> a | b ```
 
 Maximum of `a` and `b`.
 
 
-## CMD: [``` ||` ```](#cmd--47)
+## CMD: [``` ||` ```](#cmd--49)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Logical OR of `a` and `b`.
 
 
-## CMD: [``` <=> ```](#cmd--48)
+## CMD: [``` <=> ```](#cmd--50)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (-1 | 0 | 1)' ```
 
-Atomic [``` <=>` ```](#cmd--49).
+Atomic [``` <=>` ```](#cmd--51).
 
 
-## CMD: [``` <=>` ```](#cmd--49)
+## CMD: [``` <=>` ```](#cmd--51)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> -1 | 0 | 1 ```
 
 Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or greater than `b`).
 
 
-## CMD: [``` = ```](#cmd--50)
+## CMD: [``` = ```](#cmd--52)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` =` ```](#cmd--51).
+Atomic [``` =` ```](#cmd--53).
 
 
-## CMD: [``` =` ```](#cmd--51)
+## CMD: [``` =` ```](#cmd--53)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` equals `b`.
 
 
-## CMD: [``` != ```](#cmd--52)
+## CMD: [``` != ```](#cmd--54)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` !=` ```](#cmd--53).
+Atomic [``` !=` ```](#cmd--55).
 
 
-## CMD: [``` !=` ```](#cmd--53)
+## CMD: [``` !=` ```](#cmd--55)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` does not equals `b`.
 
 
-## CMD: [``` < ```](#cmd--54)
+## CMD: [``` < ```](#cmd--56)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` <` ```](#cmd--55).
+Atomic [``` <` ```](#cmd--57).
 
 
-## CMD: [``` <` ```](#cmd--55)
+## CMD: [``` <` ```](#cmd--57)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` is less than `b`.
 
 
-## CMD: [``` > ```](#cmd--56)
+## CMD: [``` > ```](#cmd--58)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` >` ```](#cmd--57).
+Atomic [``` >` ```](#cmd--59).
 
 
-## CMD: [``` >` ```](#cmd--57)
+## CMD: [``` >` ```](#cmd--59)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` is greater than `b`.
 
 
-## CMD: [``` <= ```](#cmd--58)
+## CMD: [``` <= ```](#cmd--60)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` <=` ```](#cmd--59).
+Atomic [``` <=` ```](#cmd--61).
 
 
-## CMD: [``` <=` ```](#cmd--59)
+## CMD: [``` <=` ```](#cmd--61)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` is less than or equal to `b`.
 
 
-## CMD: [``` >= ```](#cmd--60)
+## CMD: [``` >= ```](#cmd--62)
 
-Stack: ``` a' b' -> NUM' ```
+Stack: ``` a' b' -> (0 | 1)' ```
 
-Atomic [``` >=` ```](#cmd--61).
+Atomic [``` >=` ```](#cmd--63).
 
 
-## CMD: [``` >=` ```](#cmd--61)
+## CMD: [``` >=` ```](#cmd--63)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` is greater than or equal to `b`.
 
 
-## CMD: [``` : ```](#cmd--62)
+## CMD: [``` : ```](#cmd--64)
 
 Stack: ``` a i' -> (a._ | UN)' ```
 
@@ -1082,30 +1114,37 @@ Stack: ``` a -> a._ ```
 Value at random index in `a`.
 
 
-## CMD: [``` :` ```](#cmd--63)
+## CMD: [``` :` ```](#cmd--65)
 
 Stack: ``` a i -> a._ | UN ```
 
 Value at index `i` in `a`.
 
 
-## CMD: [``` := ```](#cmd--64)
+## CMD: [``` := ```](#cmd--66)
 
 Stack: ``` a >ARR[i b] -> x ```
 
 Sets value at index `i` in `a` to `b`.
 
 
-## CMD: [``` :? ```](#cmd--65)
+## CMD: [``` :- ```](#cmd---2)
 
-Stack: ``` a b' -> NUM' ```
+Stack: ``` a i -> x ```
+
+Removes index `i` from `a`.
+
+
+## CMD: [``` :? ```](#cmd--67)
+
+Stack: ``` a b' -> (0 | 1)' ```
 
 Whether `a` has atomic `b`.
 
 
-## CMD: [``` :?` ```](#cmd--66)
+## CMD: [``` :?` ```](#cmd--68)
 
-Stack: ``` a b -> NUM ```
+Stack: ``` a b -> 0 | 1 ```
 
 Whether `a` has `b`.
 `MAP`s check `b` against keys; other types of `a` check `b` against values.
@@ -1118,21 +1157,21 @@ Stack: ``` a -> NUM ```
 Length of `a`.
 
 
-## CMD: [``` , ```](#cmd--67)
+## CMD: [``` , ```](#cmd--69)
 
 Stack: ``` a b -> ARR[a b] ```
 
 Pairs `a` and `b` in an `ARR`.
 
 
-## CMD: [``` ,, ```](#cmd--68)
+## CMD: [``` ,, ```](#cmd--70)
 
 Stack: ``` a -> ARR[a] ```
 
 Wraps `a` in an `ARR`.
 
 
-## CMD: [``` ,` ```](#cmd--69)
+## CMD: [``` ,` ```](#cmd--71)
 
 Stack: ``` a* -> a ```
 
@@ -1320,7 +1359,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [4 0 8 5 2 3 9 7 1 6]
+-> [8 7 3 1 2 5 4 0 9 6]
 ```
 
 
@@ -1357,14 +1396,14 @@ All subsets of `a`.
 ```
 
 
-## CMD: [``` N+> ```](#cmd-n-2)
+## CMD: [``` Q* ```](#cmd-q-2)
 
-Stack: ``` a (n >NUM)' -> SEQ' ```
+Stack: ``` a[_*] -> SEQ' ```
 
-Length-`n` increments of digits `a`.
+Cartesian product of iterable-of-iterables `a` to `n`.
 ```
-"abc" 3N+> >A
--> ["aaa" "aab" "aac" "aba" "abb" "abc" "aca" "acb" "acc" "baa" "bab" "bac" "bba" "bbb" "bbc" "bca" "bcb" "bcc" "caa" "cab" "cac" "cba" "cbb" "cbc" "cca" "ccb" "ccc"]
+["abc" "def" "ghi"] Q* >A
+-> ["adg" "adh" "adi" "aeg" "aeh" "aei" "afg" "afh" "afi" "bdg" "bdh" "bdi" "beg" "beh" "bei" "bfg" "bfh" "bfi" "cdg" "cdh" "cdi" "ceg" "ceh" "cei" "cfg" "cfh" "cfi"]
 ```
 
 
@@ -1535,9 +1574,9 @@ Stack: ``` a b f' -> _' ```
 Stack: ``` a f' -> _' ```
 
 Keeps elements of `a` that satisfy predicate `f`.
-If `a` is `MAP`, then the signature of `f` is `k v -> >(0 | 1)`,
+If `a` is `MAP`, then the signature of `f` is `k v -> 0 | 1 |`,
 where `k=>v` is the key-value pair.
-Otherwise, the signature of `f` is `x -> >(0 | 1)`,
+Otherwise, the signature of `f` is `x -> 0 | 1 |`,
 where `x` is the element.
 ```
 [5 1 2 4 3] 2.> fltr
@@ -1547,9 +1586,9 @@ where `x` is the element.
 
 ## CMD: [``` any ```](#cmd-any)
 
-Stack: ``` a f' -> NUM' ```
+Stack: ``` a f' -> (0 | 1)' ```
 
-0 or 1 depending on whether any elements of `a` satisfy predicate `f`.
+Whether any elements of `a` satisfy predicate `f`.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 2.> any
@@ -1559,9 +1598,9 @@ See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 
 ## CMD: [``` all ```](#cmd-all)
 
-Stack: ``` a f' -> NUM' ```
+Stack: ``` a f' -> (0 | 1)' ```
 
-0 or 1 depending on whether all elements of `a` satisfy predicate `f`.
+Whether all elements of `a` satisfy predicate `f`.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 ```
 [5 1 2 4 3] 2.> all
@@ -1629,7 +1668,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 1 2 5 4]
+-> [5 3 2 4 1]
 ```
 
 
@@ -1638,9 +1677,9 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 Stack: ``` a f' -> _' ```
 
 Sorts elements of `a` with comparator `f`.
-If `a` is `MAP`, then the signature of `f` is `j k v w -> >(0 | 1) |`,
+If `a` is `MAP`, then the signature of `f` is `j k v w -> 0 | 1 |`,
 where `j=>v` and `k=>w` are key-value pairs to compare.
-Otherwise, the signature of `f` is `x y -> >(0 | 1) |`,
+Otherwise, the signature of `f` is `x y -> 0 | 1 |`,
 where `x` and `y` are elements to compare.
 ```
 [1 5 2 3 4] \< sort~
