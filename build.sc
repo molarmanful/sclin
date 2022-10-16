@@ -1,4 +1,6 @@
 import $file.docp
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.0`
+import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
 import scalalib._
@@ -6,8 +8,8 @@ import scalalib.publish._
 
 object sclin extends ScalaModule with PublishModule {
 
-  def scalaVersion   = "3.2.0"
-  def publishVersion = "0.0.0-5"
+  def scalaVersion                       = "3.2.0"
+  override def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
     description = "Scala implementation of lin",
     organization = "io.github.molarmanful",
