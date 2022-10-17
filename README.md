@@ -2,11 +2,11 @@
 
 Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
-## Browser Interface
+## Installation
+
+### Browser Interface
 
 [Try sclin in your browser!](https://replit.com/@molarmanful/try-sclin)
-
-## Installation
 
 ### Requirements
 

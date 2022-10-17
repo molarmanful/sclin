@@ -18,13 +18,12 @@ extension (env: ENV)
         env.code.x match
           case List() => env1
           case _      => env.modStack(_ => env1.exec.stack)
-      case f: CMD => env.execA(f)
       case _      => env.push(x).toFN.eval
   )
   def evale: ENV = env.arg1((x, env) =>
     x match
       case f: FN => env.modStack(_ => env.copy(code = f).exec.stack)
-      case _     => env.push(x).eval
+      case _     => env.push(x).toFN.evale
   )
   def evalA1(x: ARRW[ANY], f: ANY): ANY =
     env.modStack(_ => x :+ f).evale.getStack(0)
