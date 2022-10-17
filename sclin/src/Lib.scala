@@ -18,7 +18,7 @@ extension (env: ENV)
         env.code.x match
           case List() => env1
           case _      => env.modStack(_ => env1.exec.stack)
-      case _      => env.push(x).toFN.eval
+      case _ => env.push(x).toFN.eval
   )
   def evale: ENV = env.arg1((x, env) =>
     x match
@@ -255,6 +255,12 @@ extension (env: ENV)
 
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toInt)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
+  def splitAt: ENV = env
+    .mod2((x, y) =>
+      val n = y.toInt
+      Vector(x.take(n), x.drop(n)).toARR
+    )
+    .unwrap
 
   def scale: ENV = env.push(NUM(10)).swap.pow.mul
   def trunc: ENV = env.num1(_.toBigInt)
@@ -1659,7 +1665,7 @@ extension (env: ENV)
      */
     case "c>S" => fromCodePt
     case "<>"  => split
-    case "<>:" => ???
+    case "<>:" => splitAt
     case "c<>" => env.push(STR("")).split
     case "w<>" => env.push(STR(" ")).split
     case "n<>" => env.push(STR("\n")).split

@@ -443,8 +443,8 @@ enum ANY:
     */
   def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (Itr(_), Itr(_)) => zip(t, _.vec2(_, f))
-    case (Itr(_), _)      => map(f(_, t))
-    case (_, Itr(_))      => t.map(f(this, _))
+    case (Itr(_), _)      => map(_.vec2(t, f))
+    case (_, Itr(_))      => t.map(vec2(_, f))
     case _                => f(this, t)
 
   def vef1[T](a: T)(f: (T, ANY) => T): T = this match
