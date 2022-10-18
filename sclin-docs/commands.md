@@ -1359,7 +1359,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [5 6 3 1 7 8 4 0 2 9]
+-> [2 3 5 4 1 6 9 8 0 7]
 ```
 
 
@@ -1420,7 +1420,7 @@ Converts `a` to codepoints.
 
 ## CMD: [``` c>S ```](#cmd-cs)
 
-Stack: ``` (a >ARR[NUM]) -> (a >STR) ```
+Stack: ``` (a >ARR[NUM]) -> STR ```
 
 Converts iterable of codepoints to `STR`.
 ```
@@ -1429,18 +1429,39 @@ Converts iterable of codepoints to `STR`.
 ```
 
 
+## CMD: [``` <> ```](#cmd--72)
+
+Stack: ``` (a >STR)' (b >STR)' -> ARR' ```
+
+Splits `a` with `b`.
+
+
+## CMD: [``` <>: ```](#cmd--73)
+
+Stack: ``` a (i >NUM) -> ARR[_ _] ```
+
+[``` tk ```](#cmd-tk) and [``` dp ```](#cmd-dp) of `a` at index `i`.
+
+
+## CMD: [``` >< ```](#cmd--74)
+
+Stack: ``` a (b >STR)' -> STR' ```
+
+Joins `a` with `b`.
+
+
 ## CMD: [``` A>a ```](#cmd-aa)
 
 Stack: ``` (a >STR)' -> STR' ```
 
-Convert `STR` to `lowercase`.
+Converts `STR` to `lowercase`.
 
 
 ## CMD: [``` a>A ```](#cmd-aa-1)
 
 Stack: ``` (a >STR)' -> STR' ```
 
-Convert `STR` to `UPPERCASE`.
+Converts `STR` to `UPPERCASE`.
 
 
 ## CMD: [``` map ```](#cmd-map)
@@ -1668,7 +1689,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [5 4 3 2 1]
+-> [3 2 1 5 4]
 ```
 
 
@@ -1688,5 +1709,30 @@ where `x` and `y` are elements to compare.
 ```
 [1 5 2 3 4] \> sort~
 -> [5 4 3 2 1]
+```
+
+
+## CMD: [``` part ```](#cmd-part)
+
+Stack: ``` a f' -> ARR[_ _]' ```
+
+Separates `a` into 2 parts based on predicate `f`.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+```
+[5 1 2 4 3] 2.> part
+-> [[5 4 3] [1 2]]
+```
+
+
+## CMD: [``` group ```](#cmd-group)
+
+Stack: ``` a f' -> MAP' ```
+
+Separates `a` groups based on `f`.
+Each result of `f` becomes a key in the resulting `MAP`.
+See [``` map ```](#cmd-map) for the signature of `f`.
+```
+"abc"^set >A \len group
+-> {0=>[""] 2=>["ab" "ac" "bc"] 1=>["a" "b" "c"] 3=>["abc"]}
 ```
 
