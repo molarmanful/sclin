@@ -427,6 +427,29 @@ enum ANY:
         .toMAP
     case _ => sortWith(g)
 
+  def partition(f: ANY => Boolean): (ANY, ANY) = this match
+    case SEQ(x)   => x.partition(f).pipe { case (a, b) => (a.toSEQ, b.toSEQ) }
+    case ARR(x)   => x.partition(f).pipe { case (a, b) => (a.toARR, b.toARR) }
+    case FN(p, x) => x.partition(f).pipe { case (a, b) => (a.pFN(p), b.pFN(p)) }
+    case _        => toSEQ.partition(f)
+  def partitionM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
+    this match
+      case MAP(x) =>
+        x.partition { case (a, b) => f(a, b) }.pipe { case (a, b) =>
+          (a.toMAP, b.toMAP)
+        }
+      case _ => partition(g)
+
+  def groupBy(f: ANY => ANY): Map[ANY, ANY] = this match
+    case SEQ(x)   => x.groupBy(f).view.mapValues(_.toSEQ).toMap
+    case ARR(x)   => x.groupBy(f).view.mapValues(_.toARR).toMap
+    case FN(p, x) => x.groupBy(f).view.mapValues(_.pFN(p)).toMap
+    case _        => toSEQ.groupBy(f)
+  def groupByM(f: (ANY, ANY) => ANY, g: ANY => ANY): Map[ANY, ANY] = this match
+    case MAP(x) =>
+      x.groupBy { case (a, b) => f(a, b) }.view.mapValues(_.toMAP).toMap
+    case _ => groupBy(g)
+
   /** Vectorizes function over `ANY`.
     *
     * @param f
@@ -506,7 +529,7 @@ object ANY:
     def toSEQ: SEQ       = SEQ(x.to(LazyList))
     def pFN(p: PATH): FN = FN(p, x.toList)
 
-  extension (x: MAPW[ANY, ANY]) def toMAP: MAP = MAP(x)
+  extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 
   extension (b: Boolean)
 

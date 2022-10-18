@@ -242,7 +242,7 @@ extension (env: ENV)
 
   def split: ENV   = env.str2a(_.split(_))
   def ssplit: ENV  = env.str1a(_.split(raw"\s"))
-  def join: ENV    = env.mod2((x, y) => y.vec1(s => STR(x.join(s.toString))))
+  def join: ENV    = env.mod2((x, y) => y.str1(x.join(_)))
   def toUpper: ENV = env.str1(_.toUpperCase)
   def toLower: ENV = env.str1(_.toLowerCase)
 
@@ -255,12 +255,12 @@ extension (env: ENV)
 
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toInt)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
-  def splitAt: ENV = env
-    .mod2((x, y) =>
-      val n = y.toInt
-      Vector(x.take(n), x.drop(n)).toARR
+  def splitAt: ENV = env.mod2((x, y) =>
+    y.vec1(n =>
+      val i = n.toInt
+      Vector(x.take(i), x.drop(i)).toARR
     )
-    .unwrap
+  )
 
   def scale: ENV = env.push(NUM(10)).swap.pow.mul
   def trunc: ENV = env.num1(_.toBigInt)
@@ -590,6 +590,22 @@ extension (env: ENV)
         (i, j, a, b) => env.evalA1(Vector(i, j, a, b), f).toBool,
         (a, b) => env.evalA1(Vector(a, b), f).toBool
       )
+    )
+  )
+  def part: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.partitionM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      ).pipe { case (a, b) => Vector(a, b).toARR }
+    )
+  )
+  def group: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.groupByM(
+        (a, b) => env.evalA1(Vector(a, b), f),
+        a => env.evalA1(Vector(a), f)
+      ).toMAP
     )
   )
 
@@ -1657,33 +1673,43 @@ extension (env: ENV)
      */
     case "S>c" => toCodePt
     /*
-    @s (a >ARR[NUM]) -> (a >STR)
+    @s (a >ARR[NUM]) -> STR
     Converts iterable of codepoints to `STR`.
     ```sclin
     [104 101 108 108 111] c>S
     ```
      */
     case "c>S" => fromCodePt
-    case "<>"  => split
+    /*
+    @s (a >STR)' (b >STR)' -> ARR'
+    Splits `a` with `b`.
+     */
+    case "<>" => split
+    /*
+    @s a (i >NUM) -> ARR[_ _]
+    #{tk} and #{dp} of `a` at index `i`.
+     */
     case "<>:" => splitAt
     case "c<>" => env.push(STR("")).split
     case "w<>" => env.push(STR(" ")).split
     case "n<>" => env.push(STR("\n")).split
     case "s<>" => ssplit
-    case "<>`" => ???
+    /*
+    @s a (b >STR)' -> STR'
+    Joins `a` with `b`.
+     */
     case "><"  => join
     case "c><" => env.push(STR("")).join
     case "w><" => env.push(STR(" ")).join
     case "n><" => env.push(STR("\n")).join
-    case "><`" => ???
     /*
     @s (a >STR)' -> STR'
-    Convert `STR` to `lowercase`.
+    Converts `STR` to `lowercase`.
      */
     case "A>a" => toLower
     /*
     @s (a >STR)' -> STR'
-    Convert `STR` to `UPPERCASE`.
+    Converts `STR` to `UPPERCASE`.
      */
     case "a>A" => toUpper
 
@@ -1872,8 +1898,26 @@ extension (env: ENV)
     ```
      */
     case "sort~" => sort$
-    case "part"  => ???
-    case "group" => ???
+    /*
+    @s a f' -> ARR[_ _]'
+    Separates `a` into 2 parts based on predicate `f`.
+    See #{fltr} for the signature of `f`.
+    ```sclin
+    [5 1 2 4 3] 2.> part
+    ```
+     */
+    case "part" => part
+    /*
+    @s a f' -> MAP'
+    Separates `a` groups based on `f`.
+    Each result of `f` becomes a key in the resulting `MAP`.
+    See #{map} for the signature of `f`.
+    ```sclin
+    "abc"^set >A \len group
+    ```
+     */
+    case "group" => group
+
     case "."     => dot
 
     // CMDOC END
