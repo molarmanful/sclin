@@ -8,4 +8,4 @@
 
 #show ; len " solutions found for n = " $n ,` n>o
   ( \; map >A ""n>o ) map >A
-    0 $n *` swap 1, := ".Q" swap : n>o
+    0 $n *` swap 1, := ".Q" swap : w>< n>o

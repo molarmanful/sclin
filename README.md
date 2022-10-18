@@ -1,5 +1,9 @@
 # sclin
 
+![maven](https://img.shields.io/maven-central/v/io.github.molarmanful/sclin_3?style=flat-square)
+![build](https://img.shields.io/github/workflow/status/molarmanful/sclin/release?style=flat-square)
+![license](https://img.shields.io/github/license/molarmanful/sclin?style=flat-square)
+
 Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
 ## Installation
@@ -18,7 +22,7 @@ Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 cs install --contrib sclin
 ```
 
-### Prebuilt Installation
+### Prebuilt Executable
 
 Download the [latest executable JAR from releases](https://github.com/molarmanful/sclin/releases) and place it on your `$PATH`. Verify that it works with `sclin --help`.
 
