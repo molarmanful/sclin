@@ -125,7 +125,9 @@ extension (env: ENV)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-  def toBool: ENV    = env.mod1(_.toBool.boolNUM)
+  def toBool: ENV = env.mod1(_.toBool.boolNUM)
+  def toNUMD: ENV =
+    env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).pipe(STR(_))))
   def matchType: ENV = env.mod2(_.matchType(_))
 
   def locId: ENV =
@@ -468,7 +470,6 @@ extension (env: ENV)
         a => env.evalA1(Vector(a), f).pipe(_ => a)
       )
     )
-    x
   )
   def flatMap: ENV = env.mod2((x, y) =>
     y.vec1(f =>
@@ -704,6 +705,11 @@ extension (env: ENV)
     1 or 0 depending on truthiness of `a`.
      */
     case ">?" => toBool
+    /*
+    @s (a >NUM) (b >STR)' -> STR
+    Converts `a` to an `STR` formatted to `b`'s specifications.
+     */
+    case "N>d" => toNUMD
     /*
     @s a b -> _
     Converts `a` to type of `b`.
@@ -1918,7 +1924,7 @@ extension (env: ENV)
      */
     case "group" => group
 
-    case "."     => dot
+    case "." => dot
 
     // CMDOC END
 
