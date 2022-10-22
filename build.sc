@@ -24,7 +24,7 @@ object sclin extends ScalaModule with PublishModule {
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.2.3",
-    ivy"com.lihaoyi::os-lib:0.8.0",
+    ivy"com.lihaoyi::os-lib:0.8.1",
     ivy"com.lihaoyi::fansi:0.4.0"
   )
 
