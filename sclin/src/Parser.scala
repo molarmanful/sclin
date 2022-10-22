@@ -60,12 +60,11 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
         case '"' => "\""
         case _   => "\\" + c
       ).sett(PT.STR)
-    case PT.STR =>
+    case _ =>
       c match
         case '\\' => sett(PT.ESC)
         case '"'  => clean
         case _    => addc(c)
-    case _ => ???
 
   /** Parses to NUM.
     *

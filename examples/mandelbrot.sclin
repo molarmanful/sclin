@@ -2,6 +2,6 @@
   121O>a 30/2- ( =$re. ) map >A "" n>o
     " .,:;|!([$O0*%#@-" ; : >o
       ; 16tk ( 2^ ,_ + 4<= ) tk* len
-        $re $im , ( =$i =$r. ).' itr
-          $r $i 2.^ '_ - $re +.
-          $r $i * 2* $im +
+        $re $im , \; itr
+          dup 2^ ,_ - $re +.
+          swap ,_ * 2* $im + ,
