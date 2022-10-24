@@ -628,7 +628,18 @@ extension (env: ENV)
 
     case s"#$k" if k != "" => env
     case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
-    case s"`$k" if k != "" => ???
+
+    case s"`$k" if k != "" =>
+      def loop(
+          n: Int = env.code.p.l + 1,
+          res: ARRW[String] = Vector.empty
+      ): (ARRW[String], Int) =
+        env.lines.get(PATH(env.code.p.f, n)) match
+          case Some(STR(s), f) if !s.trim.startsWith(k) => loop(n + 1, res :+ s)
+          case _                                        => (res, n)
+      val (x, i) = loop()
+      env.push(STR(x.mkString("\n"))).push(NUM(i)).evalLine
+    case "`" => env
 
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
@@ -1029,11 +1040,11 @@ extension (env: ENV)
     1 2 3 4 1.+.map '_
     ```
      */
-    case "'_"  => evalStArr
+    case "'_" => evalStArr
     /*
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
-    */
+     */
     case "end" => env.copy(code = List.empty.pFN(env.code.p))
 
     /*
