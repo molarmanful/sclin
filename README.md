@@ -1,4 +1,4 @@
-# sclin
+# ![sclin](./logo.svg)
 
 [![maven](https://img.shields.io/maven-central/v/io.github.molarmanful/sclin_3?style=flat-square)](https://central.sonatype.dev/artifact/io.github.molarmanful/sclin_3/0.0.0-7)
 [![build](https://img.shields.io/github/workflow/status/molarmanful/sclin/release?style=flat-square)](https://github.com/molarmanful/sclin/actions)
