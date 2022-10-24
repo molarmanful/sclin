@@ -182,21 +182,14 @@ enum ANY:
     case FN(_, x) => x.mkString(s)
     case _        => toString
 
-  def permutations: SEQ = this match
-    case SEQ(x)   => x.permutations.map(_.toSEQ).toSEQ
-    case ARR(x)   => x.permutations.map(_.toARR).toSEQ
-    case _: MAP   => toARR.permutations.map(_.toMAP).toSEQ
-    case FN(p, x) => x.permutations.map(_.pFN(p)).toSEQ
-    case STR(x)   => x.permutations.map(STR(_)).toSEQ
-    case _        => toARR.permutations
+  def permutations: ANY = this match
+    case SEQ(x) => x.permutations.map(_.toSEQ).toSEQ
+    case _      => toSEQ.permutations.map(_.matchType(this))
 
-  def combinations(n: Int): SEQ = this match
-    case SEQ(x)   => x.combinations(n).map(_.toSEQ).toSEQ
-    case ARR(x)   => x.combinations(n).map(_.toARR).toSEQ
-    case _: MAP   => toARR.combinations(n).map(_.toMAP).toSEQ
-    case FN(p, x) => x.combinations(n).map(_.pFN(p)).toSEQ
-    case STR(x)   => x.combinations(n).map(STR(_)).toSEQ
-    case _        => toARR.combinations(n)
+  def combinations(n: Int): ANY = this match
+    case SEQ(x) =>
+      x.zipWithIndex.map(_._2).combinations(n).map(_.map(x(_)).toSEQ).toSEQ
+    case _ => toSEQ.combinations(n).map(_.matchType(this))
 
   def toSEQ: SEQ = this match
     case x: SEQ => x
