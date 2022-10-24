@@ -1029,7 +1029,12 @@ extension (env: ENV)
     1 2 3 4 1.+.map '_
     ```
      */
-    case "'_" => evalStArr
+    case "'_"  => evalStArr
+    /*
+    @s ->
+    Clears code queue, similar to the "break" keyword in other languages.
+    */
+    case "end" => env.copy(code = List.empty.pFN(env.code.p))
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
