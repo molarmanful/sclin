@@ -316,6 +316,10 @@ enum ANY:
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
 
+  def rmap(f: ANY => ANY): ANY = this match
+    case Itr(_) => mapM((k, v) => (k, v.rmap(f)), _.rmap(f))
+    case x      => f(x)
+
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)

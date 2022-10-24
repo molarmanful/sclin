@@ -479,6 +479,8 @@ extension (env: ENV)
       )
     )
   )
+  def rmap: ENV =
+    env.mod2((x, y) => y.vec1(f => x.rmap(a => env.evalA1(Vector(a), f))))
   def flat: ENV = env.mod1(_.flat)
 
   def zip: ENV = env.mod3((x, y, z) =>
@@ -1789,6 +1791,14 @@ extension (env: ENV)
      */
     case "mapf" => flatMap
     /*
+    @s a f' -> _'
+    Atomic/recursive #{map}.
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] ( dup n>o ) rmap
+    ```
+     */
+    case "rmap" => rmap
+    /*
     @s a b f' -> _'
     #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
     If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
@@ -1811,6 +1821,7 @@ extension (env: ENV)
     ```
      */
     case "scan" => scan
+    case "walk" => ???
     /*
     @s a f' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
