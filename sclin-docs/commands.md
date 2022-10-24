@@ -532,6 +532,13 @@ Stack: ``` (a* >ARR) f -> _* ```
 ```
 
 
+## CMD: [``` end ```](#cmd-end)
+
+Stack: ``` -> ```
+
+Clears code queue, similar to the "break" keyword in other languages.
+
+
 ## CMD: [``` E ```](#cmd-e-2)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
@@ -1366,7 +1373,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [1 0 8 3 4 2 9 6 7 5]
+-> [6 7 5 2 1 3 0 9 8 4]
 ```
 
 
@@ -1714,7 +1721,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 2 5 4 1]
+-> [1 2 4 3 5]
 ```
 
 
