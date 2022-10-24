@@ -6,6 +6,11 @@
 
 Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
+```
+101I>a >A \; map
+  "Fizz""Buzz", over 3 5, % ! *` c>< dup \pop |# n>o
+```
+
 ## Installation
 
 ### Browser Interface
