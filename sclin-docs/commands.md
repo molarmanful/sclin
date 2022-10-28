@@ -219,6 +219,13 @@ Stack: ``` -> STR | UN ```
 Previous line.
 
 
+## CMD: [``` n\ ```](#cmd-n-2)
+
+Stack: ``` -> STR ```
+
+Newline character.
+
+
 ## CMD: [``` @$ ```](#cmd--4)
 
 Stack: ``` (a >STR) -> ```
@@ -1373,7 +1380,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [1 5 6 0 7 2 3 9 4 8]
+-> [0 3 4 5 2 6 9 1 8 7]
 ```
 
 
@@ -1721,7 +1728,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 2 3 4 5]
+-> [3 2 5 1 4]
 ```
 
 
