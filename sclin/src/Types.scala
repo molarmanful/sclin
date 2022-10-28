@@ -556,11 +556,11 @@ object ANY:
       case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
       case _                                => None
 
-  def fromDec(n: SafeLong, b: Int): Vector[SafeLong] =
-    def loop(n: SafeLong): ARRW[SafeLong] =
+  def fromDec(n: SafeLong, b: Int): ARRW[SafeLong] =
+    def loop(n: SafeLong, res: ARRW[SafeLong] = Vector.empty): ARRW[SafeLong] =
       if b == 1 then Vector.fill(n.toInt)(1)
-      else if n == 0 then Vector.empty
-      else loop(n / b) :+ n % b
+      else if n == 0 then res
+      else loop(n / b, n % b +: res)
     if b < 1 then throw LinEx("MATH", s"bad base $b")
     loop(n) match
       case Vector() if b > 1 => Vector(0)
