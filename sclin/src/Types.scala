@@ -531,8 +531,8 @@ object ANY:
 
   extension (b: Boolean)
 
-    def boolI: Int   = if b then 1 else 0
-    def boolNUM: NUM = NUM(b.boolI)
+    def boolInt: Int = if b then 1 else 0
+    def boolNUM: NUM = NUM(b.boolInt)
 
   extension (s: String) def toNUM: NUM = NUM(Real(s))
 

@@ -219,7 +219,7 @@ extension (env: ENV)
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
   def range: ENV = env.num2q((x, y) =>
-    Range(x.intValue, y.intValue, (y > x).boolI * 2 - 1).iterator.map(Real(_))
+    Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1).iterator.map(Real(_))
   )
 
   def shuffle: ENV = env.mod1(_.shuffle)
@@ -275,6 +275,17 @@ extension (env: ENV)
   def toDec: ENV = env.mod2((x, y) =>
     val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
     y.num1(n => ANY.toDec(x1, n.toInt))
+  )
+  def toNumDen: ENV = env.vec1(x =>
+    val a = x.toNUM.x.toRational
+    Vector(a.numerator, a.denominator).map(NUM(_)).toARR
+  )
+  def isInt: ENV = env.vec1(_.toNUM.x.isWhole.boolNUM)
+  def isExact: ENV = env.vec1(x =>
+    NUM(x.toNUM.x match
+      case Real.Exact(_) => 1
+      case _             => 0
+    )
   )
 
   def neg: ENV   = env.num1(-_)
@@ -411,7 +422,7 @@ extension (env: ENV)
   def log: ENV   = env.arg2((x, y, env) => env.push(x).ln.push(y).ln.div)
   def log10: ENV = env.push(NUM(10)).log
 
-  def isPrime: ENV = env.num1(x => prime.isPrime(x.toSafeLong).boolI)
+  def isPrime: ENV = env.num1(x => prime.isPrime(x.toSafeLong).boolInt)
   def factor: ENV = env.vec1(
     _.toNUM.x.toSafeLong
       .pipe(prime.factor)
@@ -1063,6 +1074,11 @@ extension (env: ENV)
      */
     case "I" => trunc
     /*
+    @s (a >NUM)' -> (1 | 0)'
+    Whether `a` is an integer.
+     */
+    case "I?" => isInt
+    /*
     @s (a >NUM)' -> NUM'
     Rounds `a` towards -∞.
      */
@@ -1099,6 +1115,28 @@ extension (env: ENV)
     ```
      */
     case "b>X" => toDec
+    /*
+    @s (a >NUM)' -> ARR[NUM NUM]'
+    Converts `a` to a numerator-denominator pair.
+    ```sclin
+    4 6/ >n/d
+    ```
+    ```sclin
+    $PI >n/d
+    ```
+     */
+    case ">n/d" => toNumDen
+    /*
+    @s (a >NUM)' -> ARR[NUM NUM]'
+    Whether `a` is an exact value (i.e. represented in full precision).
+    ```sclin
+    2 3/ prec?
+    ```
+    ```sclin
+    $PI prec?
+    ```
+     */
+    case "prec?" => isExact
 
     /*
     @s (a >NUM)' -> NUM'
