@@ -560,6 +560,13 @@ Stack: ``` (a >NUM)' -> NUM' ```
 Rounds `a` towards 0.
 
 
+## CMD: [``` I? ```](#cmd-i-2)
+
+Stack: ``` (a >NUM)' -> (1 | 0)' ```
+
+Whether `a` is an integer.
+
+
 ## CMD: [``` |_ ```](#cmd-_-1)
 
 Stack: ``` (a >NUM)' -> NUM' ```
@@ -608,6 +615,36 @@ Converts base-`b` digits to decimal.
 ```
 [9 9] 16b>X
 -> 153
+```
+
+
+## CMD: [``` >n/d ```](#cmd-nd-1)
+
+Stack: ``` (a >NUM)' -> ARR[NUM NUM]' ```
+
+Converts `a` to a numerator-denominator pair.
+```
+4 6/ >n/d
+-> [2 3]
+```
+```
+$PI >n/d
+-> [68417829380157871863019543882359730131241 21778071482940061661655974875633165533184]
+```
+
+
+## CMD: [``` prec? ```](#cmd-prec)
+
+Stack: ``` (a >NUM)' -> ARR[NUM NUM]' ```
+
+Whether `a` is an exact value (i.e. represented in full precision).
+```
+2 3/ prec?
+-> 1
+```
+```
+$PI prec?
+-> 0
 ```
 
 
@@ -1380,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [3 2 1 6 0 9 5 4 7 8]
+-> [2 0 1 8 7 4 3 5 6 9]
 ```
 
 
@@ -1728,7 +1765,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 3 2 1 5]
+-> [1 2 3 5 4]
 ```
 
 
