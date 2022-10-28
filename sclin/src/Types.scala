@@ -26,12 +26,13 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x) => x
-    case NUM(x) => x.toString
-    case CMD(x) => x
-    case ERR(x) => x.toString
-    case UN     => ""
-    case _      => join("")
+    case STR(x)   => x
+    case NUM(x)   => x.toString
+    case FN(_, x) => x.mkString(" ")
+    case CMD(x)   => x
+    case ERR(x)   => x.toString
+    case UN       => ""
+    case _        => join("")
 
   def toForm: String = this match
     case _: SEQ => s"[…]"

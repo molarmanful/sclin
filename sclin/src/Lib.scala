@@ -824,6 +824,11 @@ extension (env: ENV)
     Previous line.
      */
     case "g;;" => getLPrev
+    /*
+    @s -> STR
+    Newline character.
+     */
+    case "n\\" => env.push(STR("\n"))
 
     /*
     @s (a >STR) ->
