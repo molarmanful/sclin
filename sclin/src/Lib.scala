@@ -418,7 +418,11 @@ extension (env: ENV)
   def acosh: ENV = env.num1(Real.acosh)
   def atanh: ENV = env.num1(Real.atanh)
 
-  def ln: ENV    = env.num1(Real.log)
+  def ln: ENV =
+    env.num1(
+      x => if x <= 0 then throw ArithmeticException() else Real.log(x),
+      "bad log"
+    )
   def log: ENV   = env.arg2((x, y, env) => env.push(x).ln.push(y).ln.div)
   def log10: ENV = env.push(NUM(10)).log
 
