@@ -1,6 +1,7 @@
 package sclin
 
 import pprint.Tree.Lazy
+import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.io.StdIn._
 import scala.util.chaining._
@@ -693,6 +694,10 @@ extension (env: ENV)
     case x if env.ids.contains(x)    => env.push(NUM(env.ids(x).l)).evalLine
     case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
     case x if env.gids.contains(x)   => env.push(NUM(env.gids(x).l)).evalLine
+
+    case _ => cmd1(x)
+
+  def cmd1(x: String): ENV = (x: @switch) match
 
     case "(" => startFN
     case ")" => env
