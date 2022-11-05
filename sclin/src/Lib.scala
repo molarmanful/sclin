@@ -754,7 +754,7 @@ extension (env: ENV)
      */
     case ">?" => toBool
     /*
-    @s (a >NUM) (b >STR)' -> STR
+    @s (a >NUM) (b >NUM)' -> STR
     Converts `a` to an `STR` formatted to `b`'s specifications.
      */
     case "N>d" => toNUMD
