@@ -74,7 +74,7 @@ Stack: ``` a -> 0 | 1 ```
 
 ## CMD: [``` N>d ```](#cmd-nd)
 
-Stack: ``` (a >NUM) (b >STR)' -> STR ```
+Stack: ``` (a >NUM) (b >NUM)' -> STR ```
 
 Converts `a` to an `STR` formatted to `b`'s specifications.
 
@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [0 2 1 6 9 5 4 7 3 8]
+-> [5 3 0 6 1 2 8 7 4 9]
 ```
 
 
@@ -1765,7 +1765,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 4 5 1 2]
+-> [5 2 1 4 3]
 ```
 
 
