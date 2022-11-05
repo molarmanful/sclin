@@ -605,7 +605,9 @@ extension (env: ENV)
   def sort$ : ENV = env.mod2((x, y) =>
     y.vec1(f =>
       x.sortWithM(
-        (i, j, a, b) => env.evalA1(Vector(i, j, a, b), f).toBool,
+        { case ((i, j), (a, b)) =>
+          env.evalA1(Vector(Vector(i, j).toARR, Vector(a, b).toARR), f).toBool
+        },
         (a, b) => env.evalA1(Vector(a, b), f).toBool
       )
     )
@@ -624,6 +626,24 @@ extension (env: ENV)
         (a, b) => env.evalA1(Vector(a, b), f),
         a => env.evalA1(Vector(a), f)
       ).toMAP
+    )
+  )
+  def span: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.spanM(
+        (a, b) => env.evalA1(Vector(a, b), f).toBool,
+        a => env.evalA1(Vector(a), f).toBool
+      ).pipe { case (a, b) => Vector(a, b).toARR }
+    )
+  )
+  def pack: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.packByM(
+        { case ((i, j), (a, b)) =>
+          env.evalA1(Vector(Vector(i, j).toARR, Vector(a, b).toARR), f).toBool
+        },
+        (a, b) => env.evalA1(Vector(a, b), f).toBool
+      )
     )
   )
 
@@ -1997,6 +2017,24 @@ extension (env: ENV)
     ```
      */
     case "group" => group
+    /*
+    @s a f' -> ARR[_ _]'
+    Equivalent to a combination of #{tk*} and #{dp*}.
+    See #{fltr} for the signature of `f`.
+    ```sclin
+    [5 1 2 4 3] 2.% span
+    ```
+     */
+    case "span" => span
+    /*
+    @s a f' -> _'
+    Groups consecutive duplicate runs of `a` based on predicate `f`.
+    See #{sort~} for the signature of `f`.
+    ```sclin
+    [1 1 2 3 3 4 6 4 4] \=` pack
+    ```
+     */
+    case "pack" => pack
 
     case "." => dot
 

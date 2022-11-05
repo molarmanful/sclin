@@ -416,14 +416,11 @@ enum ANY:
     case FN(p, x) => x.sortWith(f).pFN(p)
     case _        => toSEQ.sortWith(f)
   def sortWithM(
-      f: (ANY, ANY, ANY, ANY) => Boolean,
+      f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
   ): ANY = this match
-    case MAP(x) =>
-      x.toSeq.sortWith { case ((i, a), (j, b)) => f(i, j, a, b) }
-        .to(VectorMap)
-        .toMAP
-    case _ => sortWith(g)
+    case MAP(x) => x.toSeq.sortWith(f).to(VectorMap).toMAP
+    case _      => sortWith(g)
 
   def partition(f: ANY => Boolean): (ANY, ANY) = this match
     case SEQ(x)   => x.partition(f).pipe { case (a, b) => (a.toSEQ, b.toSEQ) }
@@ -447,6 +444,31 @@ enum ANY:
     case MAP(x) =>
       x.groupBy { case (a, b) => f(a, b) }.view.mapValues(_.toMAP).toMap
     case _ => groupBy(g)
+
+  def span(f: ANY => Boolean): (ANY, ANY) = this match
+    case SEQ(x)   => x.span(f).pipe { case (a, b) => (a.toSEQ, b.toSEQ) }
+    case ARR(x)   => x.span(f).pipe { case (a, b) => (a.toARR, b.toARR) }
+    case FN(p, x) => x.span(f).pipe { case (a, b) => (a.pFN(p), b.pFN(p)) }
+    case _        => toSEQ.span(f)
+  def spanM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
+    this match
+      case MAP(x) =>
+        x.span { case (a, b) => f(a, b) }.pipe { case (a, b) =>
+          (a.toMAP, b.toMAP)
+        }
+      case _ => span(g)
+
+  def packBy(f: (ANY, ANY) => Boolean): ANY = this match
+    case SEQ(x)   => x.packBy(f).map(_.toSEQ).toSEQ
+    case ARR(x)   => x.packBy(f).map(_.toARR).toARR
+    case FN(p, x) => x.packBy(f).map(_.pFN(p)).pFN(p)
+    case x        => toSEQ.packBy(f)
+  def packByM(
+      f: ((ANY, ANY), (ANY, ANY)) => Boolean,
+      g: (ANY, ANY) => Boolean
+  ): ANY = this match
+    case MAP(x) => x.toSeq.packBy(f).map(_.to(VectorMap).toMAP).toSEQ
+    case _      => packBy(g)
 
   /** Vectorizes function over `ANY`.
     *
@@ -515,6 +537,28 @@ object OrdANY extends Ordering[ANY]:
   def compare(x: ANY, y: ANY): Int = x.cmp(y)
 
 object ANY:
+
+  extension [T](xs: Iterable[T])
+
+    def packBy(f: (T, T) => Boolean): Iterable[Iterable[T]] =
+      def loop(
+          xs: Iterable[T],
+          res: Iterable[Iterable[T]] = Iterable.empty
+      ): Iterable[Iterable[T]] =
+        if xs.isEmpty then res
+        else
+          val (y, ys) = (xs.head, xs.tail)
+          val (z, zs) = ys.span(f(y, _))
+          loop(zs, res ++ Iterable(Iterable(y) ++ z))
+      loop(xs)
+
+  extension [T](xs: SEQW[T])
+
+    def packBy(f: (T, T) => Boolean): SEQW[SEQW[T]] = xs match
+      case LazyList() => LazyList.empty
+      case x #:: xs =>
+        val (ys, zs) = xs.span(f(x, _))
+        (x #:: ys) #:: zs.packBy(f)
 
   extension (x: Iterable[ANY])
 
