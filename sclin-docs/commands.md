@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [0 9 8 4 7 1 6 5 2 3]
+-> [0 2 1 6 9 5 4 7 3 8]
 ```
 
 
@@ -1765,7 +1765,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 4 2 5 1]
+-> [3 4 5 1 2]
 ```
 
 
@@ -1810,5 +1810,29 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 "abc"^set >A \len group
 -> {0=>[""] 2=>["ab" "ac" "bc"] 1=>["a" "b" "c"] 3=>["abc"]}
+```
+
+
+## CMD: [``` span ```](#cmd-span)
+
+Stack: ``` a f' -> ARR[_ _]' ```
+
+Equivalent to a combination of [``` tk* ```](#cmd-tk-1) and [``` dp* ```](#cmd-dp-1).
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+```
+[5 1 2 4 3] 2.% span
+-> [[5 1] [2 4 3]]
+```
+
+
+## CMD: [``` pack ```](#cmd-pack)
+
+Stack: ``` a f' -> _' ```
+
+Groups consecutive duplicate runs of `a` based on predicate `f`.
+See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
+```
+[1 1 2 3 3 4 6 4 4] \=` pack
+-> [[1 1] [2] [3 3] [4] [6] [4 4]]
 ```
 
