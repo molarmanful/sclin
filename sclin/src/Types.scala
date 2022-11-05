@@ -323,6 +323,15 @@ enum ANY:
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
       case _      => foldLeft(a)(g)
 
+  def rfoldLeft[T](a: T)(f: (T, ANY) => T): T =
+    this match
+      case Itr(_) =>
+        foldLeftM(a)(
+          { case (s, (_, v)) => v.rfoldLeft(s)(f) },
+          (s, v) => v.rfoldLeft(s)(f)
+        )
+      case x => f(a, x)
+
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case SEQ(x) => x.scanLeft(a)(f).toSEQ
     case ARR(x) => x.scanLeft(a)(f).toARR
@@ -492,7 +501,7 @@ enum ANY:
 
   def vef1[T](a: T)(f: (T, ANY) => T): T = this match
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
-    case _      => f(a, this)
+    case x      => f(a, x)
 
   def num1(f: NUMF => NUMF): ANY = vec1(x => NUM(f(x.toNUM.x)))
   def num1(f: NUMF => NUMF, e: String): ANY =

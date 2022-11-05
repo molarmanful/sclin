@@ -523,6 +523,10 @@ extension (env: ENV)
     )
   )
 
+  def rfold: ENV = env.mod3((x, y, z) =>
+    z.vec1(f => x.rfoldLeft(y)((a, b) => env.evalA1(Vector(a, b), f)))
+  )
+
   def scan: ENV = env.mod3((x, y, z) =>
     z.vec1(f =>
       x.scanLeftM(y)(
@@ -1901,6 +1905,27 @@ extension (env: ENV)
     ```
      */
     case "fold" => fold
+    /*
+    @s a b f' -> _'
+    Atomic/recursive #{fold}.
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] 0 \+ rfold
+    ```
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] [] \+` rfold
+    ```
+     */
+    case "rfold" => rfold
+    /*
+    @s a -> NUM'
+    Sum of `a`. Equivalent to `0 \+ rfold`.
+     */
+    case "+/" => env.push(NUM(0)).push(CMD("+")).rfold
+    /*
+    @s a -> NUM'
+    Product of `a`. Equivalent to `1 \* rfold`.
+     */
+    case "*/" => env.push(NUM(1)).push(CMD("*")).rfold
     /*
     @s a b f' -> _'
     #{fold} with intermediate values.
