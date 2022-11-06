@@ -536,6 +536,22 @@ extension (env: ENV)
     )
   )
 
+  def walk: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      def loop(xs: ANY): ANY =
+        env.modStack(_ => Vector(xs, f)).evale.stack match
+          case st :+ n =>
+            st match
+              case _ :+ m =>
+                m match
+                  case Itr(_) if n.toBool => m.map(loop).matchType(m)
+                  case _                  => m
+              case _ => n
+          case _ => ???
+      loop(x)
+    )
+  )
+
   def fltr: ENV = env.mod2((x, y) =>
     y.vec1(f =>
       x.filterM(
@@ -1934,7 +1950,18 @@ extension (env: ENV)
     ```
      */
     case "scan" => scan
-    case "walk" => ???
+    /*
+    @s a f' -> _'
+    A multi-purpose function for creating, modifying, and traversing nested structures.
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] ( dup f>o 1 ) walk
+    ```
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] ( dup len ( 2*` 1 ) &# ) walk
+    ```
+     */
+    // TODO: this doc sucks
+    case "walk" => walk
     /*
     @s a f' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
