@@ -1950,6 +1950,7 @@ extension (env: ENV)
     ```
      */
     case "scan" => scan
+    // TODO: this doc sucks
     /*
     @s a f' -> _'
     A multi-purpose function for creating, modifying, and traversing nested structures.
@@ -1960,7 +1961,6 @@ extension (env: ENV)
     [[1 2] 3 4 [5 [6 7]]] ( dup len ( 2*` 1 ) &# ) walk
     ```
      */
-    // TODO: this doc sucks
     case "walk" => walk
     /*
     @s a f' -> _'
