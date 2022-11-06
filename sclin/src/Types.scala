@@ -293,6 +293,21 @@ enum ANY:
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
     case _      => flatMap(g)
+  def flatMap$(f: ANY => ARRW[ANY]): ANY = this match
+    case SEQ(x)   => x.flatMap(f).toSEQ
+    case ARR(x)   => x.flatMap(f).toARR
+    case FN(p, x) => x.flatMap(f).pFN(p)
+    case _        => toSEQ.flatMap$(f)
+  def flatMap$M(f: (ANY, ANY) => ARRW[ANY], g: ANY => ARRW[ANY]): ANY =
+    this match
+      case MAP(x) =>
+        x.flatMap { case (a, b) =>
+          f(a, b) match
+            case _ :+ k :+ v => Some(k, v)
+            case Vector(v)   => Some(a, v)
+            case _           => None
+        }.toMAP
+      case _ => flatMap$(g)
   def flat: ANY = flatMap(x => x)
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match

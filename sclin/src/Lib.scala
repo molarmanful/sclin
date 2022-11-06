@@ -26,6 +26,8 @@ extension (env: ENV)
       case f: FN => env.modStack(_ => env.copy(code = f).exec.stack)
       case _     => env.push(x).toFN.evale
   )
+  def evalS(x: ARRW[ANY], f: ANY): ARRW[ANY] =
+    env.modStack(_ => x :+ f).evale.stack
   def evalA1(x: ARRW[ANY], f: ANY): ANY =
     env.modStack(_ => x :+ f).evale.getStack(0)
   def evalA2(x: ARRW[ANY], f: ANY): (ANY, ANY) =
@@ -201,7 +203,7 @@ extension (env: ENV)
     y.vec1(f =>
       LazyList
         .unfold(x)(s =>
-          env.modStack(_ => Vector(s, f)).evale.stack match
+          env.evalS(Vector(s), f) match
             case st :+ n =>
               st match
                 case _ :+ m => Some(m, n)
@@ -538,17 +540,32 @@ extension (env: ENV)
 
   def walk: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      def loop(xs: ANY): ANY =
-        env.modStack(_ => Vector(xs, f)).evale.stack match
-          case st :+ n =>
-            st match
-              case _ :+ m =>
-                m match
-                  case Itr(_) if n.toBool => m.map(loop).matchType(m)
-                  case _                  => m
-              case _ => n
-          case _ => ???
-      loop(x)
+      def loop(b: Boolean = false)(xs: ARRW[ANY]): ARRW[ANY] = xs match
+        case st :+ n =>
+          st match
+            case st :+ m if b =>
+              st match
+                case _ :+ k =>
+                  if n.toBool then Vector(k, fn(m))
+                  else Vector(k, m)
+                case _ =>
+                  n match
+                    case Itr(_) => Vector(m, fn(n))
+                    case _      => Vector(m, n)
+            case _ :+ m =>
+              if n.toBool then Vector(fn(m))
+              else Vector(m)
+            case _ =>
+              n match
+                case Itr(_) => Vector(fn(n))
+                case _      => Vector(n)
+        case _ => Vector.empty
+      def fn(t: ANY): ANY =
+        t.flatMap$M(
+          (k, v) => env.evalS(Vector(k, v), f).pipe(loop(true)),
+          v => env.evalS(Vector(v), f).pipe(loop())
+        )
+      env.evalS(Vector(x), f).pipe(loop()).lastOption.getOrElse(UN)
     )
   )
 
@@ -1955,10 +1972,10 @@ extension (env: ENV)
     @s a f' -> _'
     A multi-purpose function for creating, modifying, and traversing nested structures.
     ```sclin
-    [[1 2] 3 4 [5 [6 7]]] ( dup f>o 1 ) walk
+    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dups f>o ) walk
     ```
     ```sclin
-    [[1 2] 3 4 [5 [6 7]]] ( dup len ( 2*` 1 ) &# ) walk
+    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len ( dup +` ) &# ) walk
     ```
      */
     case "walk" => walk
