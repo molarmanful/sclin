@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [4 1 3 9 2 5 7 0 6 8]
+-> [7 3 2 0 9 4 8 5 1 6]
 ```
 
 
@@ -1695,6 +1695,32 @@ Stack: ``` a b f' -> _' ```
 ```
 
 
+## CMD: [``` walk ```](#cmd-walk)
+
+Stack: ``` a f' -> _' ```
+
+A multi-purpose function for creating, modifying, and traversing nested structures.
+```
+[[1 2] 3 4 [5 [6 7]]] ( dup f>o 1 ) walk
+-> [[1 2] 3 4 [5 [6 7]]]
+[[1 2] 3 4 [5 [6 7]]]
+[1 2]
+1
+2
+3
+4
+[5 [6 7]]
+5
+[6 7]
+6
+7
+```
+```
+[[1 2] 3 4 [5 [6 7]]] ( dup len ( 2*` 1 ) &# ) walk
+-> [[1 2 1 2] 3 4 [5 [6 7 6 7] 5 [6 7 6 7]] [1 2 1 2] 3 4 [5 [6 7 6 7] 5 [6 7 6 7]]]
+```
+
+
 ## CMD: [``` fltr ```](#cmd-fltr)
 
 Stack: ``` a f' -> _' ```
@@ -1794,7 +1820,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [5 1 2 3 4]
+-> [3 2 4 1 5]
 ```
 
 
