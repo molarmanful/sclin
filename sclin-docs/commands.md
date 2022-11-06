@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [8 7 6 0 5 3 1 9 4 2]
+-> [4 1 3 9 2 5 7 0 6 8]
 ```
 
 
@@ -1655,6 +1655,35 @@ where `x` is the accumulator and `y` is the value.
 ```
 
 
+## CMD: [``` rfold ```](#cmd-rfold)
+
+Stack: ``` a b f' -> _' ```
+
+Atomic/recursive [``` fold ```](#cmd-fold).
+```
+[[1 2] 3 4 [5 [6 7]]] 0 \+ rfold
+-> 28
+```
+```
+[[1 2] 3 4 [5 [6 7]]] [] \+` rfold
+-> [1 2 3 4 5 6 7]
+```
+
+
+## CMD: [``` +/ ```](#cmd--75)
+
+Stack: ``` a -> NUM' ```
+
+Sum of `a`. Equivalent to `0 \+ rfold`.
+
+
+## CMD: [``` */ ```](#cmd--76)
+
+Stack: ``` a -> NUM' ```
+
+Product of `a`. Equivalent to `1 \* rfold`.
+
+
 ## CMD: [``` scan ```](#cmd-scan)
 
 Stack: ``` a b f' -> _' ```
@@ -1765,7 +1794,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 2 5 4 1]
+-> [5 1 2 3 4]
 ```
 
 
