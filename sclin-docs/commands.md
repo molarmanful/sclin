@@ -235,7 +235,6 @@ Loads ID `a` into local scope.
 "outer"=$a ( \a @$ a ) # $a
 #a "inner"
 -> "inner" "outer"
-a
 ```
 
 
@@ -1418,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [9 1 2 8 0 4 3 6 5 7]
+-> [0 3 6 1 2 7 4 5 8 9]
 ```
 
 
@@ -1870,7 +1869,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 4 2 3 5]
+-> [2 1 4 5 3]
 ```
 
 
