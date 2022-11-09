@@ -241,7 +241,7 @@ enum ANY:
   def xFN: List[ANY] = this match
     case FN(_, x) => x
     case STR(x)   => Parser.parse(x)
-    case SEQ(x)   => x.toList
+    case ARR(x)   => x.toList
     case _        => toARR.xFN
 
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
