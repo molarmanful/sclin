@@ -1734,27 +1734,27 @@ extension (env: ENV)
      */
     case ">v" => vals
     /*
-    @s (a >NUM)' (b >NUM)' -> SEQ[NUM*]'
+    @s (a >NUM)' (b >NUM)' -> ARR[NUM*]'
     Exclusive range from `a` to `b`.
      */
     case "a>b" => range
     /*
-    @s (a >NUM)' -> SEQ[NUM*]'
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from 0 to `a`.
      */
     case "O>a" => env.push(NUM(0)).swap.range
     /*
-    @s (a >NUM)' -> SEQ[NUM*]'
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from `a` to 0.
      */
     case "a>O" => env.push(NUM(0)).range
     /*
-    @s (a >NUM)' -> SEQ[NUM*]'
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from 1 to `a`.
      */
     case "I>a" => env.push(NUM(1)).swap.range
     /*
-    @s (a >NUM)' -> SEQ[NUM*]'
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from `a` to 1.
      */
     case "a>I" => env.push(NUM(1)).range
