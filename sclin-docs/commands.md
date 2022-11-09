@@ -1377,35 +1377,35 @@ Stack: ``` a -> SEQ ```
 
 ## CMD: [``` a>b ```](#cmd-ab)
 
-Stack: ``` (a >NUM)' (b >NUM)' -> SEQ[NUM*]' ```
+Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from `a` to `b`.
 
 
 ## CMD: [``` O>a ```](#cmd-oa)
 
-Stack: ``` (a >NUM)' -> SEQ[NUM*]' ```
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from 0 to `a`.
 
 
 ## CMD: [``` a>O ```](#cmd-ao)
 
-Stack: ``` (a >NUM)' -> SEQ[NUM*]' ```
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from `a` to 0.
 
 
 ## CMD: [``` I>a ```](#cmd-ia)
 
-Stack: ``` (a >NUM)' -> SEQ[NUM*]' ```
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from 1 to `a`.
 
 
 ## CMD: [``` a>I ```](#cmd-ai)
 
-Stack: ``` (a >NUM)' -> SEQ[NUM*]' ```
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from `a` to 1.
 
@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [7 8 4 9 1 2 0 6 5 3]
+-> [4 2 8 1 6 7 9 5 0 3]
 ```
 
 
@@ -1869,7 +1869,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 2 5 4 1]
+-> [4 3 2 5 1]
 ```
 
 
