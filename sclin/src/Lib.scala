@@ -134,7 +134,7 @@ extension (env: ENV)
   def matchType: ENV = env.mod2(_.matchType(_))
 
   def locId: ENV =
-    env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.tap(println).toString)))
+    env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.toString)))
   def globId: ENV =
     env.arg1((x, env) => x.vef1(env)((env, c) => env.addGlobId(c.toString)))
 
