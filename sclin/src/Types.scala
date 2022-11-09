@@ -626,18 +626,25 @@ object ANY:
       case _                                => None
 
   def fromDec(n: SafeLong, b: Int): ARRW[SafeLong] =
-    def loop(n: SafeLong, res: ARRW[SafeLong] = Vector.empty): ARRW[SafeLong] =
-      if b == 1 then Vector.fill(n.toInt)(1)
-      else if n == 0 then res
-      else loop(n / b, n % b +: res)
-    if b < 1 then throw LinEx("MATH", s"bad base $b")
-    loop(n) match
-      case Vector() if b > 1 => Vector(0)
-      case x                 => x
+    def loop(
+        n: SafeLong,
+        b: Int = b,
+        res: ARRW[SafeLong] = Vector.empty
+    ): ARRW[SafeLong] =
+      if b == 0 then Vector.empty
+      else if b == 1 then Vector.fill(n.toInt)(1)
+      else if b < 0 then loop(n, -b).reverse
+      else if n == 0 then
+        res match
+          case Vector() if b > 1 => Vector(0)
+          case x                 => x
+      else loop(n / b, b, n % b +: res)
+    loop(n)
 
   def toDec(ns: ARRW[SafeLong], b: SafeLong): SafeLong =
-    if b < 1 then throw LinEx("MATH", s"bad base $b")
-    if b == 1 then ns.length
+    if b == 0 then 0
+    else if b < 0 then toDec(ns.reverse, -b)
+    else if b == 1 then ns.length
     else
       ns.reverseIterator.zipWithIndex.foldLeft[SafeLong](0) {
         case (a, (n, i)) =>
