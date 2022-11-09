@@ -232,7 +232,7 @@ extension (env: ENV)
   def cProd: ENV = env.mod1(x =>
     x.toSEQ.x
       .map(_.toSEQ.x)
-      .pipe(ANY.cProd(_))
+      .pipe(ANY.cProd)
       .map(_.toSEQ.matchType(x.get(NUM(0))))
       .toSEQ
   )

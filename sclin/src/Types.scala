@@ -651,6 +651,6 @@ object ANY:
       val y = cProd(xs)
       x.flatMap(a => y.map(b => a #:: b))
 
-  def cPow[A](seed: LazyList[A], n: Int): LazyList[LazyList[A]] = cProd(
+  def cPow[A](seed: SEQW[A], n: Int): SEQW[SEQW[A]] = cProd(
     LazyList.fill(n)(seed)
   )
