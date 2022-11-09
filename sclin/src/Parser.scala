@@ -113,7 +113,7 @@ object Parser:
     * @param s
     *   string to check
     */
-  def isPar(s: String): Boolean = s.forall("()[]{}".contains(_))
+  def isPar(s: String): Boolean = s.forall("()[]{}".contains)
 
   /** Parses a single line.
     *

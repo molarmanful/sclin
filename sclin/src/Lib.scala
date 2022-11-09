@@ -221,8 +221,10 @@ extension (env: ENV)
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
-  def range: ENV = env.num2q((x, y) =>
-    Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1).iterator.map(Real(_))
+  def range: ENV = env.num2a((x, y) =>
+    Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1).iterator
+      .map(Real(_))
+      .toVector
   )
 
   def shuffle: ENV = env.mod1(_.shuffle)
@@ -247,7 +249,7 @@ extension (env: ENV)
 
   def split: ENV   = env.str2a(_.split(_))
   def ssplit: ENV  = env.str1a(_.split(raw"\s"))
-  def join: ENV    = env.mod2((x, y) => y.str1(x.join(_)))
+  def join: ENV    = env.mod2((x, y) => y.str1(x.join))
   def toUpper: ENV = env.str1(_.toUpperCase)
   def toLower: ENV = env.str1(_.toLowerCase)
 
@@ -355,7 +357,7 @@ extension (env: ENV)
     (x, y) => if y == 0 then throw ArithmeticException() else x.fquot(y),
     "bad /~"
   )
-  def div$ : ENV = env.strnumq((x, y) => x.grouped(y.intValue))
+  def div$ : ENV = env.strnumq((x, y) => x.grouped(y.intValue).to(LazyList))
   def div$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
       case SEQ(x)   => x.grouped(y.toInt).map(_.toSEQ).toSEQ
@@ -373,7 +375,7 @@ extension (env: ENV)
   def divmod: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
   )
-  def mod$ : ENV = env.strnumq((x, y) => x.sliding(y.intValue))
+  def mod$ : ENV = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
   def mod$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = x match
       case SEQ(x)   => x.sliding(y.toInt).map(_.toSEQ).toSEQ
@@ -1847,7 +1849,7 @@ extension (env: ENV)
     @s a (b >STR)' -> STR'
     Joins `a` with `b`.
      */
-    case "><"  => join
+    case "><" => join
     /*
     @s a -> STR'
     #{><}s with empty string.

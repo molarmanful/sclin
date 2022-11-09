@@ -81,7 +81,7 @@ enum ANY:
     case ARR(x)   => !x.isEmpty
     case MAP(x)   => !x.isEmpty
     case STR(x)   => !x.isEmpty
-    case NUM(_)   => !eql(NUM(0))
+    case _: NUM   => !eql(NUM(0))
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
@@ -189,7 +189,7 @@ enum ANY:
 
   def combinations(n: Int): ANY = this match
     case SEQ(x) =>
-      x.zipWithIndex.map(_._2).combinations(n).map(_.map(x(_)).toSEQ).toSEQ
+      x.zipWithIndex.map(_._2).combinations(n).map(_.map(x).toSEQ).toSEQ
     case _ => toSEQ.combinations(n).map(_.matchType(this))
 
   def toSEQ: SEQ = this match
@@ -529,7 +529,7 @@ enum ANY:
     try num2(t, f)
     catch case _: ArithmeticException => throw LinEx("MATH", e)
 
-  def num2q(t: ANY, f: (NUMF, NUMF) => Iterator[NUMF]): ANY =
+  def num2q(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
     vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toSEQ)
 
   def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
@@ -544,7 +544,7 @@ enum ANY:
   def str2(t: ANY, f: (String, String) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toString)))
 
-  def str2q(t: ANY, f: (String, String) => Iterator[String]): ANY =
+  def str2q(t: ANY, f: (String, String) => Iterable[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toString).map(STR(_)).toSEQ)
 
   def str2a(t: ANY, f: (String, String) => Iterable[String]): ANY =
@@ -553,7 +553,7 @@ enum ANY:
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
-  def strnumq(t: ANY, f: (String, NUMF) => Iterator[String]): ANY =
+  def strnumq(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
 
 object OrdANY extends Ordering[ANY]:
