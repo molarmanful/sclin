@@ -1823,17 +1823,45 @@ extension (env: ENV)
     #{tk} and #{dp} of `a` at index `i`.
      */
     case "<>:" => splitAt
+    /*
+    @s (a >STR)' -> ARR'
+    #{<>}s with empty string.
+     */
     case "c<>" => env.push(STR("")).split
+    /*
+    @s (a >STR)' -> ARR'
+    #{<>}s with space.
+     */
     case "w<>" => env.push(STR(" ")).split
+    /*
+    @s (a >STR)' -> ARR'
+    #{<>}s with newline.
+     */
     case "n<>" => env.push(STR("\n")).split
+    /*
+    @s (a >STR)' -> ARR'
+    #{<>}s on whitespace characters.
+     */
     case "s<>" => ssplit
     /*
     @s a (b >STR)' -> STR'
     Joins `a` with `b`.
      */
     case "><"  => join
+    /*
+    @s a -> STR'
+    #{><}s with empty string.
+     */
     case "c><" => env.push(STR("")).join
+    /*
+    @s a -> STR'
+    #{><}s with space.
+     */
     case "w><" => env.push(STR(" ")).join
+    /*
+    @s a -> STR'
+    #{><}s with newline.
+     */
     case "n><" => env.push(STR("\n")).join
     /*
     @s (a >STR)' -> STR'
