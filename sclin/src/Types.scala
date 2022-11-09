@@ -106,7 +106,7 @@ enum ANY:
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case STR(x) =>
             if i2 < x.length then x(i2).toString.pipe(STR(_)) else UN
-          case _ => toSEQ.get(NUM(i2))
+          case _ => toARR.get(NUM(i2))
       case MAP(x) => x.applyOrElse(i, _ => UN)
       case _: CMD => toSTR.get(i)
       case _      => UN
@@ -151,7 +151,7 @@ enum ANY:
     case MAP(x)   => MAP(if n < 0 then x.takeRight(-n) else x.take(n))
     case STR(x)   => STR(if n < 0 then x.takeRight(-n) else x.take(n))
     case FN(p, x) => FN(p, if n < 0 then x.takeRight(-n) else x.take(n))
-    case _        => toSEQ.take(n)
+    case _        => toARR.take(n)
 
   def drop(n: Int): ANY = this match
     case SEQ(x)   => SEQ(if n < 0 then x.dropRight(-n) else x.drop(n))
@@ -159,14 +159,14 @@ enum ANY:
     case MAP(x)   => MAP(if n < 0 then x.dropRight(-n) else x.drop(n))
     case STR(x)   => STR(if n < 0 then x.dropRight(-n) else x.drop(n))
     case FN(p, x) => FN(p, if n < 0 then x.dropRight(-n) else x.drop(n))
-    case _        => toSEQ.drop(n)
+    case _        => toARR.drop(n)
 
   def has(t: ANY): Boolean = this match
     case SEQ(x) => x.contains(t)
     case ARR(x) => x.contains(t)
     case MAP(x) => x.contains(t)
     case STR(x) => x.contains(t.toString)
-    case _      => toSEQ.has(t)
+    case _      => toARR.has(t)
 
   def shuffle: ANY = this match
     case SEQ(x)   => Random.shuffle(x).toSEQ
@@ -174,12 +174,12 @@ enum ANY:
     case MAP(x)   => Random.shuffle(x).toMAP
     case STR(x)   => STR(Random.shuffle(x).toString)
     case FN(p, x) => Random.shuffle(x).pFN(p)
-    case _        => toSEQ.shuffle
+    case _        => toARR.shuffle
 
   def join(s: String): String = this match
     case SEQ(x)   => x.mkString(s)
     case ARR(x)   => x.mkString(s)
-    case _: STR   => toSEQ.join(s)
+    case _: STR   => toARR.join(s)
     case FN(_, x) => x.mkString(s)
     case _        => toString
 
@@ -194,18 +194,17 @@ enum ANY:
 
   def toSEQ: SEQ = this match
     case x: SEQ => x
-    case ARR(x) => LazyList.from(x).toSEQ
-    case MAP(x) =>
-      LazyList.from(x).map { case (i, a) => Vector(i, a).toARR }.toSEQ
-    case STR(x)   => LazyList.from(x).map(c => STR(c.toString)).toSEQ
-    case FN(_, x) => LazyList.from(x).toSEQ
-    case UN       => LazyList.empty.toSEQ
-    case _        => LazyList(this).toSEQ
+    case ARR(x) => x.toSEQ
+    case _      => toARR.toSEQ
 
   def toARR: ARR = this match
-    case x: ARR => x
-    case SEQ(x) => x.toARR
-    case _      => toSEQ.toARR
+    case x: ARR   => x
+    case SEQ(x)   => x.toARR
+    case MAP(x)   => x.toVector.map { case (i, a) => Vector(i, a).toARR }.toARR
+    case STR(x)   => x.toVector.map(c => STR(c.toString)).toARR
+    case FN(_, x) => x.toARR
+    case UN       => Vector.empty.toARR
+    case _        => Vector(this).toARR
 
   def toMAP: MAP = this match
     case x: MAP => x
@@ -214,7 +213,7 @@ enum ANY:
         case Itr(a) if a.length > 0 => Some((a.get(NUM(0)), a.get(NUM(1))))
         case _                      => None
       }.to(VectorMap).toMAP
-    case _ => toSEQ.toMAP
+    case _ => toARR.toMAP
 
   def toSTR: STR = STR(toString)
 
@@ -243,7 +242,7 @@ enum ANY:
     case FN(_, x) => x
     case STR(x)   => Parser.parse(x)
     case SEQ(x)   => x.toList
-    case _        => toSEQ.xFN
+    case _        => toARR.xFN
 
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
 
@@ -280,7 +279,7 @@ enum ANY:
     case SEQ(x)   => x.map(f).toSEQ
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
-    case _        => toSEQ.map(f)
+    case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
     case _      => map(g)
@@ -289,7 +288,7 @@ enum ANY:
     case SEQ(x)   => x.flatMap(f(_).toSEQ.x).toSEQ
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
-    case _        => toSEQ.flatMap(f)
+    case _        => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
     case _      => flatMap(g)
@@ -297,7 +296,7 @@ enum ANY:
     case SEQ(x)   => x.flatMap(f).toSEQ
     case ARR(x)   => x.flatMap(f).toARR
     case FN(p, x) => x.flatMap(f).pFN(p)
-    case _        => toSEQ.flatMap$(f)
+    case _        => toARR.flatMap$(f)
   def flatMap$M(f: (ANY, ANY) => ARRW[ANY], g: ANY => ARRW[ANY]): ANY =
     this match
       case MAP(x) =>
@@ -332,7 +331,7 @@ enum ANY:
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)
-    case _      => toSEQ.foldLeft(a)(f)
+    case _      => toARR.foldLeft(a)(f)
   def foldLeftM[T](a: T)(f: (T, (ANY, ANY)) => T, g: (T, ANY) => T): T =
     this match
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
@@ -350,7 +349,7 @@ enum ANY:
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case SEQ(x) => x.scanLeft(a)(f).toSEQ
     case ARR(x) => x.scanLeft(a)(f).toARR
-    case _      => toSEQ.scanLeft(a)(f)
+    case _      => toARR.scanLeft(a)(f)
   def scanLeftM(
       a: ANY
   )(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY = this match
@@ -361,7 +360,7 @@ enum ANY:
     case SEQ(x)   => x.filter(f).toSEQ
     case ARR(x)   => x.filter(f).toARR
     case FN(p, x) => x.filter(f).pFN(p)
-    case _        => toSEQ.filter(f)
+    case _        => toARR.filter(f)
   def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
     case _      => filter(g)
@@ -370,7 +369,7 @@ enum ANY:
     case SEQ(x)   => x.exists(f)
     case ARR(x)   => x.exists(f)
     case FN(p, x) => x.exists(f)
-    case _        => toSEQ.any(f)
+    case _        => toARR.any(f)
   def anyM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.exists { case (a, b) => f(a, b) }
     case _      => any(g)
@@ -379,7 +378,7 @@ enum ANY:
     case SEQ(x)   => x.forall(f)
     case ARR(x)   => x.forall(f)
     case FN(p, x) => x.forall(f)
-    case _        => toSEQ.all(f)
+    case _        => toARR.all(f)
   def allM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.forall { case (a, b) => f(a, b) }
     case _      => all(g)
@@ -388,7 +387,7 @@ enum ANY:
     case SEQ(x)   => x.takeWhile(f).toSEQ
     case ARR(x)   => x.takeWhile(f).toARR
     case FN(p, x) => x.takeWhile(f).pFN(p)
-    case _        => toSEQ.takeWhile(f)
+    case _        => toARR.takeWhile(f)
   def takeWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
     case _      => takeWhile(g)
@@ -397,7 +396,7 @@ enum ANY:
     case SEQ(x)   => x.dropWhile(f).toSEQ
     case ARR(x)   => x.dropWhile(f).toARR
     case FN(p, x) => x.dropWhile(f).pFN(p)
-    case _        => toSEQ.dropWhile(f)
+    case _        => toARR.dropWhile(f)
   def dropWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.dropWhile { case (a, b) => f(a, b) }.toMAP
     case _      => dropWhile(g)
@@ -406,7 +405,7 @@ enum ANY:
     case SEQ(x)   => x.find(f)
     case ARR(x)   => x.find(f)
     case FN(p, x) => x.find(f)
-    case _        => toSEQ.find(f)
+    case _        => toARR.find(f)
   def findM(
       f: (ANY, ANY) => Boolean,
       g: ANY => Boolean
@@ -418,7 +417,7 @@ enum ANY:
     case SEQ(x)   => x.distinctBy(f).toSEQ
     case ARR(x)   => x.distinctBy(f).toARR
     case FN(p, x) => x.distinctBy(f).pFN(p)
-    case _        => toSEQ.uniqBy(f)
+    case _        => toARR.uniqBy(f)
   def uniqByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.distinctBy { case (a, b) => f(a, b) }.to(VectorMap).toMAP
@@ -428,7 +427,7 @@ enum ANY:
     case SEQ(x)   => x.sortBy(f)(OrdANY).toSEQ
     case ARR(x)   => x.sortBy(f)(OrdANY).toARR
     case FN(p, x) => x.sortBy(f)(OrdANY).pFN(p)
-    case _        => toSEQ.sortBy(f)
+    case _        => toARR.sortBy(f)
   def sortByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.sortBy { case (a, b) => f(a, b) }(OrdANY).to(VectorMap).toMAP
@@ -438,7 +437,7 @@ enum ANY:
     case SEQ(x)   => x.sortWith(f).toSEQ
     case ARR(x)   => x.sortWith(f).toARR
     case FN(p, x) => x.sortWith(f).pFN(p)
-    case _        => toSEQ.sortWith(f)
+    case _        => toARR.sortWith(f)
   def sortWithM(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
@@ -450,7 +449,7 @@ enum ANY:
     case SEQ(x)   => x.partition(f).pipe { case (a, b) => (a.toSEQ, b.toSEQ) }
     case ARR(x)   => x.partition(f).pipe { case (a, b) => (a.toARR, b.toARR) }
     case FN(p, x) => x.partition(f).pipe { case (a, b) => (a.pFN(p), b.pFN(p)) }
-    case _        => toSEQ.partition(f)
+    case _        => toARR.partition(f)
   def partitionM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
       case MAP(x) =>
@@ -463,7 +462,7 @@ enum ANY:
     case SEQ(x)   => x.groupBy(f).view.mapValues(_.toSEQ).toMap
     case ARR(x)   => x.groupBy(f).view.mapValues(_.toARR).toMap
     case FN(p, x) => x.groupBy(f).view.mapValues(_.pFN(p)).toMap
-    case _        => toSEQ.groupBy(f)
+    case _        => toARR.groupBy(f)
   def groupByM(f: (ANY, ANY) => ANY, g: ANY => ANY): Map[ANY, ANY] = this match
     case MAP(x) =>
       x.groupBy { case (a, b) => f(a, b) }.view.mapValues(_.toMAP).toMap
@@ -473,7 +472,7 @@ enum ANY:
     case SEQ(x)   => x.span(f).pipe { case (a, b) => (a.toSEQ, b.toSEQ) }
     case ARR(x)   => x.span(f).pipe { case (a, b) => (a.toARR, b.toARR) }
     case FN(p, x) => x.span(f).pipe { case (a, b) => (a.pFN(p), b.pFN(p)) }
-    case _        => toSEQ.span(f)
+    case _        => toARR.span(f)
   def spanM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
       case MAP(x) =>
@@ -486,7 +485,7 @@ enum ANY:
     case SEQ(x)   => x.packBy(f).map(_.toSEQ).toSEQ
     case ARR(x)   => x.packBy(f).map(_.toARR).toARR
     case FN(p, x) => x.packBy(f).map(_.pFN(p)).pFN(p)
-    case x        => toSEQ.packBy(f)
+    case x        => toARR.packBy(f)
   def packByM(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
@@ -555,6 +554,9 @@ enum ANY:
 
   def strnumq(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
+
+  def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
 
 object OrdANY extends Ordering[ANY]:
 

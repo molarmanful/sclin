@@ -282,6 +282,9 @@ case class ENV(
   def strnumq(f: (String, NUMF) => Iterable[String]): ENV = mod2(
     _.strnumq(_, f)
   )
+  def strnuma(f: (String, NUMF) => Iterable[String]): ENV = mod2(
+    _.strnuma(_, f)
+  )
 
   /** Executes `CMD`s and pushes other `ANY`s.
     *

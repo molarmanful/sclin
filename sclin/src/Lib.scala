@@ -215,8 +215,14 @@ extension (env: ENV)
   )
 
   def enumL: ENV = env.mod1 {
-    case x: MAP => x.toSEQ
-    case x      => LazyList.from(0).map(NUM(_)).toSEQ.zip(x, Vector(_, _).toARR)
+    case x: MAP => x.toARR
+    case x =>
+      LazyList
+        .from(0)
+        .map(NUM(_))
+        .toSEQ
+        .zip(x, Vector(_, _).toARR)
+        .matchType(x)
   }
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
@@ -364,7 +370,7 @@ extension (env: ENV)
       case ARR(x)   => x.grouped(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.grouped(y.toInt).map(_.toMAP).toSEQ
       case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
-      case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).pFN(p)
+      case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).toSEQ
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
@@ -382,7 +388,7 @@ extension (env: ENV)
       case ARR(x)   => x.sliding(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.sliding(y.toInt).map(_.toMAP).toSEQ
       case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
-      case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).pFN(p)
+      case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).toSEQ
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
 
@@ -1699,7 +1705,7 @@ extension (env: ENV)
      */
     case "fold_" => unfold
     /*
-    @s a -> SEQ[ARR[k v]*]
+    @s a -> (SEQ | ARR)[ARR[k v]*]
     `SEQ` of key/value pairs in `a`.
     ```sclin
     ["a" "b" "c" "d"] >kv >A
@@ -1718,16 +1724,16 @@ extension (env: ENV)
      */
     case "=>kv" => enumL.toMAP
     /*
-    @s a -> SEQ
-    `SEQ` of keys in `a`.
+    @s a -> SEQ | ARR
+    Keys in `a`.
     ```sclin
     {"x" "a", "y" "b", "z" "c", } >k >A
     ```
      */
     case ">k" => keys
     /*
-    @s a -> SEQ
-    `SEQ` of values in `a`.
+    @s a -> SEQ | ARR
+    Values in `a`.
     ```sclin
     {"x""a", "y""b", "z""c", } >v >A
     ```
@@ -1762,7 +1768,7 @@ extension (env: ENV)
     @s a -> _
     Shuffles `a`.
     ```sclin
-    10O>a shuf >A
+    10O>a shuf
     ```
      */
     case "shuf" => shuffle
