@@ -1417,7 +1417,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf >A
--> [7 1 9 8 4 6 5 3 0 2]
+-> [3 1 9 2 5 8 0 6 7 4]
 ```
 
 
@@ -1501,11 +1501,60 @@ Stack: ``` a (i >NUM) -> ARR[_ _] ```
 [``` tk ```](#cmd-tk) and [``` dp ```](#cmd-dp) of `a` at index `i`.
 
 
+## CMD: [``` c<> ```](#cmd-c)
+
+Stack: ``` (a >STR)' -> ARR' ```
+
+[``` <> ```](#cmd--72)s with empty string.
+
+
+## CMD: [``` w<> ```](#cmd-w-1)
+
+Stack: ``` (a >STR)' -> ARR' ```
+
+[``` <> ```](#cmd--72)s with space.
+
+
+## CMD: [``` n<> ```](#cmd-n-3)
+
+Stack: ``` (a >STR)' -> ARR' ```
+
+[``` <> ```](#cmd--72)s with newline.
+
+
+## CMD: [``` s<> ```](#cmd-s-1)
+
+Stack: ``` (a >STR)' -> ARR' ```
+
+[``` <> ```](#cmd--72)s on whitespace characters.
+
+
 ## CMD: [``` >< ```](#cmd--74)
 
 Stack: ``` a (b >STR)' -> STR' ```
 
 Joins `a` with `b`.
+
+
+## CMD: [``` c>< ```](#cmd-c-1)
+
+Stack: ``` a -> STR' ```
+
+[``` >< ```](#cmd--74)s with empty string.
+
+
+## CMD: [``` w>< ```](#cmd-w-2)
+
+Stack: ``` a -> STR' ```
+
+[``` >< ```](#cmd--74)s with space.
+
+
+## CMD: [``` n>< ```](#cmd-n-4)
+
+Stack: ``` a -> STR' ```
+
+[``` >< ```](#cmd--74)s with newline.
 
 
 ## CMD: [``` A>a ```](#cmd-aa)
@@ -1820,7 +1869,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [5 3 2 1 4]
+-> [2 1 4 5 3]
 ```
 
 
