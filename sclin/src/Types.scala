@@ -208,7 +208,7 @@ enum ANY:
 
   def toMAP: MAP = this match
     case x: MAP => x
-    case SEQ(x) =>
+    case ARR(x) =>
       x.flatMap {
         case Itr(a) if a.length > 0 => Some((a.get(NUM(0)), a.get(NUM(1))))
         case _                      => None
