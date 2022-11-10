@@ -296,8 +296,7 @@ case class ENV(
     case _      => push(c)
 
   /** Executes an `ENV`. */
-  @tailrec
-  final def exec: ENV = code.x match
+  @tailrec final def exec: ENV = code.x match
     case List() => this
     case c :: cs =>
       if eS then print("\u001b[2J\u001b[;H")
