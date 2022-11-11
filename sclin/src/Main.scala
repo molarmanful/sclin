@@ -11,8 +11,7 @@ object Main:
         strs => Right(os.Path(strs.head, os.pwd))
       )
 
-  @main
-  def sclin(
+  @main def sclin(
       @arg(short = 'f', doc = "Execute file.") file: Option[os.Path],
       @arg(short = 'e', doc = "Execute string.") eval: Option[String],
       @arg(
