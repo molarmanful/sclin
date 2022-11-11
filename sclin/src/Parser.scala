@@ -19,7 +19,6 @@ enum PT:
   */
 case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
 
-  /** Pushes `t` with type `t` to `xs`; resets `x` and `t`. */
   def clean: Parser = Parser(t match
     case PT.STR => xs :+ STR(x)
     case PT.ESC => xs :+ STR(x + "\\")
@@ -35,25 +34,9 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
     case _      => xs
   )
 
-  /** Adds string/char to `x`.
-    *
-    * @param c
-    *   string/char to add
-    */
   def addc(c: String | Char): Parser = copy(x = x + c)
+  def sett(t: PT): Parser            = copy(t = t)
 
-  /** Sets `t`.
-    *
-    * @param t
-    *   type to set
-    */
-  def sett(t: PT): Parser = copy(t = t)
-
-  /** Parses to STR.
-    *
-    * @param c
-    *   char to add
-    */
   def pstr(c: Char): Parser = t match
     case PT.ESC =>
       addc(c match
@@ -66,35 +49,19 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
         case '"'  => clean
         case _    => addc(c)
 
-  /** Parses to NUM.
-    *
-    * @param c
-    *   char to add
-    */
   def pnum(c: Char): Parser = t match
     case PT.DEC | PT.NUM => addc(c)
     case _               => clean.addc(c).sett(PT.NUM)
 
-  /** Handles dot special case. */
   def pdot: Parser = (t match
     case PT.NUM => addc
     case _      => clean.addc
   )('.').sett(PT.DEC)
 
-  /** Parses to CMD.
-    *
-    * @param c
-    *   char to add
-    */
   def pcmd(c: Char): Parser = t match
     case PT.CMD => addc(c)
     case _      => clean.addc(c).sett(PT.CMD)
 
-  /** Determines parse approach from `c` and `t`.
-    *
-    * @param c
-    *   char to add
-    */
   def choice(c: Char): Parser = t match
     case PT.STR | PT.ESC => pstr(c)
     case _ =>
@@ -108,25 +75,10 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
 /** Frontend for `Parser`. */
 object Parser:
 
-  /** Checks if CMD is brackets only.
-    *
-    * @param s
-    *   string to check
-    */
   def isPar(s: String): Boolean = s.forall("()[]{}".contains)
 
-  /** Parses a single line.
-    *
-    * @param s
-    *   string to parse
-    */
   def pline(s: String): List[ANY] =
     s.foldLeft(Parser())((st, c) => st.choice(c)).clean.xs
 
-  /** Parses an arbitrary string.
-    *
-    * @param s
-    *   string to parse
-    */
   def parse(s: String): List[ANY] =
     s.split("\n").headOption.getOrElse("").pipe(pline)
