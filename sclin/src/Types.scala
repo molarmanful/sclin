@@ -5,7 +5,9 @@ import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Failure
 import scala.util.Random
+import scala.util.Success
 import spire.math._
 import util.chaining._
 import ANY._
@@ -35,7 +37,7 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
-    case FUT(x)   => Await.result(x.map(_.toString), Duration.Inf)
+    case x: FUT   => x.toForm
     case UN       => ""
     case _        => join("")
 
@@ -56,9 +58,16 @@ enum ANY:
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.map(_.toForm).mkString(" ")})$n"
     case ERR(x) => s"ERR(${x.t})"
-    case _: FUT => "(…)~"
-    case UN     => "UN"
-    case _      => toString
+    case FUT(x) =>
+      s"(${x.value match
+          case Some(t) =>
+            t match
+              case Success(s) => s.toForm
+              case Failure(e) => e
+          case _ => "…"
+        })~"
+    case UN => "UN"
+    case _  => toString
 
   def cmp(t: ANY): Int = (this, t) match
     case (Itr(x), _) if !x.toBool => UN.cmp(t)
@@ -91,7 +100,7 @@ enum ANY:
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
-    case FUT(x)   => Await.result(x.map(_.toBool), Duration.Inf)
+    case FUT(x)   => x.isCompleted
     case UN       => false
 
   def length: Int = this match
