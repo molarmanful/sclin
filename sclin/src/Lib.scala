@@ -65,7 +65,7 @@ extension (env: ENV)
       case _       => (res, CMD(")"))
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
-  def endFUT: ENV = env.push(FUT(Future {
+  def endFUT: ENV = env.pop.push(FUT(Future {
     quar.getStack(0)
   }))
 
@@ -2174,9 +2174,9 @@ extension (env: ENV)
      */
     case "pack" => pack
 
-    case "await"  => await
-    case "await~" => await$
-    case "sleep"  => sleep
+    case "~>"    => await
+    case "~>~"   => await$
+    case "sleep" => sleep
 
     case "." => dot
 
