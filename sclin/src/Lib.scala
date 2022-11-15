@@ -766,7 +766,7 @@ extension (env: ENV)
 
     case "("  => startFN
     case ")"  => env
-    case ")$" => endFUT
+    case ")~" => endFUT
     case "["  => startARR
     case "]"  => endARR
     case "{"  => startARR
@@ -819,7 +819,7 @@ extension (env: ENV)
     Converts `a` to `ERR` with message `b`.
      */
     case ">E" => toERR
-    case ">$" => toFUT
+    case ">~" => toFUT
     /*
     @s a -> 0 | 1
     1 or 0 depending on truthiness of `a`.
@@ -860,7 +860,7 @@ extension (env: ENV)
     @s -> FUT
     Empty `FUT`.
      */
-    case "()$" => env.push(UN.toFUT)
+    case "()~" => env.push(UN.toFUT)
     /*
     @s -> NUM
     π (Pi).
@@ -1137,6 +1137,7 @@ extension (env: ENV)
     Tries to #{#} `f`; on error, pushes caught `ERR` and #{#}s `g`.
      */
     case "!#" => evalTry
+    case "~#" => endFUT
     /*
     @s (e ERR) ->
     Throws `e`.

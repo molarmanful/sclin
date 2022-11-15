@@ -56,7 +56,7 @@ enum ANY:
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.map(_.toForm).mkString(" ")})$n"
     case ERR(x) => s"ERR(${x.t})"
-    case _: FUT => "(…)$"
+    case _: FUT => "(…)~"
     case UN     => "UN"
     case _      => toString
 
