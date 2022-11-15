@@ -701,16 +701,14 @@ extension (env: ENV)
     )
   )
 
-  def await: ENV = env.mod1(x => Await.result(x.toFUT.x, Duration.Inf))
-  def await$ : ENV = env.mod2((x, y) =>
-    y.vec1(n =>
-      val n1 = n.toNUM.x.toLong.milliseconds
-      try Await.result(x.toFUT.x, n1)
-      catch
-        case e: java.util.concurrent.TimeoutException =>
-          throw new LinEx("FUT", s"timeout after $n1")
-        case e => throw e
-    )
+  def await: ENV = env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
+  def await$ : ENV = env.vec2((x, n) =>
+    val n1 = n.toNUM.x.toLong.milliseconds
+    try Await.result(x.toFUT.x, n1)
+    catch
+      case e: java.util.concurrent.TimeoutException =>
+        throw new LinEx("FUT", s"timeout after $n1")
+      case e => throw e
   )
 
   def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
