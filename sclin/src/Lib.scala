@@ -65,7 +65,9 @@ extension (env: ENV)
       case _       => (res, CMD(")"))
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
-  def endFUT: ENV = ???
+  def endFUT: ENV = env.push(FUT(Future {
+    quar.getStack(0)
+  }))
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
@@ -131,10 +133,9 @@ extension (env: ENV)
   def toSTR: ENV   = env.mod1(_.toSTR)
   def toNUM: ENV   = env.mod1(_.toNUM)
   def toFN: ENV    = env.mod1(_.toFN(env))
+  def toFUT: ENV   = env.mod1(_.toFUT)
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-  def toFUT: ENV =
-    env.mod1(x => FUT(Future(x)))
   def toBool: ENV = env.mod1(_.toBool.boolNUM)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).pipe(STR(_))))
@@ -700,6 +701,20 @@ extension (env: ENV)
     )
   )
 
+  def await: ENV = env.mod1(x => Await.result(x.toFUT.x, Duration.Inf))
+  def await$ : ENV = env.mod2((x, y) =>
+    y.vec1(n =>
+      val n1 = n.toNUM.x.toLong.milliseconds
+      try Await.result(x.toFUT.x, n1)
+      catch
+        case e: java.util.concurrent.TimeoutException =>
+          throw new LinEx("FUT", s"timeout after $n1")
+        case e => throw e
+    )
+  )
+
+  def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
+
   def dot: ENV = env.code.x match
     case c :: cs =>
       env
@@ -753,7 +768,7 @@ extension (env: ENV)
 
     case "("  => startFN
     case ")"  => env
-    case ")U" => endFUT
+    case ")$" => endFUT
     case "["  => startARR
     case "]"  => endARR
     case "{"  => startARR
@@ -806,7 +821,7 @@ extension (env: ENV)
     Converts `a` to `ERR` with message `b`.
      */
     case ">E" => toERR
-    case ">U" => toFUT
+    case ">$" => toFUT
     /*
     @s a -> 0 | 1
     1 or 0 depending on truthiness of `a`.
@@ -843,6 +858,11 @@ extension (env: ENV)
     Empty `MAP`.
      */
     case "{}" => env.push(UN.toMAP)
+    /*
+    @s -> FUT
+    Empty `FUT`.
+     */
+    case "()$" => env.push(UN.toFUT)
     /*
     @s -> NUM
     π (Pi).
@@ -2154,6 +2174,10 @@ extension (env: ENV)
     ```
      */
     case "pack" => pack
+
+    case "await"  => await
+    case "await~" => await$
+    case "sleep"  => sleep
 
     case "." => dot
 

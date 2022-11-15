@@ -35,7 +35,7 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
-    case FUT(x)   => Await.result(x, Duration.Inf).toString
+    case FUT(x)   => Await.result(x.map(_.toString), Duration.Inf)
     case UN       => ""
     case _        => join("")
 
@@ -244,7 +244,6 @@ enum ANY:
 
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
-  /** Converts `ANY` to `FN` body. */
   def xFN: List[ANY] = this match
     case FN(_, x) => x
     case STR(x)   => Parser.parse(x)
@@ -253,23 +252,13 @@ enum ANY:
 
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
 
-  /** Converts `ANY` to `FN` at given line number.
-    *
-    * @param l
-    *   line number
-    * @param env
-    *   context `ENV` to wrap `FN`
-    */
   def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), xFN)
 
-  /** Converts `ANY` to `FN` at given `PATH`.
-    *
-    * @param p
-    *   `PATH`
-    * @param env
-    *   context `ENV` to wrap `FN`
-    */
   def pFN(p: PATH): FN = FN(p, xFN)
+
+  def toFUT: FUT = this match
+    case x: FUT => x
+    case x      => FUT(Future(x))
 
   def matchType(a: ANY): ANY = a match
     case _: SEQ               => toSEQ
@@ -278,6 +267,7 @@ enum ANY:
     case _: STR               => toSTR
     case _: NUM               => toNUM
     case _: CMD               => toString.pipe(CMD(_))
+    case _: FUT               => toFUT
     case FN(p, _)             => pFN(p)
     case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR(_))
     case UN                   => UN
@@ -500,20 +490,10 @@ enum ANY:
     case MAP(x) => x.toSeq.packBy(f).map(_.to(VectorMap).toMAP).toSEQ
     case _      => packBy(g)
 
-  /** Vectorizes function over `ANY`.
-    *
-    * @param f
-    *   function to vectorize
-    */
   def vec1(f: ANY => ANY): ANY = this match
     case Itr(_) => map(_.vec1(f))
     case _      => f(this)
 
-  /** Vectorizes function over 2 `ANY`s.
-    *
-    * @param f
-    *   function to vectrorize
-    */
   def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (Itr(_), Itr(_)) => zip(t, _.vec2(_, f))
     case (Itr(_), _)      => map(_.vec2(t, f))
@@ -631,8 +611,8 @@ object ANY:
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
-      case _                                => None
+      case _: SEQ | _: ARR | _: STR | _: FN | _: FUT => Some(a)
+      case _                                         => None
 
   def fromDec(n: SafeLong, b: Int): ARRW[SafeLong] =
     def loop(
