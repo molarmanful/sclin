@@ -3,6 +3,9 @@ package sclin
 import pprint.Tree.Lazy
 import scala.annotation._
 import scala.collection.immutable.VectorMap
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.StdIn._
 import scala.util.chaining._
 import spire.algebra._
@@ -61,6 +64,8 @@ extension (env: ENV)
       case cs :+ c => (cs, c)
       case _       => (res, CMD(")"))
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
+
+  def endFUT: ENV = ???
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
@@ -128,6 +133,8 @@ extension (env: ENV)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
+  def toFUT: ENV =
+    env.mod1(x => FUT(Future(x)))
   def toBool: ENV = env.mod1(_.toBool.boolNUM)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).pipe(STR(_))))
@@ -744,12 +751,13 @@ extension (env: ENV)
 
   def cmd1(x: String): ENV = (x: @switch) match
 
-    case "(" => startFN
-    case ")" => env
-    case "[" => startARR
-    case "]" => endARR
-    case "{" => startARR
-    case "}" => endMAP
+    case "("  => startFN
+    case ")"  => env
+    case ")U" => endFUT
+    case "["  => startARR
+    case "]"  => endARR
+    case "{"  => startARR
+    case "}"  => endMAP
 
     // CMDOC START
 
@@ -798,6 +806,7 @@ extension (env: ENV)
     Converts `a` to `ERR` with message `b`.
      */
     case ">E" => toERR
+    case ">U" => toFUT
     /*
     @s a -> 0 | 1
     1 or 0 depending on truthiness of `a`.

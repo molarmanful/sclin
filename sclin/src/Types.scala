@@ -2,6 +2,9 @@ package sclin
 
 import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 import spire.math._
 import util.chaining._
@@ -18,6 +21,7 @@ enum ANY:
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
   case ERR(x: LinERR)
+  case FUT(x: Future[ANY])
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -31,6 +35,7 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
+    case FUT(x)   => Await.result(x, Duration.Inf).toString
     case UN       => ""
     case _        => join("")
 
@@ -51,6 +56,7 @@ enum ANY:
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.map(_.toForm).mkString(" ")})$n"
     case ERR(x) => s"ERR(${x.t})"
+    case _: FUT => "(…)$"
     case UN     => "UN"
     case _      => toString
 
@@ -85,6 +91,7 @@ enum ANY:
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
+    case FUT(x)   => Await.result(x.map(_.toBool), Duration.Inf)
     case UN       => false
 
   def length: Int = this match
