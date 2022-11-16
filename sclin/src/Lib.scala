@@ -129,6 +129,7 @@ extension (env: ENV)
   def toNUM: ENV   = env.mod1(_.toNUM)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toFUT: ENV   = env.mod1(_.toFUT)
+  def toTRY: ENV   = env.mod1(_.toTRY)
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
   def toBool: ENV = env.mod1(_.toBool.boolNUM)
@@ -823,8 +824,9 @@ extension (env: ENV)
     @s (a >STR) (b >STR) -> ERR
     Converts `a` to `ERR` with message `b`.
      */
-    case ">E" => toERR
-    case ">~" => toFUT
+    case ">E"  => toERR
+    case ">~"  => toFUT
+    case ">!?" => toTRY
     /*
     @s a -> 0 | 1
     1 or 0 depending on truthiness of `a`.

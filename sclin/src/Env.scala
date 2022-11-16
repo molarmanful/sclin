@@ -203,16 +203,11 @@ case class ENV(
     _.strnuma(_, f)
   )
 
-  /** Executes `CMD`s and pushes other `ANY`s.
-    *
-    * @param c
-    *   `ANY` to evaluate
-    */
   def execA(c: ANY): ENV = c match
-    case CMD(x) => this.cmd(x)
-    case _      => push(c)
+    case CMD(x)       => this.cmd(x)
+    case TRY(b, x, e) => if b then push(x) else throw e
+    case _            => push(c)
 
-  /** Executes an `ENV`. */
   @tailrec final def exec: ENV = code.x match
     case List() => this
     case c :: cs =>
