@@ -68,10 +68,6 @@ extension (env: ENV)
       case _       => (res, CMD(")"))
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
-  def evalFUT: ENV = env.pop.push(FUT(Future {
-    quar.getStack(0)
-  }))
-
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
     val env1 = env.fnLine(i)
@@ -109,14 +105,11 @@ extension (env: ENV)
     try env.push(f).evale
     catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
   )
+  def evalFUT: ENV = env.arg1((x, env) =>
+    env.push(x.vec1(f => FUT(Future(env.push(f).quar.getStack(0)))))
+  )
   def evalTRY: ENV = env.arg1((x, env) =>
-    env.push(
-      x.vec1(f =>
-        Try {
-          env.push(f).quar.getStack(0)
-        }.toTRY
-      )
-    )
+    env.push(x.vec1(f => Try(env.push(f).quar.getStack(0)).toTRY))
   )
   def throwERR: ENV = env.arg1((x, env) => throw x.toThrow)
   def evalArrSt: ENV = env.arg2((x, f, env) =>
@@ -715,6 +708,17 @@ extension (env: ENV)
         throw new LinEx("FUT", s"timeout after $n1")
       case e => throw e
   )
+  def awaitTRY: ENV =
+    env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
+  def awaitTRY$ : ENV =
+    env.vec2((x, n) =>
+      val n1 = n.toNUM.x.toLong.milliseconds
+      try Await.ready(x.toFUT.x, n1).value.get.toTRY
+      catch
+        case e: java.util.concurrent.TimeoutException =>
+          throw new LinEx("FUT", s"timeout after $n1")
+        case e => throw e
+    )
   // def transform: ENV = env.mod3((x, y, z) =>
   //   y.vec2(
   //     z,
@@ -2192,8 +2196,10 @@ extension (env: ENV)
      */
     case "pack" => pack
 
-    case "~_"  => await
-    case "~_~" => await$
+    case "~_"   => await
+    case "~_~"  => await$
+    case "~_!"  => awaitTRY
+    case "~_!~" => awaitTRY$
     // case "~>"    => transform
     case "sleep" => sleep
 
