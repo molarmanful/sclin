@@ -719,16 +719,20 @@ extension (env: ENV)
           throw new LinEx("FUT", s"timeout after $n1")
         case e => throw e
     )
-  // def transform: ENV = env.mod3((x, y, z) =>
-  //   y.vec2(
-  //     z,
-  //     (f, g) =>
-  //       x.toFUT.x.transform {
-  //         case Success(s) => env.evalA1(Vector(s), f)
-  //         case Failure(e) => env.evalA1(Vector(e), f)
-  //       }
-  //   )
-  // )
+  def transform: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.toFUT.x
+        .transform(t => env.evalA1(Vector(t.toTRY), f).toTry)
+        .pipe(FUT(_))
+    )
+  )
+  def transform$ : ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.toFUT.x
+        .transformWith(t => env.evalA1(Vector(t.toTRY), f).toFUT.x)
+        .pipe(FUT(_))
+    )
+  )
 
   def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
 
@@ -2196,11 +2200,12 @@ extension (env: ENV)
      */
     case "pack" => pack
 
-    case "~_"   => await
-    case "~_~"  => await$
-    case "~_!"  => awaitTRY
-    case "~_!~" => awaitTRY$
-    // case "~>"    => transform
+    case "~_"    => await
+    case "~_~"   => await$
+    case "~_!"   => awaitTRY
+    case "~_!~"  => awaitTRY$
+    case "~>"    => transform
+    case "~>~"   => transform$
     case "sleep" => sleep
 
     case "." => dot
