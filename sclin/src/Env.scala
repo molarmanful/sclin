@@ -233,9 +233,9 @@ case class ENV(
           .tap(_ => if eS then print("\u001b[2J\u001b[;H"))
           .exec
       catch
-        case e: LinEx => throw e.toERR(this)
+        case e: LinEx => throw e.toLinERR(this)
         case e: java.lang.StackOverflowError =>
-          throw LinEx("REC", "stack overflow").toERR(this)
+          throw LinEx("REC", "stack overflow").toLinERR(this)
 
 /** Frontend for `ENV`. */
 object ENV:

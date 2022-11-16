@@ -107,17 +107,9 @@ extension (env: ENV)
     )
   def evalTry: ENV = env.arg2((f, g, env) =>
     try env.push(f).evale
-    catch
-      case e: LinERR => env.pushs(Vector(ERR(e), g)).evale
-      case e: LinEx  => env.pushs(Vector(ERR(e.toERR(env)), g)).evale
-      case e =>
-        env.pushs(Vector(ERR(LinEx("_", e.getMessage).toERR(env)), g)).evale
+    catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
   )
-  def throwERR: ENV = env.arg1((x, env) =>
-    x match
-      case ERR(x) => throw x
-      case _      => throw LinEx("_", x.toString).toERR(env)
-  )
+  def throwERR: ENV = env.arg1((x, env) => throw x.toThrow)
   def evalArrSt: ENV = env.arg2((x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
   )

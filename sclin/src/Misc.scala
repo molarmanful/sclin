@@ -20,7 +20,7 @@ case class PATH(f: FILE, l: Int):
 
 case class LinEx(t: String, x: String) extends Exception(x):
 
-  def toERR(env: ENV): LinERR = LinERR(env.code.p, t, x)
+  def toLinERR(env: ENV): LinERR = LinERR(env.code.p, t, x)
 
 case class LinERR(p: PATH, t: String, x: String) extends Exception(x):
 

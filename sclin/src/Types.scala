@@ -1,5 +1,6 @@
 package sclin
 
+import algebra.lattice.Bool
 import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
@@ -23,9 +24,9 @@ enum ANY:
   case NUM(x: NUMF)
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
-  case ERR(x: LinERR)
+  case ERR(x: Throwable)
   case FUT(x: Future[ANY])
-  case TRY(x: Try[ANY])
+  case TRY(b: Boolean, x: ANY, e: Throwable)
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -59,16 +60,15 @@ enum ANY:
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.map(_.toForm).mkString(" ")})$n"
-    case ERR(x) => s"ERR(${x.t})"
+    case ERR(x) => s"ERR(${x.getMessage})"
     case FUT(x) =>
       s"(${x.value match
-          case Some(t) => TRY(t).toForm
+          case Some(t) => t.toTRY.toForm
           case _       => "…"
         })~"
-    case TRY(x) =>
-      x match
-        case Success(s) => s"YES(${s.toForm})"
-        case Failure(e) => s"NO(${e.getMessage})"
+    case TRY(b, x, e) =>
+      if b then s"YES(${x.toForm})"
+      else s"NO(${ERR(e).toForm})"
     case UN => "UN"
     case _  => toString
 
@@ -104,8 +104,13 @@ enum ANY:
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
     case FUT(x)   => x.isCompleted && x.value.get.isSuccess
-    case TRY(x)   => x.isSuccess
+    case x: TRY   => x.b
     case UN       => false
+
+  def toTry: Try[ANY] = this match
+    case TRY(b, x, e) => if b then Success(x) else Failure(e)
+    case ERR(x)       => Failure(x)
+    case x            => Success(x)
 
   def length: Int = this match
     case SEQ(x)   => x.length
@@ -127,10 +132,10 @@ enum ANY:
           case STR(x) =>
             if i2 < x.length then x(i2).toString.pipe(STR(_)) else UN
           case _ => toARR.get(NUM(i2))
-      case MAP(x) => x.applyOrElse(i, _ => UN)
-      case _: CMD => toSTR.get(i)
-      case TRY(x) => x.get
-      case _      => UN
+      case MAP(x)       => x.applyOrElse(i, _ => UN)
+      case _: CMD       => toSTR.get(i)
+      case TRY(b, x, e) => if b then x else throw e
+      case _            => UN
 
   def set(i: ANY, t: ANY): ANY =
     val oi = i.optI
@@ -250,6 +255,18 @@ enum ANY:
         throw LinEx("CAST", "bad NUM cast " + toForm)
       case e => throw e
 
+  def toThrow: Throwable = this match
+    case ERR(x) => x
+    case x      => LinEx("_", x.toString)
+
+  def toERR: ERR = this match
+    case x: ERR => x
+    case _      => toThrow.pipe(ERR(_))
+
+  def toTRY: TRY = this match
+    case x: TRY => x
+    case _      => toTry.toTRY
+
   def optNUM: Option[NUM] =
     try Some(toNUM)
     catch _ => None
@@ -274,22 +291,18 @@ enum ANY:
     case x: FUT => x
     case x      => FUT(Future(x))
 
-  def toTRY: TRY = this match
-    case x: TRY => x
-    case x      => TRY(Try(x))
-
   def matchType(a: ANY): ANY = a match
-    case _: SEQ               => toSEQ
-    case _: ARR               => toARR
-    case _: MAP               => toMAP
-    case _: STR               => toSTR
-    case _: NUM               => toNUM
-    case _: CMD               => toString.pipe(CMD(_))
-    case _: FUT               => toFUT
-    case _: TRY               => toTRY
-    case FN(p, _)             => pFN(p)
-    case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR(_))
-    case UN                   => UN
+    case _: SEQ   => toSEQ
+    case _: ARR   => toARR
+    case _: MAP   => toMAP
+    case _: STR   => toSTR
+    case _: NUM   => toNUM
+    case _: CMD   => toString.pipe(CMD(_))
+    case _: FUT   => toFUT
+    case _: TRY   => toTRY
+    case _: ERR   => toERR
+    case FN(p, _) => pFN(p)
+    case UN       => UN
 
   def map(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.map(f).toSEQ
@@ -613,6 +626,19 @@ object ANY:
     def boolNUM: NUM = NUM(b.boolInt)
 
   extension (s: String) def toNUM: NUM = NUM(Real(s))
+
+  extension (t: Try[ANY])
+
+    def toTRY: TRY = t match
+      case Success(s) => TRY(true, s, LinEx("_", ""))
+      case Failure(e) => TRY(false, UN, e)
+
+  extension (t: Throwable)
+
+    def toERRW(env: ENV): ERR = t match
+      case e: LinERR => ERR(e)
+      case e: LinEx  => e.toLinERR(env).toERRW(env)
+      case e         => LinEx("_", e.getMessage).toERRW(env)
 
   /** Pattern for `SEQ`-like. */
   object Itr:
