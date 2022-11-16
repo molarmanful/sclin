@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Random
 import scala.util.Success
+import scala.util.Try
 import spire.math._
 import util.chaining._
 import ANY._

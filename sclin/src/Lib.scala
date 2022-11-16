@@ -8,6 +8,9 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.StdIn._
 import scala.util.chaining._
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 import spire.algebra._
 import spire.implicits._
 import spire.math._
@@ -710,6 +713,16 @@ extension (env: ENV)
         throw new LinEx("FUT", s"timeout after $n1")
       case e => throw e
   )
+  // def transform: ENV = env.mod3((x, y, z) =>
+  //   y.vec2(
+  //     z,
+  //     (f, g) =>
+  //       x.toFUT.x.transform {
+  //         case Success(s) => env.evalA1(Vector(s), f)
+  //         case Failure(e) => env.evalA1(Vector(e), f)
+  //       }
+  //   )
+  // )
 
   def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
 
@@ -2174,8 +2187,9 @@ extension (env: ENV)
      */
     case "pack" => pack
 
-    case "~>"    => await
-    case "~>~"   => await$
+    case "~_"  => await
+    case "~_~" => await$
+    // case "~>"    => transform
     case "sleep" => sleep
 
     case "." => dot

@@ -40,7 +40,6 @@ case class ENV(
     eI: Boolean = false
 ):
 
-  /** Prints debug trace header. */
   def trace1: ENV =
     println(fansi.Color.DarkGray(s"———(${code.p})"))
     println(code.x match
@@ -60,7 +59,6 @@ case class ENV(
     )
     this
 
-  /** Prints debug trace stack. */
   def trace2: ENV =
     println(fansi.Color.DarkGray("———>"))
     println(stack.map(_.toForm).mkString("\n"))
@@ -68,54 +66,22 @@ case class ENV(
 
   def trace: ENV = trace1.trace2
 
-  /** Modifies `code` with function.
-    *
-    * @param f
-    *   function that modifies `code`
-    */
   def modCode(f: List[ANY] => List[ANY]): ENV =
     copy(code = FN(code.p, f(code.x)))
 
-  /** Prepends list to `code`.
-    *
-    * @param x
-    *   list to prepend
-    */
   def loadCode(x: List[ANY]): ENV = modCode(x ++ _)
 
-  /** Modifies `stack` with function.
-    *
-    * @param f
-    *   function that modifies `stack`
-    */
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
 
-  /** Indexes stack starting from top.
-    *
-    * @param i
-    *   index of item to retrieve
-    */
   def getStack(i: Int): ANY = stack.applyOrElse(iStack(i), _ => UN)
 
-  /** Converts index to stack index.
-    *
-    * @param i
-    *   index
-    */
   def iStack(i: Int): Int =
     val i1 = ~i
     if i1 < 0 then stack.length + i1 else i1
 
   def setArr(x: List[ARRW[ANY]]): ENV = copy(arr = x)
 
-  /** Modifies line at path in `lines`.
-    *
-    * @param p
-    *   line path to modify
-    * @param x
-    *   new line
-    */
   def setLine(p: PATH, x: STR, y: ANY): ENV =
     lines += (p -> (x, y))
     this
@@ -125,27 +91,12 @@ case class ENV(
     lines += (p -> (lines(p)._1, x))
     this
 
-  /** Gets line at number in `lines`.
-    *
-    * @param i
-    *   line number to retrieve
-    */
   def getLine(i: Int): Option[(ANY, ANY)] = lines.get(PATH(code.p.f, i))
 
-  /** Gets STR part of line at number in `lines`.
-    *
-    * @param i
-    *   line number to retrieve
-    */
   def getLineS(i: Int): ANY = getLine(i) match
     case Some(x, _) => x
     case _          => UN
 
-  /** Gets FN part of line at number in `lines`.
-    *
-    * @param i
-    *   line number to retrieve
-    */
   def getLineF(i: Int): ANY = getLine(i) match
     case Some(x, y) =>
       y match
@@ -153,11 +104,6 @@ case class ENV(
         case _     => x
     case _ => UN
 
-  /** Caches line at number in `lines` as `FN`.
-    *
-    * @param i
-    *   line number to cache
-    */
   def fnLine(i: Int): ENV = getLine(i) match
     case Some(x, y) =>
       setLineF(
@@ -168,11 +114,6 @@ case class ENV(
       )
     case _ => this
 
-  /** Converts line at number in `lines` to `FN` and pushes to `code`.
-    *
-    * @param i
-    *   line number to load
-    */
   def loadLine(i: Int): ENV =
     fnLine(i)
     copy(code = getLineF(i) match
@@ -180,10 +121,6 @@ case class ENV(
       case _     => FN(code.p, List())
     )
 
-  /** Retrieves `PATH` from ID.
-    * @param c
-    *   ID name
-    */
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
     s.x.trim.startsWith("#" + c)
   } match
@@ -193,36 +130,16 @@ case class ENV(
   def optId(c: String): Option[PATH] = try Some(getId(c))
   catch e => None
 
-  /** Adds ID to `ids`.
-    * @param c
-    *   ID name
-    */
   def addLocId(c: String): ENV =
     copy(ids = ids + (c -> getId(c)), scope = scope - c)
 
-  /** Adds ID to `gids`.
-    * @param c
-    *   ID name
-    */
   def addGlobId(c: String): ENV =
     gids   += (c -> getId(c))
     gscope -= c
     this
 
-  /** Adds variable to `scope`.
-    * @param k
-    *   variable name
-    * @param v
-    *   variable value
-    */
   def addLoc(k: String, v: ANY): ENV = copy(scope = scope + (k -> v))
 
-  /** Adds variable to `gscope`.
-    * @param k
-    *   variable name
-    * @param v
-    *   variable value
-    */
   def addGlob(k: String, v: ANY): ENV =
     gscope += (k -> v)
     this
@@ -323,15 +240,6 @@ case class ENV(
 /** Frontend for `ENV`. */
 object ENV:
 
-  /** Creates a new `ENV` around given code and executes it.
-    *
-    * @param l
-    *   code to run
-    * @param f
-    *   file path
-    * @param o
-    *   debug flags
-    */
   def run(
       l: String,
       f: FILE = None,
