@@ -68,7 +68,7 @@ extension (env: ENV)
       case _       => (res, CMD(")"))
     env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
 
-  def endFUT: ENV = env.pop.push(FUT(Future {
+  def evalFUT: ENV = env.pop.push(FUT(Future {
     quar.getStack(0)
   }))
 
@@ -108,6 +108,15 @@ extension (env: ENV)
   def evalTry: ENV = env.arg2((f, g, env) =>
     try env.push(f).evale
     catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
+  )
+  def evalTRY: ENV = env.arg1((x, env) =>
+    env.push(
+      x.vec1(f =>
+        Try {
+          env.push(f).quar.getStack(0)
+        }.toTRY
+      )
+    )
   )
   def throwERR: ENV = env.arg1((x, env) => throw x.toThrow)
   def evalArrSt: ENV = env.arg2((x, f, env) =>
@@ -772,7 +781,8 @@ extension (env: ENV)
 
     case "("  => startFN
     case ")"  => env
-    case ")~" => endFUT
+    case ")~" => evalFUT
+    case ")!" => evalTRY
     case "["  => startARR
     case "]"  => endARR
     case "{"  => startARR
@@ -1143,8 +1153,9 @@ extension (env: ENV)
     @s a* f g -> _*
     Tries to #{#} `f`; on error, pushes caught `ERR` and #{#}s `g`.
      */
-    case "!#" => evalTry
-    case "~#" => endFUT
+    case "!#"  => evalTry
+    case "!?#" => evalTRY
+    case "~#"  => evalFUT
     /*
     @s (e ERR) ->
     Throws `e`.
