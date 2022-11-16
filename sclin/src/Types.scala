@@ -285,6 +285,7 @@ enum ANY:
     case SEQ(x)   => x.map(f).toSEQ
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
+    case FUT(x)   => x.map(f).pipe(FUT(_))
     case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
@@ -294,6 +295,7 @@ enum ANY:
     case SEQ(x)   => x.flatMap(f(_).toSEQ.x).toSEQ
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
+    case FUT(x)   => x.flatMap(f(_).toFUT.x).pipe(FUT(_))
     case _        => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
