@@ -25,6 +25,7 @@ enum ANY:
   case FN(p: PATH, x: List[ANY])
   case ERR(x: LinERR)
   case FUT(x: Future[ANY])
+  case TRY(x: Try[ANY])
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -61,12 +62,13 @@ enum ANY:
     case ERR(x) => s"ERR(${x.t})"
     case FUT(x) =>
       s"(${x.value match
-          case Some(t) =>
-            t match
-              case Success(s) => s.toForm
-              case Failure(e) => e
-          case _ => "…"
+          case Some(t) => TRY(t).toForm
+          case _       => "…"
         })~"
+    case TRY(x) =>
+      x match
+        case Success(s) => s"YES(${s.toForm})"
+        case Failure(e) => s"NO(${e.getMessage})"
     case UN => "UN"
     case _  => toString
 
@@ -101,7 +103,8 @@ enum ANY:
     case CMD(x)   => !x.isEmpty
     case FN(_, x) => !x.isEmpty
     case _: ERR   => false
-    case FUT(x)   => x.isCompleted
+    case FUT(x)   => x.isCompleted && x.value.get.isSuccess
+    case TRY(x)   => x.isSuccess
     case UN       => false
 
   def length: Int = this match
@@ -126,6 +129,7 @@ enum ANY:
           case _ => toARR.get(NUM(i2))
       case MAP(x) => x.applyOrElse(i, _ => UN)
       case _: CMD => toSTR.get(i)
+      case TRY(x) => x.get
       case _      => UN
 
   def set(i: ANY, t: ANY): ANY =
@@ -270,6 +274,10 @@ enum ANY:
     case x: FUT => x
     case x      => FUT(Future(x))
 
+  def toTRY: TRY = this match
+    case x: TRY => x
+    case x      => TRY(Try(x))
+
   def matchType(a: ANY): ANY = a match
     case _: SEQ               => toSEQ
     case _: ARR               => toARR
@@ -278,6 +286,7 @@ enum ANY:
     case _: NUM               => toNUM
     case _: CMD               => toString.pipe(CMD(_))
     case _: FUT               => toFUT
+    case _: TRY               => toTRY
     case FN(p, _)             => pFN(p)
     case ERR(LinERR(p, t, _)) => LinERR(p, t, toString).pipe(ERR(_))
     case UN                   => UN
@@ -623,8 +632,8 @@ object ANY:
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: STR | _: FN | _: FUT => Some(a)
-      case _                                         => None
+      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
+      case _                                => None
 
   def fromDec(n: SafeLong, b: Int): ARRW[SafeLong] =
     def loop(
