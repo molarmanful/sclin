@@ -153,7 +153,10 @@ extension (env: ENV)
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
+  def dupd: ENV = env.mods2((x, y) => Vector(x, x, y))
   def over: ENV = env.mods2((x, y) => Vector(x, y, x))
+  def ddup: ENV = env.mods2((x, y) => Vector(x, y, x, y))
+  def edup: ENV = env.mods3((x, y, z) => Vector(x, y, z, x, y, z))
   def pick: ENV =
     env.arg1((x, env) => env.push(x.vec1(n => env.getStack(n.toInt))))
 
@@ -167,9 +170,10 @@ extension (env: ENV)
     )
   )
 
-  def swap: ENV = env.mods2((x, y) => Vector(y, x))
-  def rev: ENV  = env.modStack(_.reverse)
-  def tuck: ENV = env.mods2((x, y) => Vector(y, x, y))
+  def swap: ENV  = env.mods2((x, y) => Vector(y, x))
+  def rev: ENV   = env.modStack(_.reverse)
+  def swapd: ENV = env.mods3((x, y, z) => Vector(y, x, z))
+  def tuck: ENV  = env.mods2((x, y) => Vector(y, x, y))
   def trade: ENV =
     env.arg1((x, env) => env.push(x).rollu.push(x).push(NUM(1)).sub.roll)
 
@@ -1022,9 +1026,21 @@ extension (env: ENV)
      */
     case "dups" => dups
     /*
+    @s a b -> a a b
+     */
+    case "dupd" => dupd
+    /*
     @s a b -> a b a
      */
     case "over" => over
+    /*
+    @s a b -> a b a b
+     */
+    case "ddup" => ddup
+    /*
+    @s a b c -> a b c a b c
+     */
+    case "edup" => edup
     /*
     @s (a @ n) b* (n >NUM) -> a b* a
     #{dup}s `n`th item from top of stack.
@@ -1056,6 +1072,10 @@ extension (env: ENV)
     Reverses stack.
      */
     case "rev" => rev
+    /*
+    @s a b c -> b a c
+     */
+    case "swapd" => swapd
     /*
     @s a b -> b a b
      */
