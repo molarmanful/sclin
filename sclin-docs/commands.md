@@ -376,6 +376,20 @@ Stack: ``` _ b -> b ```
 
 
 
+## CMD: [``` ppop ```](#cmd-ppop)
+
+Stack: ``` _ _ -> ```
+
+
+
+
+## CMD: [``` qpop ```](#cmd-qpop)
+
+Stack: ``` _ _ _ -> ```
+
+
+
+
 ## CMD: [``` nix ```](#cmd-nix)
 
 Stack: ``` (a @ n) b* (n >NUM) -> _* ```
@@ -1487,7 +1501,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [3 9 6 5 0 7 8 4 2 1]
+-> [6 3 2 0 1 4 7 8 9 5]
 ```
 
 
@@ -1939,7 +1953,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [2 5 3 1 4]
+-> [1 2 3 4 5]
 ```
 
 
