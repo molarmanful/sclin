@@ -719,19 +719,13 @@ extension (env: ENV)
           throw new LinEx("FUT", s"timeout after $n1")
         case e => throw e
     )
-  def transform: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.toFUT.x
-        .transform(t => env.evalA1(Vector(t.toTRY), f).toTry)
-        .pipe(FUT(_))
-    )
+  def transform: ENV = env.vec2((x, f) =>
+    x.toFUT.x.transform(t => env.evalA1(Vector(t.toTRY), f).toTry).pipe(FUT(_))
   )
-  def transform$ : ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.toFUT.x
-        .transformWith(t => env.evalA1(Vector(t.toTRY), f).toFUT.x)
-        .pipe(FUT(_))
-    )
+  def transform$ : ENV = env.vec2((x, f) =>
+    x.toFUT.x
+      .transformWith(t => env.evalA1(Vector(t.toTRY), f).toFUT.x)
+      .pipe(FUT(_))
   )
 
   def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
@@ -842,8 +836,16 @@ extension (env: ENV)
     @s (a >STR) (b >STR) -> ERR
     Converts `a` to `ERR` with message `b`.
      */
-    case ">E"  => toERR
-    case ">~"  => toFUT
+    case ">E" => toERR
+    /*
+    @s a -> FUT
+    Converts `a` to `FUT`.
+     */
+    case ">~" => toFUT
+    /*
+    @s a -> TRY
+    Converts `a` to `TRY`.
+     */
     case ">!?" => toTRY
     /*
     @s a -> 0 | 1
@@ -886,6 +888,11 @@ extension (env: ENV)
     Empty `FUT`.
      */
     case "()~" => env.push(UN.toFUT)
+    /*
+    @s -> TRY
+    Empty `TRY`.
+     */
+    case "()!" => env.push(UN.toTRY)
     /*
     @s -> NUM
     π (Pi).
@@ -1161,9 +1168,17 @@ extension (env: ENV)
     @s a* f g -> _*
     Tries to #{#} `f`; on error, pushes caught `ERR` and #{#}s `g`.
      */
-    case "!#"  => evalTry
-    case "!?#" => evalTRY
-    case "~#"  => evalFUT
+    case "!#" => evalTry
+    /*
+    @s f' -> TRY'
+    #{Q}s `f` and wraps the result in a `TRY`.
+     */
+    case "!Q" => evalTRY
+    /*
+    @s f' -> FUT'
+    #{Q}s `f` asynchronously, returning a future.
+     */
+    case "~Q" => evalFUT
     /*
     @s (e ERR) ->
     Throws `e`.
@@ -2200,12 +2215,41 @@ extension (env: ENV)
      */
     case "pack" => pack
 
-    case "~_"    => await
-    case "~_~"   => await$
-    case "~_!"   => awaitTRY
-    case "~_!~"  => awaitTRY$
-    case "~>"    => transform
-    case "~>~"   => transform$
+    /*
+    @s (a >FUT)' -> _'
+    Synchronously waits for `a` to complete, leaving the result on the stack.
+     */
+    case "~_" => await
+    /*
+    @s (a >FUT)' (ms >NUM)' -> _'
+    #{~_} but if `a` is not completed before `ms`, then an error is thrown.
+     */
+    case "~_~" => await$
+    /*
+    @s (a >FUT)' -> TRY'
+    #{~_} with result wrapped in a `TRY`.
+     */
+    case "~_!" => awaitTRY
+    /*
+    @s (a >FUT)' (ms >NUM)' -> TRY'
+    #{~_!} but if `a` is not completed before `ms`, then an error is thrown.
+     */
+    case "~_!~" => awaitTRY$
+    /*
+    @s (a >FUT)' f' -> TRY'
+    Transforms the result of `a` into a new `FUT` using `f`.
+    The signature of `f` is `(x TRY) -> >TRY`.
+     */
+    case "~>" => transform
+    /*
+    @s (a >FUT)' f' -> TRY'
+    `~>` but the signature of `f` is `(x TRY) -> >FUT`.
+     */
+    case "~>~" => transform$
+    /*
+    @s (ms >NUM)' ->
+    Sleeps the current thread for `ms` milliseconds.
+     */
     case "sleep" => sleep
 
     case "." => dot
