@@ -1058,6 +1058,14 @@ extension (env: ENV)
      */
     case "nip" => nip
     /*
+    @s _ _ ->
+     */
+    case "ppop" => pop.pop
+    /*
+    @s _ _ _ ->
+     */
+    case "qpop" => pop.pop.pop
+    /*
     @s (a @ n) b* (n >NUM) -> _*
     #{pop}s `n`th item from top of stack.
      */
