@@ -2,7 +2,6 @@ package sclin
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.VectorMap
-import scala.language.implicitConversions
 import spire.math.Real
 import util.chaining._
 
