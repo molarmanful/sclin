@@ -320,9 +320,30 @@ Stack: ``` a* -> a* ARR[a*] ```
 
 
 
+## CMD: [``` dupd ```](#cmd-dupd)
+
+Stack: ``` a b -> a a b ```
+
+
+
+
 ## CMD: [``` over ```](#cmd-over)
 
 Stack: ``` a b -> a b a ```
+
+
+
+
+## CMD: [``` ddup ```](#cmd-ddup)
+
+Stack: ``` a b -> a b a b ```
+
+
+
+
+## CMD: [``` edup ```](#cmd-edup)
+
+Stack: ``` a b c -> a b c a b c ```
 
 
 
@@ -374,6 +395,13 @@ Stack: ``` a b -> b a ```
 Stack: ``` a* -> _* ```
 
 Reverses stack.
+
+
+## CMD: [``` swapd ```](#cmd-swapd)
+
+Stack: ``` a b c -> b a c ```
+
+
 
 
 ## CMD: [``` tuck ```](#cmd-tuck)
@@ -1459,7 +1487,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [6 7 1 4 0 2 8 3 5 9]
+-> [6 1 5 9 2 7 3 4 0 8]
 ```
 
 
@@ -1911,7 +1939,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 2 3 4 5]
+-> [2 1 4 3 5]
 ```
 
 
