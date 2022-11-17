@@ -309,6 +309,7 @@ enum ANY:
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
     case FUT(x)   => x.map(f).pipe(FUT(_))
+    case x: TRY   => x.toTry.map(f).toTRY
     case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
@@ -319,6 +320,7 @@ enum ANY:
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
     case FUT(x)   => x.flatMap(f(_).toFUT.x).pipe(FUT(_))
+    case x: TRY   => x.toTry.flatMap(f(_).toTry).toTRY
     case _        => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
@@ -341,9 +343,10 @@ enum ANY:
   def flat: ANY = flatMap(x => x)
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (SEQ(x), _) => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
-    case (_, _: SEQ) => t.zip(this, (x, y) => f(y, x)).toSEQ
-    case _           => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
+    case (SEQ(x), _)               => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
+    case (FUT(x), _)               => x.zipWith(t.toFUT.x)(f).pipe(FUT(_))
+    case (_, _: SEQ) | (_, _: FUT) => t.zip(this, (x, y) => f(y, x))
+    case _                         => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -391,7 +394,20 @@ enum ANY:
     case SEQ(x)   => x.filter(f).toSEQ
     case ARR(x)   => x.filter(f).toARR
     case FN(p, x) => x.filter(f).pFN(p)
-    case _        => toARR.filter(f)
+    case FUT(x) =>
+      x.filter(f)
+        .transform {
+          case Success(s) => Success(s)
+          case Failure(e) =>
+            Failure(e match
+              case e: java.util.NoSuchElementException =>
+                LinEx("FUT", "filter failed")
+              case e => e
+            )
+        }
+        .pipe(FUT(_))
+    case x: TRY => x.toTry.filter(f).toTRY
+    case _      => toARR.filter(f)
   def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
     case _      => filter(g)

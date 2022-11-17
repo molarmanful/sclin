@@ -207,6 +207,7 @@ case class ENV(
     case CMD(x)       => this.cmd(x)
     case _: FUT       => push(c).await
     case TRY(b, x, e) => if b then push(x) else throw e
+    case ERR(x)       => throw x
     case _            => push(c)
 
   @tailrec final def exec: ENV = code.x match
