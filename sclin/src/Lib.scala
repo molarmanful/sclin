@@ -1,6 +1,5 @@
 package sclin
 
-import pprint.Tree.Lazy
 import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.concurrent._

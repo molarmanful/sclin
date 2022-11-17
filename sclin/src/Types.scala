@@ -1,7 +1,5 @@
 package sclin
 
-import algebra.lattice.Bool
-import pprint.Tree.Lazy
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
