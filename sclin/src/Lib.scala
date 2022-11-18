@@ -892,7 +892,15 @@ extension (env: ENV)
     `UN`
      */
     case "UN" => env.push(UN)
+    /*
+    @s -> TF
+    True.
+     */
     case "$T" => env.push(TF(true))
+    /*
+    @s -> TF
+    False.
+     */
     case "$F" => env.push(TF(false))
     /*
     @s -> FN
