@@ -1302,7 +1302,7 @@ extension (env: ENV)
      */
     case "|^" => ceil
     /*
-    @s (a >NUM)' (b >NUM)' -> ARR[NUM]'
+    @s (a >NUM)' (b >NUM)' -> ARR[NUM*]'
     Converts `a` from decimal to `ARR` of base-`b` digits.
     ```sclin
     153 2X>b
@@ -1313,7 +1313,7 @@ extension (env: ENV)
      */
     case "X>b" => fromDec
     /*
-    @s (a >ARR[>NUM]) (b >NUM)' -> NUM'
+    @s (a >ARR[>NUM*]) (b >NUM)' -> NUM'
     Converts base-`b` digits to decimal.
     ```sclin
     [1 0 0 1 1 0 0 1] 2b>X
@@ -1431,7 +1431,7 @@ extension (env: ENV)
      */
     case "/~" => divi
     /*
-    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
+    @s (a >STR)' (b >NUM)' -> SEQ[STR*]'
     Atomic #{/`}.
      */
     case "//" => div$
@@ -1454,7 +1454,7 @@ extension (env: ENV)
      */
     case "/%" => divmod
     /*
-    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
+    @s (a >STR)' (b >NUM)' -> SEQ[STR*]'
     Atomic #{%`}.
      */
     case "%%" => mod$
@@ -1477,7 +1477,7 @@ extension (env: ENV)
      */
     case "^~" => powi
     /*
-    @s (a >STR)' (b >NUM)' -> SEQ[STR]'
+    @s (a >STR)' (b >NUM)' -> SEQ[STR*]'
     Atomic #{^`}.
      */
     case "^^" => pow$
@@ -1940,7 +1940,7 @@ extension (env: ENV)
     case "Q*" => cProd
 
     /*
-    @s (a >STR)' -> ARR[NUM]'
+    @s (a >STR)' -> ARR[NUM*]'
     Converts `a` to codepoints.
     ```sclin
     "hello"S>c
@@ -1948,7 +1948,7 @@ extension (env: ENV)
      */
     case "S>c" => toCodePt
     /*
-    @s (a >ARR[NUM]) -> STR
+    @s (a >ARR[NUM*]) -> STR
     Converts iterable of codepoints to `STR`.
     ```sclin
     [104 101 108 108 111] c>S
@@ -2301,14 +2301,13 @@ extension (env: ENV)
      */
     case "~_!~" => awaitTRY$
     /*
-    @s (a >FUT)' f' -> TRY'
+    @s (a >FUT)' (f: (x TRY) -> >TRY)' -> TRY'
     Transforms the result of `a` into a new `FUT` using `f`.
-    The signature of `f` is `(x TRY) -> >TRY`.
      */
     case "~>" => transform
     /*
-    @s (a >FUT)' f' -> TRY'
-    `~>` but the signature of `f` is `(x TRY) -> >FUT`.
+    @s (a >FUT)' (f: (x TRY) -> >FUT)' -> TRY'
+    `~>` but with `f`'s result converted to `FUT` instead of `TRY`.
      */
     case "~>~" => transform$
     /*
