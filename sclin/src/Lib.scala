@@ -93,6 +93,14 @@ extension (env: ENV)
     env.arg2((x, f, env) => if x.toBool then env else env.push(f).eval)
   def evalIf: ENV =
     env.arg3((x, f, g, env) => env.push(if x.toBool then f else g).eval)
+  def evalIf$ : ENV =
+    env.arg1((f, env) =>
+      f.toMAP.x.find { case (k, _) =>
+        env.push(k).evale.getStack(0).toBool
+      } match
+        case Some(_, v) => env.push(v).eval
+        case _          => env
+    )
   def evalTimes: ENV =
     env.arg2((f, n, env) =>
       def loop(env: ENV, n: NUMF): ENV =
@@ -1186,6 +1194,13 @@ extension (env: ENV)
     #{#}s `f` if `b` is truthy; else #{#}s `g`.
      */
     case "?#" => evalIf
+    /*
+    @s a* (b >MAP) -> _*
+    Iterates through each key-value pair of `b`.
+    For each pair: if the #{Q} of the key is truthy,
+    then #{#}s the value and short-circuits.
+     */
+    case "??#" => evalIf$
     /*
     @s a* f (n >NUM) -> _*
     #{#}s `f` `n` times.
