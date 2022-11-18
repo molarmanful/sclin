@@ -1524,7 +1524,11 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
+<<<<<<< HEAD
 -> [3 8 0 1 4 7 5 9 6 2]
+=======
+-> [9 4 2 0 5 8 1 3 7 6]
+>>>>>>> refs/remotes/origin/main
 ```
 
 
@@ -1976,7 +1980,11 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
+<<<<<<< HEAD
 -> [2 5 1 3 4]
+=======
+-> [1 2 4 3 5]
+>>>>>>> refs/remotes/origin/main
 ```
 
 
