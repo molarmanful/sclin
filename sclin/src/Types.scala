@@ -224,8 +224,9 @@ enum ANY:
     case _        => toString
 
   def permutations: ANY = this match
-    case SEQ(x) => x.permutations.map(_.toSEQ).toSEQ
-    case _      => toSEQ.permutations.map(_.matchType(this))
+    case SEQ(x) =>
+      x.zipWithIndex.map(_._2).permutations.map(_.map(x).toSEQ).toSEQ
+    case _ => toSEQ.permutations.map(_.matchType(this))
 
   def combinations(n: Int): ANY = this match
     case SEQ(x) =>
