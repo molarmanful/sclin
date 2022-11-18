@@ -683,8 +683,8 @@ object ANY:
       case ujson.Arr(x) => x.map(_.toANY).toARR
       case ujson.Str(x) => STR(x)
       case ujson.Num(x) => NUM(x)
-      case ujson.True   => ???
-      case ujson.False  => ???
+      case ujson.True   => TF(true)
+      case ujson.False  => TF(false)
       case ujson.Null   => UN
 
   /** Pattern for `SEQ`-like. */
