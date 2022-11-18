@@ -9,6 +9,7 @@ import scala.util.Random
 import scala.util.Success
 import scala.util.Try
 import spire.math._
+import upickle.default._
 import util.chaining._
 import ANY._
 
@@ -20,6 +21,7 @@ enum ANY:
   case MAP(x: MAPW[ANY, ANY])
   case STR(x: String)
   case NUM(x: NUMF)
+  case TF(x: Boolean)
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
   case ERR(x: Throwable)
@@ -38,9 +40,14 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
-    case x: FUT   => x.toForm
-    case UN       => ""
-    case _        => join("")
+    case FUT(x) =>
+      s"(${x.value match
+          case Some(t) => t.toTRY.toForm
+          case _       => "…"
+        })~"
+    case TF(x) => if x then "$T" else "$F"
+    case UN    => ""
+    case _     => join("")
 
   def toForm: String = this match
     case _: SEQ => s"[…]"
@@ -59,11 +66,6 @@ enum ANY:
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(${x.map(_.toForm).mkString(" ")})$n"
     case ERR(x) => s"ERR(${x.getMessage})"
-    case FUT(x) =>
-      s"(${x.value match
-          case Some(t) => t.toTRY.toForm
-          case _       => "…"
-        })~"
     case TRY(b, x, e) =>
       if b then s"YES(${x.toForm})"
       else s"NO(${ERR(e).toForm})"
@@ -93,22 +95,36 @@ enum ANY:
     case _                => this == t
 
   def toBool: Boolean = this match
-    case SEQ(x)   => !x.isEmpty
-    case ARR(x)   => !x.isEmpty
-    case MAP(x)   => !x.isEmpty
-    case STR(x)   => !x.isEmpty
-    case _: NUM   => !eql(NUM(0))
-    case CMD(x)   => !x.isEmpty
-    case FN(_, x) => !x.isEmpty
-    case _: ERR   => false
-    case FUT(x)   => x.isCompleted && x.value.get.isSuccess
-    case x: TRY   => x.b
-    case UN       => false
+    case TF(x)        => x
+    case SEQ(x)       => !x.isEmpty
+    case ARR(x)       => !x.isEmpty
+    case MAP(x)       => !x.isEmpty
+    case STR(x)       => !x.isEmpty
+    case _: NUM       => !eql(NUM(0))
+    case CMD(x)       => !x.isEmpty
+    case FN(_, x)     => !x.isEmpty
+    case _: ERR       => false
+    case FUT(x)       => x.isCompleted && x.value.get.isSuccess
+    case TRY(b, _, _) => b
+    case UN           => false
+
+  def toTF: TF = this match
+    case x: TF => x
+    case _     => toBool.boolTF
 
   def toTry: Try[ANY] = this match
     case TRY(b, x, e) => if b then Success(x) else Failure(e)
     case ERR(x)       => Failure(x)
     case x            => Success(x)
+
+  def toJSON: ujson.Value = this match
+    case MAP(x) => x.map { case (k, v) => (k.toString, v.toJSON) }
+    case ARR(x) => x.map(_.toJSON)
+    case _: SEQ => toARR.toJSON
+    case NUM(x) => x.toDouble
+    case TF(x)  => x
+    case UN     => null
+    case _      => toString
 
   def length: Int = this match
     case SEQ(x)   => x.length
@@ -246,6 +262,7 @@ enum ANY:
       this match
         case UN     => NUM(0)
         case x: NUM => x
+        case TF(x)  => x.boolNUM
         case STR(x) => x.toNUM
         case _      => toSTR.x.toNUM
     catch
@@ -295,6 +312,7 @@ enum ANY:
     case _: MAP   => toMAP
     case _: STR   => toSTR
     case _: NUM   => toNUM
+    case _: TF    => toTF
     case _: CMD   => toString.pipe(CMD(_))
     case _: FUT   => toFUT
     case _: TRY   => toTRY
@@ -593,6 +611,8 @@ enum ANY:
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
     vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
 
+given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
+
 object OrdANY extends Ordering[ANY]:
 
   def compare(x: ANY, y: ANY): Int = x.cmp(y)
@@ -638,6 +658,7 @@ object ANY:
 
     def boolInt: Int = if b then 1 else 0
     def boolNUM: NUM = NUM(b.boolInt)
+    def boolTF: TF   = TF(b)
 
   extension (s: String) def toNUM: NUM = NUM(Real(s))
 
@@ -653,6 +674,18 @@ object ANY:
       case e: LinERR => ERR(e)
       case e: LinEx  => e.toLinERR(env).toERRW(env)
       case e         => LinEx("_", e.getMessage).toERRW(env)
+
+  extension (v: ujson.Value)
+
+    def toANY: ANY = v match
+      case ujson.Obj(x) =>
+        x.map { case (k, v) => (STR(k), v.toANY) }.to(VectorMap).toMAP
+      case ujson.Arr(x) => x.map(_.toANY).toARR
+      case ujson.Str(x) => STR(x)
+      case ujson.Num(x) => NUM(x)
+      case ujson.True   => ???
+      case ujson.False  => ???
+      case ujson.Null   => UN
 
   /** Pattern for `SEQ`-like. */
   object Itr:

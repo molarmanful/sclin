@@ -13,6 +13,7 @@ import scala.util.Try
 import spire.algebra._
 import spire.implicits._
 import spire.math._
+import upickle.default._
 import ANY._
 
 extension (env: ENV)
@@ -141,10 +142,19 @@ extension (env: ENV)
   def toTRY: ENV   = env.mod1(_.toTRY)
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-  def toBool: ENV = env.mod1(_.toBool.boolNUM)
+  def toTF: ENV = env.mod1(_.toTF)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).pipe(STR(_))))
   def matchType: ENV = env.mod2(_.matchType(_))
+  def lineMAP: ENV = env.vec1(
+    _.toSTR.x
+      .split("\n")
+      .map(s => env.evalA2(Vector.empty, STR(s)))
+      .to(VectorMap)
+      .toMAP
+  )
+  def fromJSON: ENV = env.vec1(_.toString.pipe(read(_)))
+  def toJSON: ENV   = env.mod1(write(_).pipe(STR(_)))
 
   def locId: ENV =
     env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.toString)))
@@ -206,8 +216,8 @@ extension (env: ENV)
 
   def del: ENV = env.mod2(_.remove(_))
 
-  def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolNUM))
-  def has$$ : ENV = env.mod2(_.has(_).boolNUM)
+  def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolTF))
+  def has$$ : ENV = env.mod2(_.has(_).boolTF)
 
   def len: ENV = env.mod1(_.length.pipe(NUM(_)))
 
@@ -308,7 +318,7 @@ extension (env: ENV)
     val a = x.toNUM.x.toRational
     Vector(a.numerator, a.denominator).map(NUM(_)).toARR
   )
-  def isInt: ENV = env.vec1(_.toNUM.x.isWhole.boolNUM)
+  def isInt: ENV = env.vec1(_.toNUM.x.isWhole.boolTF)
   def isExact: ENV = env.vec1(x =>
     NUM(x.toNUM.x match
       case Real.Exact(_) => 1
@@ -464,16 +474,16 @@ extension (env: ENV)
       .sortByM((a, _) => a, a => a)
   )
 
-  def not: ENV    = env.vec1(_.toBool.unary_!.boolNUM)
-  def not$$ : ENV = env.mod1(_.toBool.unary_!.boolNUM)
+  def not: ENV    = env.vec1(_.toBool.unary_!.boolTF)
+  def not$$ : ENV = env.mod1(_.toBool.unary_!.boolTF)
   def min: ENV    = env.vec2((x, y) => if x.cmp(y) < 0 then x else y)
-  def and: ENV    = env.vec2((x, y) => (x.toBool && y.toBool).boolNUM)
+  def and: ENV    = env.vec2((x, y) => (x.toBool && y.toBool).boolTF)
   def min$$ : ENV = env.mod2((x, y) => if x.cmp(y) < 0 then x else y)
-  def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolNUM)
+  def and$$ : ENV = env.mod2((x, y) => (x.toBool && y.toBool).boolTF)
   def max: ENV    = env.vec2((x, y) => if x.cmp(y) > 0 then x else y)
-  def or: ENV     = env.vec2((x, y) => (x.toBool || y.toBool).boolNUM)
+  def or: ENV     = env.vec2((x, y) => (x.toBool || y.toBool).boolTF)
   def max$$ : ENV = env.mod2((x, y) => if x.cmp(y) > 0 then x else y)
-  def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolNUM)
+  def or$$ : ENV  = env.mod2((x, y) => (x.toBool || y.toBool).boolTF)
 
   def cmp: ENV    = env.vec2((x, y) => NUM(x.cmp(y)))
   def cmp$$ : ENV = env.mod2((x, y) => NUM(x.cmp(y)))
@@ -493,8 +503,8 @@ extension (env: ENV)
   def gteq$$ : ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).gt$$.pushs(Vector(x, y)).eql$$.or
   )
-  def eql: ENV    = env.vec2(_.eql(_).boolNUM)
-  def eql$$ : ENV = env.mod2(_.eql(_).boolNUM)
+  def eql: ENV    = env.vec2(_.eql(_).boolTF)
+  def eql$$ : ENV = env.mod2(_.eql(_).boolTF)
   def neq: ENV    = eql.not
   def neq$$ : ENV = eql$$.not
 
@@ -608,7 +618,7 @@ extension (env: ENV)
       x.anyM(
         (a, b) => env.evalA1(Vector(a, b), f).toBool,
         a => env.evalA1(Vector(a), f).toBool
-      ).boolNUM
+      ).boolTF
     )
   )
   def all: ENV = env.mod2((x, y) =>
@@ -616,7 +626,7 @@ extension (env: ENV)
       x.allM(
         (a, b) => env.evalA1(Vector(a, b), f).toBool,
         a => env.evalA1(Vector(a), f).toBool
-      ).boolNUM
+      ).boolTF
     )
   )
 
@@ -859,10 +869,10 @@ extension (env: ENV)
      */
     case ">!?" => toTRY
     /*
-    @s a -> 0 | 1
-    1 or 0 depending on truthiness of `a`.
+    @s a -> TF
+    Converts `a` to `TF`.
      */
-    case ">?" => toBool
+    case ">?" => toTF
     /*
     @s (a >NUM) (b >NUM)' -> STR
     Converts `a` to an `STR` formatted to `b`'s specifications.
@@ -873,12 +883,17 @@ extension (env: ENV)
     Converts `a` to type of `b`.
      */
     case ">TT" => matchType
+    case ">>M" => lineMAP
+    case "js>" => fromJSON
+    case ">js" => toJSON
 
     /*
     @s -> UN
     `UN`
      */
     case "UN" => env.push(UN)
+    case "$T" => env.push(TF(true))
+    case "$F" => env.push(TF(false))
     /*
     @s -> FN
     Empty `FN`.
@@ -928,12 +943,12 @@ extension (env: ENV)
     @s -> NUM
     Current line number of program execution.
      */
-    case "$L" => getLNum
+    case "$LINE" => getLNum
     /*
     @s -> STR
     Current file of program execution.
      */
-    case "$F" => getLFile
+    case "$FILE" => getLFile
     /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of 0 to ∞.
@@ -1180,17 +1195,17 @@ extension (env: ENV)
      */
     case "g@~" => getLRel
     /*
-    @s a* (b >(0 | 1)) f -> _*
+    @s a* (b >TF) f -> _*
     #{#}s `f` if `b` is truthy.
      */
     case "&#" => evalAnd
     /*
-    @s a* (b >(0 | 1)) f -> _*
+    @s a* (b >TF) f -> _*
     #{#}s `f` if `b` is falsy.
      */
     case "|#" => evalOr
     /*
-    @s a* (b >(0 | 1)) f g -> _*
+    @s a* (b >TF) f g -> _*
     #{#}s `f` if `b` is truthy; else #{#}s `g`.
      */
     case "?#" => evalIf
@@ -1572,12 +1587,12 @@ extension (env: ENV)
     case "P/" => factor
 
     /*
-    @s a' -> (0 | 1)'
+    @s (a >TF)' -> TF'
     Atomic #{!`}.
      */
     case "!" => not
     /*
-    @s a -> 0 | 1
+    @s (a >TF) -> TF
     Logical NOT.
      */
     case "!`" => not$$
@@ -1587,7 +1602,7 @@ extension (env: ENV)
      */
     case "&" => min
     /*
-    @s a' b' -> (0 | 1)'
+    @s (a >TF)' (b >TF)' -> TF'
     Atomic #{&&`}.
      */
     case "&&" => and
@@ -1597,7 +1612,7 @@ extension (env: ENV)
      */
     case "&`" => min$$
     /*
-    @s a b -> 0 | 1
+    @s (a >TF) (b >TF) -> TF
     Logical AND of `a` and `b`.
      */
     case "&&`" => and$$
@@ -1607,7 +1622,7 @@ extension (env: ENV)
      */
     case "|" => max
     /*
-    @s a' b' -> (0 | 1)'
+    @s (a >TF)' (b >TF)' -> TF'
     Atomic #{||`}.
      */
     case "||" => or
@@ -1617,7 +1632,7 @@ extension (env: ENV)
      */
     case "|`" => max$$
     /*
-    @s a b -> 0 | 1
+    @s (a >TF) (b >TF) -> TF
     Logical OR of `a` and `b`.
      */
     case "||`" => or$$
@@ -1632,62 +1647,62 @@ extension (env: ENV)
      */
     case "<=>`" => cmp$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{=`}.
      */
     case "=" => eql
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` equals `b`.
      */
     case "=`" => eql$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{!=`}.
      */
     case "!=" => neq
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` does not equals `b`.
      */
     case "!=`" => neq$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{<`}.
      */
     case "<" => lt
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` is less than `b`.
      */
     case "<`" => lt$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{>`}.
      */
     case ">" => gt
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` is greater than `b`.
      */
     case ">`" => gt$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{<=`}.
      */
     case "<=" => lteq
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` is less than or equal to `b`.
      */
     case "<=`" => gt$$
     /*
-    @s a' b' -> (0 | 1)'
+    @s a' b' -> TF'
     Atomic #{>=`}.
      */
     case ">=" => gteq
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` is greater than or equal to `b`.
      */
     case ">=`" => gt$$
@@ -1718,12 +1733,12 @@ extension (env: ENV)
      */
     case ":-" => del
     /*
-    @s a b' -> (0 | 1)'
+    @s a b' -> TF'
     Whether `a` has atomic `b`.
      */
     case ":?" => has
     /*
-    @s a b -> 0 | 1
+    @s a b -> TF
     Whether `a` has `b`.
     `MAP`s check `b` against keys; other types of `a` check `b` against values.
      */
@@ -2129,9 +2144,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> 0 | 1 |`,
+    If `a` is `MAP`, then the signature of `f` is `k v -> >TF |`,
     where `k=>v` is the key-value pair.
-    Otherwise, the signature of `f` is `x -> 0 | 1 |`,
+    Otherwise, the signature of `f` is `x -> >TF |`,
     where `x` is the element.
     ```sclin
     [5 1 2 4 3] 2.> fltr
@@ -2139,7 +2154,7 @@ extension (env: ENV)
      */
     case "fltr" => fltr
     /*
-    @s a f' -> (0 | 1)'
+    @s a f' -> TF'
     Whether any elements of `a` satisfy predicate `f`.
     See #{fltr} for the signature of `f`.
     ```sclin
@@ -2148,7 +2163,7 @@ extension (env: ENV)
      */
     case "any" => any
     /*
-    @s a f' -> (0 | 1)'
+    @s a f' -> TF'
     Whether all elements of `a` satisfy predicate `f`.
     See #{fltr} for the signature of `f`.
     ```sclin
@@ -2207,9 +2222,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Sorts elements of `a` with comparator `f`.
-    If `a` is `MAP`, then the signature of `f` is `j k v w -> 0 | 1 |`,
+    If `a` is `MAP`, then the signature of `f` is `j k v w -> >TF |`,
     where `j=>v` and `k=>w` are key-value pairs to compare.
-    Otherwise, the signature of `f` is `x y -> 0 | 1 |`,
+    Otherwise, the signature of `f` is `x y -> >TF |`,
     where `x` and `y` are elements to compare.
     ```sclin
     [1 5 2 3 4] \< sort~
