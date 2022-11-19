@@ -697,7 +697,7 @@ Rounds `a` towards ∞.
 
 ## CMD: [``` X>b ```](#cmd-xb)
 
-Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM]' ```
+Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM*]' ```
 
 Converts `a` from decimal to `ARR` of base-`b` digits.
 ```
@@ -712,7 +712,7 @@ Converts `a` from decimal to `ARR` of base-`b` digits.
 
 ## CMD: [``` b>X ```](#cmd-bx)
 
-Stack: ``` (a >ARR[>NUM]) (b >NUM)' -> NUM' ```
+Stack: ``` (a >ARR[>NUM*]) (b >NUM)' -> NUM' ```
 
 Converts base-`b` digits to decimal.
 ```
@@ -873,7 +873,7 @@ Integer [``` / ```](#cmd--33).
 
 ## CMD: [``` // ```](#cmd--35)
 
-Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR*]' ```
 
 Atomic [``` /` ```](#cmd--36).
 
@@ -905,7 +905,7 @@ Results of [``` /~ ```](#cmd--34) and [``` % ```](#cmd--37) on `a` and `b`.
 
 ## CMD: [``` %% ```](#cmd--39)
 
-Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR*]' ```
 
 Atomic [``` %` ```](#cmd--40).
 
@@ -937,7 +937,7 @@ Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 ## CMD: [``` ^^ ```](#cmd--43)
 
-Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR]' ```
+Stack: ``` (a >STR)' (b >NUM)' -> SEQ[STR*]' ```
 
 Atomic [``` ^` ```](#cmd--44).
 
@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [5 6 0 2 3 9 8 7 1 4]
+-> [3 0 4 2 7 1 5 9 6 8]
 ```
 
 
@@ -1574,7 +1574,7 @@ Cartesian product of iterable-of-iterables `a` to `n`.
 
 ## CMD: [``` S>c ```](#cmd-sc)
 
-Stack: ``` (a >STR)' -> ARR[NUM]' ```
+Stack: ``` (a >STR)' -> ARR[NUM*]' ```
 
 Converts `a` to codepoints.
 ```
@@ -1585,7 +1585,7 @@ Converts `a` to codepoints.
 
 ## CMD: [``` c>S ```](#cmd-cs)
 
-Stack: ``` (a >ARR[NUM]) -> STR ```
+Stack: ``` (a >ARR[NUM*]) -> STR ```
 
 Converts iterable of codepoints to `STR`.
 ```
@@ -1976,7 +1976,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 2 4 5 3]
+-> [1 4 3 2 5]
 ```
 
 
@@ -2078,17 +2078,16 @@ Stack: ``` (a >FUT)' (ms >NUM)' -> TRY' ```
 
 ## CMD: [``` ~> ```](#cmd--82)
 
-Stack: ``` (a >FUT)' f' -> TRY' ```
+Stack: ``` (a >FUT)' (f: (x TRY) -> >TRY)' -> TRY' ```
 
 Transforms the result of `a` into a new `FUT` using `f`.
-The signature of `f` is `(x TRY) -> >TRY`.
 
 
 ## CMD: [``` ~>~ ```](#cmd--83)
 
-Stack: ``` (a >FUT)' f' -> TRY' ```
+Stack: ``` (a >FUT)' (f: (x TRY) -> >FUT)' -> TRY' ```
 
-`~>` but the signature of `f` is `(x TRY) -> >FUT`.
+`~>` but with `f`'s result converted to `FUT` instead of `TRY`.
 
 
 ## CMD: [``` sleep ```](#cmd-sleep)
