@@ -23,7 +23,8 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
     case PT.STR => xs :+ STR(x)
     case PT.ESC => xs :+ STR(x + "\\")
     case PT.CMD =>
-      if Parser.isPar(x) then xs ++ x.map(_.toString.pipe(CMD.apply)).toList
+      if x.forall("()[]{}".contains) then
+        xs ++ x.map(_.toString.pipe(CMD.apply)).toList
       else xs :+ CMD(x)
     case PT.DEC =>
       x match
@@ -74,8 +75,6 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
 
 /** Frontend for `Parser`. */
 object Parser:
-
-  def isPar(s: String): Boolean = s.forall("()[]{}".contains)
 
   def pline(s: String): List[ANY] =
     s.foldLeft(Parser())((st, c) => st.choice(c)).clean.xs
