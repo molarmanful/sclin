@@ -4,6 +4,7 @@ import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.matching.Regex.Match
 import scala.util.Failure
 import scala.util.Random
 import scala.util.Success
@@ -661,7 +662,12 @@ object ANY:
     def boolNUM: NUM = NUM(b.boolInt)
     def boolTF: TF   = TF(b)
 
-  extension (s: String) def toNUM: NUM = NUM(Real(s))
+  extension (s: String)
+
+    def toNUM: NUM = NUM(Real(s))
+    def strun: ANY = s match
+      case null => UN
+      case _    => STR(s)
 
   extension (t: Try[ANY])
 
@@ -687,6 +693,33 @@ object ANY:
       case ujson.True   => TF(true)
       case ujson.False  => TF(false)
       case ujson.Null   => UN
+
+  extension (m: Match)
+
+    def matchMAP: MAP =
+      def strun(s: CharSequence): ANY =
+        Option(s).map(_.toString) match
+          case Some(x) => STR(x)
+          case _       => UN
+
+      VectorMap(
+        STR("&") -> m.matched.strun,
+        STR("`") -> m.before.pipe(strun),
+        STR("'") -> m.after.pipe(strun),
+        STR("*") ->
+          m.subgroups.zipWithIndex.map { case (g, i) =>
+            val i1 = i + 1
+            VectorMap(
+              STR("&") -> g.strun,
+              STR("`") -> m.before(i1).pipe(strun),
+              STR("'") -> m.after(i1).pipe(strun),
+              STR("^") -> NUM(m.start(i1)),
+              STR("$") -> NUM(m.end(i1))
+            ).toMAP
+          }.toARR,
+        STR("^") -> NUM(m.start),
+        STR("$") -> NUM(m.end)
+      ).toMAP
 
   /** Pattern for `SEQ`-like. */
   object Itr:

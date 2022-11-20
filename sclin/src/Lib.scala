@@ -285,6 +285,18 @@ extension (env: ENV)
   def join: ENV    = env.mod2((x, y) => y.str1(x.join))
   def toUpper: ENV = env.str1(_.toUpperCase)
   def toLower: ENV = env.str1(_.toLowerCase)
+  def toCap: ENV   = env.str1(_.capitalize)
+
+  def rmatchBase(x: ANY, r: ANY): Iterator[MAP] =
+    r.toSTR.x.r.findAllMatchIn(x.toSTR.x).map(_.matchMAP)
+  def rmatch: ENV       = env.vec2(rmatchBase(_, _).toSEQ)
+  def rmatchMatch: ENV  = env.vec2(rmatchBase(_, _).map(_.get(STR("&"))).toSEQ)
+  def rmatchBefore: ENV = env.vec2(rmatchBase(_, _).map(_.get(STR("`"))).toSEQ)
+  def rmatchAfter: ENV  = env.vec2(rmatchBase(_, _).map(_.get(STR("'"))).toSEQ)
+  def rmatchGroups: ENV = env.vec2(rmatchBase(_, _).map(_.get(STR("*"))).toSEQ)
+  def rmatchStart: ENV  = env.vec2(rmatchBase(_, _).map(_.get(STR("^"))).toSEQ)
+  def rmatchEnd: ENV    = env.vec2(rmatchBase(_, _).map(_.get(STR("$"))).toSEQ)
+  def rsub: ENV         = ???
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
@@ -2015,6 +2027,19 @@ extension (env: ENV)
     Converts `STR` to `UPPERCASE`.
      */
     case "a>A" => toUpper
+    /*
+    @s (a >STR)' -> STR'
+    Converts `STR` to `Capitalized`.
+     */
+    case ">Aa"  => toCap
+    case "''?"  => rmatch
+    case "''?&" => rmatchMatch
+    case "''?`" => rmatchBefore
+    case "''?'" => rmatchAfter
+    case "''?*" => rmatchGroups
+    case "''?^" => rmatchStart
+    case "''?$" => rmatchEnd
+    case "''#"  => rsub
 
     /*
     @s a f' -> _'
