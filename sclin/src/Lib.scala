@@ -2036,14 +2036,53 @@ extension (env: ENV)
     Converts `STR` to `Capitalized`.
      */
     case ">Aa" => toCap
-    case "/?"  => rmatch
+    /*
+    @s (a >STR)' (r >STR)' -> SEQ[MAP]'
+    Matches `a` with regex `r`.
+    Each match returned is a `MAP` with the following keys:
+    - ``` & ```: Matched `STR`.
+    - ``` ` ```: `STR` before the match.
+    - ``` ' ```: `STR` after the match.
+    - ``` * ```: `ARR[MAP]` of each capturing group matched.
+    - ``` ^ ```: `NUM` index of the match's start.
+    - ``` $ ```: `NUM` index of the match's end.
+     */
+    case "/?" => rmatch
+    /*
+    @s (a >STR)' (r >STR)' -> SEQ[STR]'
+    #{/?} with only `&` keys.
+     */
     case "/?&" => rmatchMatch
+    /*
+    @s (a >STR)' (r >STR)' -> SEQ[STR]'
+    #{/?} with only `'` keys.
+     */
     case "/?`" => rmatchBefore
+    /*
+    @s (a >STR)' (r >STR)' -> SEQ[STR]'
+    #{/?} with only ``` ` ``` keys.
+     */
     case "/?'" => rmatchAfter
+    /*
+    @s (a >STR)' (r >STR)' -> SEQ[ARR[MAP]]'
+    #{/?} with only `*` keys.
+     */
     case "/?*" => rmatchGroups
+    /*
+    @s (a >STR)' (b >STR)' -> SEQ[NUM]'
+    #{/?} with only `^` keys.
+     */
     case "/?^" => rmatchStart
+    /*
+    @s (a >STR)' (b >STR)' -> SEQ[NUM]'
+    #{/?} with only `$` keys.
+     */
     case "/?$" => rmatchEnd
-    case "/#"  => rsub
+    /*
+    @s (a >STR)' (r >STR)' (f: MAP -> >STR)' -> STR'
+    Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
+     */
+    case "/#" => rsub
 
     /*
     @s a f' -> _'
