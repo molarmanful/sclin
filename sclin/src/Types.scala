@@ -145,7 +145,7 @@ enum ANY:
           case SEQ(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case STR(x) =>
-            if i2 < x.length then x(i2).toString.pipe(STR(_)) else UN
+            if i2 < x.length then x(i2).toString.sSTR else UN
           case _ => toARR.get(NUM(i2))
       case MAP(x)       => x.applyOrElse(i, _ => UN)
       case _: CMD       => toSTR.get(i)
@@ -564,9 +564,26 @@ enum ANY:
 
   def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (Itr(_), Itr(_)) => zip(t, _.vec2(_, f))
-    case (Itr(_), _)      => map(_.vec2(t, f))
-    case (_, Itr(_))      => t.map(vec2(_, f))
+    case (Itr(_), _)      => vec1(f(_, t))
+    case (_, Itr(_))      => t.vec1(f(this, _))
     case _                => f(this, t)
+
+  def vec3(t: ANY, s: ANY, f: (ANY, ANY, ANY) => ANY): ANY = (this, t, s) match
+    case (Itr(_), Itr(_), Itr(_)) =>
+      zip(t, Vector(_, _).toARR).zip(
+        s,
+        (x, c) =>
+          x.toARR.x match
+            case Vector(a, b) => a.vec3(b, c, f)
+            case _            => ???
+      )
+    case (Itr(_), Itr(_), _) => vec2(t, f(_, _, s))
+    case (Itr(_), _, Itr(_)) => vec2(t, f(_, t, _))
+    case (_, Itr(_), Itr(_)) => t.vec2(s, f(this, _, _))
+    case (Itr(_), _, _)      => vec1(f(_, t, s))
+    case (_, Itr(_), _)      => t.vec1(f(this, _, s))
+    case (_, _, Itr(_))      => s.vec1(f(this, t, _))
+    case _                   => f(this, t, s)
 
   def vef1[T](a: T)(f: (T, ANY) => T): T = this match
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
@@ -589,7 +606,7 @@ enum ANY:
   def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
     vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
 
-  def str1(f: String => String): ANY = vec1(_.toString.pipe(f).pipe(STR(_)))
+  def str1(f: String => String): ANY = vec1(_.toString.pipe(f).sSTR)
 
   def str1a(f: String => Iterable[String]): ANY = vec1(
     _.toString.pipe(f).map(STR(_)).toARR
@@ -665,6 +682,7 @@ object ANY:
   extension (s: String)
 
     def toNUM: NUM = NUM(Real(s))
+    def sSTR: STR  = STR(s)
     def strun: ANY = s match
       case null => UN
       case _    => STR(s)

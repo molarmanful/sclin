@@ -131,7 +131,7 @@ extension (env: ENV)
     case x :: xs => env.setArr(xs).modStack(_ => x).push(env.stack.toARR)
   def endMAP: ENV = endARR.toMAP
 
-  def getType: ENV = env.mod1(_.getType.pipe(STR(_)))
+  def getType: ENV = env.mod1(_.getType.sSTR)
   def toSEQ: ENV   = env.mod1(_.toSEQ)
   def toARR: ENV   = env.mod1(_.toARR)
   def toMAP: ENV   = env.mod1(_.toMAP)
@@ -144,7 +144,7 @@ extension (env: ENV)
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
   def toTF: ENV = env.mod1(_.toTF)
   def toNUMD: ENV =
-    env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).pipe(STR(_))))
+    env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).sSTR))
   def matchType: ENV = env.mod2(_.matchType(_))
   def lineMAP: ENV = env.vec1(
     _.toSTR.x
@@ -154,7 +154,7 @@ extension (env: ENV)
       .toMAP
   )
   def fromJSON: ENV = env.vec1(_.toString.pipe(read(_)))
-  def toJSON: ENV   = env.mod1(write(_).pipe(STR(_)))
+  def toJSON: ENV   = env.mod1(write(_).sSTR)
 
   def locId: ENV =
     env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.toString)))
@@ -165,7 +165,7 @@ extension (env: ENV)
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
 
-  def form: ENV = env.mod1(_.toForm.pipe(STR(_)))
+  def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
@@ -277,7 +277,7 @@ extension (env: ENV)
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
   def fromCodePt: ENV = env.mod1(
-    _.map(_.toInt.toChar.toString.pipe(STR(_))).toString.pipe(STR(_))
+    _.map(_.toInt.toChar.toString.sSTR).toString.sSTR
   )
 
   def split: ENV   = env.str2a(_.split(_))
@@ -296,7 +296,11 @@ extension (env: ENV)
   def rmatchGroups: ENV = env.vec2(rmatchBase(_, _).map(_.get(STR("*"))).toSEQ)
   def rmatchStart: ENV  = env.vec2(rmatchBase(_, _).map(_.get(STR("^"))).toSEQ)
   def rmatchEnd: ENV    = env.vec2(rmatchBase(_, _).map(_.get(STR("$"))).toSEQ)
-  def rsub: ENV         = ???
+  def rsub: ENV = env.vec3((x, r, f) =>
+    r.toSTR.x.r
+      .replaceAllIn(x.toSTR.x, m => env.evalA1(Vector(m.matchMAP), f).toSTR.x)
+      .sSTR
+  )
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
@@ -389,7 +393,7 @@ extension (env: ENV)
       case (Itr(x), Itr(y)) => x.zip(y, loop).flat
       case (_: SEQ, _)      => LazyList.fill(y.toInt)(x).toSEQ.flat
       case (_: ARR, _)      => Vector.fill(y.toInt)(x).toARR.flat
-      case (_: STR, _)      => loop(x.toARR, y).toString.pipe(STR(_))
+      case (_: STR, _)      => loop(x.toARR, y).toString.sSTR
       case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
       case _                => loop(Vector(x).toARR, y)
     env.mod2(loop)
@@ -408,7 +412,7 @@ extension (env: ENV)
       case SEQ(x)   => x.grouped(y.toInt).map(_.toSEQ).toSEQ
       case ARR(x)   => x.grouped(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.grouped(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.sSTR).toSEQ
       case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).toSEQ
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -426,7 +430,7 @@ extension (env: ENV)
       case SEQ(x)   => x.sliding(y.toInt).map(_.toSEQ).toSEQ
       case ARR(x)   => x.sliding(y.toInt).map(_.toARR).toSEQ
       case MAP(x)   => x.sliding(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.pipe(STR(_))).toSEQ
+      case _: STR   => loop(x.toARR, y).map(_.toString.sSTR).toSEQ
       case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).toSEQ
       case _        => loop(Vector(x).toARR, y)
     env.mod2((x, y) => y.vec1(loop(x, _)))
@@ -2031,15 +2035,15 @@ extension (env: ENV)
     @s (a >STR)' -> STR'
     Converts `STR` to `Capitalized`.
      */
-    case ">Aa"  => toCap
-    case "''?"  => rmatch
-    case "''?&" => rmatchMatch
-    case "''?`" => rmatchBefore
-    case "''?'" => rmatchAfter
-    case "''?*" => rmatchGroups
-    case "''?^" => rmatchStart
-    case "''?$" => rmatchEnd
-    case "''#"  => rsub
+    case ">Aa" => toCap
+    case "/?"  => rmatch
+    case "/?&" => rmatchMatch
+    case "/?`" => rmatchBefore
+    case "/?'" => rmatchAfter
+    case "/?*" => rmatchGroups
+    case "/?^" => rmatchStart
+    case "/?$" => rmatchEnd
+    case "/#"  => rsub
 
     /*
     @s a f' -> _'
