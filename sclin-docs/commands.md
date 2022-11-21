@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [5 1 7 8 9 4 0 6 3 2]
+-> [1 7 6 2 5 8 3 0 4 9]
 ```
 
 
@@ -1676,6 +1676,13 @@ Converts `STR` to `lowercase`.
 Stack: ``` (a >STR)' -> STR' ```
 
 Converts `STR` to `UPPERCASE`.
+
+
+## CMD: [``` >Aa ```](#cmd-aa-2)
+
+Stack: ``` (a >STR)' -> STR' ```
+
+Converts `STR` to `Capitalized`.
 
 
 ## CMD: [``` map ```](#cmd-map)
@@ -1976,7 +1983,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 2 1 5 4]
+-> [2 5 1 3 4]
 ```
 
 
