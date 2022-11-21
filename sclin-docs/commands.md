@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [2 3 7 1 4 6 8 5 0 9]
+-> [5 4 0 9 7 3 1 6 8 2]
 ```
 
 
@@ -1685,6 +1685,69 @@ Stack: ``` (a >STR)' -> STR' ```
 Converts `STR` to `Capitalized`.
 
 
+## CMD: [``` /? ```](#cmd--80)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[MAP]' ```
+
+Matches `a` with regex `r`.
+Each match returned is a `MAP` with the following keys:
+- ``` & ```: Matched `STR`.
+- ``` ` ```: `STR` before the match.
+- ``` ' ```: `STR` after the match.
+- ``` * ```: `ARR[MAP]` of each capturing group matched.
+- ``` ^ ```: `NUM` index of the match's start.
+- ``` $ ```: `NUM` index of the match's end.
+
+
+## CMD: [``` /?& ```](#cmd--81)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
+
+[``` /? ```](#cmd--80) with only `&` keys.
+
+
+## CMD: [``` /?` ```](#cmd--82)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
+
+[``` /? ```](#cmd--80) with only `'` keys.
+
+
+## CMD: [``` /?' ```](#cmd--83)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
+
+[``` /? ```](#cmd--80) with only ``` ` ``` keys.
+
+
+## CMD: [``` /?* ```](#cmd--84)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[ARR[MAP]]' ```
+
+[``` /? ```](#cmd--80) with only `*` keys.
+
+
+## CMD: [``` /?^ ```](#cmd--85)
+
+Stack: ``` (a >STR)' (b >STR)' -> SEQ[NUM]' ```
+
+[``` /? ```](#cmd--80) with only `^` keys.
+
+
+## CMD: [``` /?$ ```](#cmd--86)
+
+Stack: ``` (a >STR)' (b >STR)' -> SEQ[NUM]' ```
+
+[``` /? ```](#cmd--80) with only `$` keys.
+
+
+## CMD: [``` /# ```](#cmd--87)
+
+Stack: ``` (a >STR)' (r >STR)' (f: MAP -> >STR)' -> STR' ```
+
+Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
+
+
 ## CMD: [``` map ```](#cmd-map)
 
 Stack: ``` a f' -> _' ```
@@ -1833,14 +1896,14 @@ Atomic/recursive [``` fold ```](#cmd-fold).
 ```
 
 
-## CMD: [``` +/ ```](#cmd--80)
+## CMD: [``` +/ ```](#cmd--88)
 
 Stack: ``` a -> NUM' ```
 
 Sum of `a`. Equivalent to `0 \+ rfold`.
 
 
-## CMD: [``` */ ```](#cmd--81)
+## CMD: [``` */ ```](#cmd--89)
 
 Stack: ``` a -> NUM' ```
 
@@ -1983,7 +2046,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 3 2 4 5]
+-> [5 1 2 4 3]
 ```
 
 
@@ -2083,14 +2146,14 @@ Stack: ``` (a >FUT)' (ms >NUM)' -> TRY' ```
 [``` ~_! ```](#cmd-_-8) but if `a` is not completed before `ms`, then an error is thrown.
 
 
-## CMD: [``` ~> ```](#cmd--82)
+## CMD: [``` ~> ```](#cmd--90)
 
 Stack: ``` (a >FUT)' (f: (x TRY) -> >TRY)' -> TRY' ```
 
 Transforms the result of `a` into a new `FUT` using `f`.
 
 
-## CMD: [``` ~>~ ```](#cmd--83)
+## CMD: [``` ~>~ ```](#cmd--91)
 
 Stack: ``` (a >FUT)' (f: (x TRY) -> >FUT)' -> TRY' ```
 
