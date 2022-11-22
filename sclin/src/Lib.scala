@@ -273,6 +273,21 @@ extension (env: ENV)
   )
   def powset: ENV =
     env.dup.len.push(NUM(1)).add.push(NUM(0)).swap.range.comb.flat
+  def tpose: ENV = env.mod1(x =>
+    def f(a: ANY): LazyList[ANY] = a match
+      case MAP(a) => a.values.to(LazyList)
+      case _      => a.toSEQ.x
+    def g(a: LazyList[ANY], b: ANY): ANY = b match
+      case _: SEQ => a.toSEQ
+      case _: MAP => a.toARR
+      case Its(_) => a.toARR.matchType(b)
+      case _      => a.toARR
+    val x1 = f(x)
+    x1.map(f)
+      .transpose
+      .map(g(_, x))
+      .pipe(g(_, x1.headOption.getOrElse(UN.toSEQ)))
+  )
 
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
@@ -1953,7 +1968,8 @@ extension (env: ENV)
     ["abc" "def" "ghi"] Q* >A
     ```
      */
-    case "Q*" => cProd
+    case "Q*"    => cProd
+    case "tpose" => tpose
 
     /*
     @s (a >STR)' -> ARR[NUM*]'
