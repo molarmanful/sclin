@@ -1,10 +1,12 @@
 package sclin
 
+import monix.eval.Task
+import monix.execution.CancelableFuture
+import monix.execution.Scheduler.Implicits.global
 import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.StdIn._
 import scala.util.chaining._
 import scala.util.Failure
@@ -113,9 +115,6 @@ extension (env: ENV)
     try env.push(f).evale
     catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
   )
-  def evalFUT: ENV = env.arg1((x, env) =>
-    env.push(x.vec1(f => FUT(Future(env.push(f).quar.getStack(0)))))
-  )
   def evalTRY: ENV = env.arg1((x, env) =>
     env.push(x.vec1(f => Try(env.push(f).quar.getStack(0)).toTRY))
   )
@@ -138,7 +137,7 @@ extension (env: ENV)
   def toSTR: ENV   = env.mod1(_.toSTR)
   def toNUM: ENV   = env.mod1(_.toNUM)
   def toFN: ENV    = env.mod1(_.toFN(env))
-  def toFUT: ENV   = env.mod1(_.toFUT)
+  def toTASK: ENV  = env.mod1(_.toTASK)
   def toTRY: ENV   = env.mod1(_.toTRY)
   def toERR: ENV =
     env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
@@ -751,36 +750,39 @@ extension (env: ENV)
     )
   )
 
-  def await: ENV = env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
-  def await$ : ENV = env.vec2((x, n) =>
-    val n1 = n.toNUM.x.toLong.milliseconds
-    try Await.result(x.toFUT.x, n1)
-    catch
-      case e: java.util.concurrent.TimeoutException =>
-        throw new LinEx("FUT", s"timeout after $n1")
-      case e => throw e
+  def evalTASK: ENV = env.arg1((x, env) =>
+    env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
   )
-  def awaitTRY: ENV =
-    env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
-  def awaitTRY$ : ENV =
-    env.vec2((x, n) =>
-      val n1 = n.toNUM.x.toLong.milliseconds
-      try Await.ready(x.toFUT.x, n1).value.get.toTRY
-      catch
-        case e: java.util.concurrent.TimeoutException =>
-          throw new LinEx("FUT", s"timeout after $n1")
-        case e => throw e
+  def await: ENV =
+    env.vec1(x => Await.result(x.toTASK.x.runToFuture, Duration.Inf))
+  def awaitTRY: ENV = env.vec1(x =>
+    Await.ready(x.toTASK.x.runToFuture, Duration.Inf).value.get.toTRY
+  )
+  def timeout: ENV = env.vec2((x, n) =>
+    val n1 = n.toNUM.x.toLong
+    x.modTASK(
+      _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after $n1"))
     )
-  def transform: ENV = env.vec2((x, f) =>
-    x.toFUT.x.transform(t => env.evalA1(Vector(t.toTRY), f).toTry).pipe(FUT(_))
   )
-  def transform$ : ENV = env.vec2((x, f) =>
-    x.toFUT.x
-      .transformWith(t => env.evalA1(Vector(t.toTRY), f).toFUT.x)
-      .pipe(FUT(_))
+  def runAsync: ENV = env.arg2((x, y, env) =>
+    x.vec2(
+      y,
+      (t, f) =>
+        t.toTASK.x.runAsync(a =>
+          env.pushs(Vector(a.fold(Failure(_), Success(_)).toTRY, f)).evale
+        )
+        UN
+    )
+    env
   )
+  def forkTASK: ENV   = env.vec1(x => x.modTASK(t => t.executeAsync))
+  def memoTASK: ENV   = env.vec1(x => x.modTASK(t => t.memoize))
+  def memoTASK$ : ENV = env.vec1(x => x.modTASK(t => t.memoizeOnSuccess))
 
-  def sleep: ENV = env.num1(_.toLong.tap(Thread.sleep)).pop
+  def sleep: ENV = env.vec1(n =>
+    val n1 = n.toNUM.x.toLong
+    n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).pipe(TASK(_))
+  )
 
   def dot: ENV = env.code.x match
     case c :: cs =>
@@ -835,7 +837,7 @@ extension (env: ENV)
 
     case "("  => startFN
     case ")"  => env
-    case ")~" => evalFUT
+    case ")~" => evalTASK
     case ")!" => evalTRY
     case "["  => startARR
     case "]"  => endARR
@@ -890,10 +892,10 @@ extension (env: ENV)
      */
     case ">E" => toERR
     /*
-    @s a -> FUT
-    Converts `a` to `FUT`.
+    @s a -> TASK
+    Converts `a` to `TASK`.
      */
-    case ">~" => toFUT
+    case ">~" => toTASK
     /*
     @s a -> TRY
     Converts `a` to `TRY`.
@@ -949,10 +951,10 @@ extension (env: ENV)
      */
     case "{}" => env.push(UN.toMAP)
     /*
-    @s -> FUT
-    Empty `FUT`.
+    @s -> TASK
+    Empty `TASK`.
      */
-    case "()~" => env.push(UN.toFUT)
+    case "()~" => env.push(UN.toTASK)
     /*
     @s -> TRY
     Empty `TRY`.
@@ -1271,10 +1273,10 @@ extension (env: ENV)
      */
     case "!Q" => evalTRY
     /*
-    @s f' -> FUT'
+    @s f' -> TASK'
     #{Q}s `f` asynchronously, returning a future.
      */
-    case "~Q" => evalFUT
+    case "~Q" => evalTASK
     /*
     @s (e ERR) ->
     Throws `e`.
@@ -2365,35 +2367,19 @@ extension (env: ENV)
     case "pack" => pack
 
     /*
-    @s (a >FUT)' -> _'
+    @s (a >TASK)' -> _'
     Synchronously waits for `a` to complete, leaving the result on the stack.
      */
     case "~_" => await
     /*
-    @s (a >FUT)' (ms >NUM)' -> _'
-    #{~_} but if `a` is not completed before `ms`, then an error is thrown.
-     */
-    case "~_~" => await$
-    /*
-    @s (a >FUT)' -> TRY'
+    @s (a >TASK)' -> TRY'
     #{~_} with result wrapped in a `TRY`.
      */
     case "~_!" => awaitTRY
-    /*
-    @s (a >FUT)' (ms >NUM)' -> TRY'
-    #{~_!} but if `a` is not completed before `ms`, then an error is thrown.
-     */
-    case "~_!~" => awaitTRY$
-    /*
-    @s (a >FUT)' (f: (x TRY) -> >TRY)' -> TRY'
-    Transforms the result of `a` into a new `FUT` using `f`.
-     */
-    case "~>" => transform
-    /*
-    @s (a >FUT)' (f: (x TRY) -> >FUT)' -> TRY'
-    `~>` but with `f`'s result converted to `FUT` instead of `TRY`.
-     */
-    case "~>~" => transform$
+    case "~>"  => runAsync
+    case "~<"  => forkTASK
+    case "~:"  => memoTASK
+    case "~:&" => memoTASK$
     /*
     @s (ms >NUM)' ->
     Sleeps the current thread for `ms` milliseconds.

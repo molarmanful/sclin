@@ -1,9 +1,11 @@
 package sclin
 
+import monix.eval.Task
+import monix.execution.CancelableFuture
+import monix.execution.Scheduler.Implicits.global
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex.Match
 import scala.util.Failure
 import scala.util.Random
@@ -26,7 +28,7 @@ enum ANY:
   case CMD(x: String)
   case FN(p: PATH, x: List[ANY])
   case ERR(x: Throwable)
-  case FUT(x: Future[ANY])
+  case TASK(x: Task[ANY])
   case TRY(b: Boolean, x: ANY, e: Throwable)
   case UN
 
@@ -36,19 +38,16 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x)   => x
-    case NUM(x)   => x.toString
-    case FN(_, x) => x.mkString(" ")
-    case CMD(x)   => x
-    case ERR(x)   => x.toString
-    case FUT(x) =>
-      s"(${x.value match
-          case Some(t) => t.toTRY.toForm
-          case _       => "…"
-        })~"
-    case TF(x) => if x then "$T" else "$F"
-    case UN    => ""
-    case _     => join("")
+    case STR(x)       => x
+    case NUM(x)       => x.toString
+    case FN(_, x)     => x.mkString(" ")
+    case CMD(x)       => x
+    case ERR(x)       => x.toString
+    case TF(x)        => if x then "$T" else "$F"
+    case _: TASK      => "(…)~"
+    case TRY(b, x, e) => (if b then x else e).toString
+    case UN           => ""
+    case _            => join("")
 
   def toForm: String = this match
     case _: SEQ => s"[…]"
@@ -105,7 +104,6 @@ enum ANY:
     case CMD(x)       => !x.isEmpty
     case FN(_, x)     => !x.isEmpty
     case _: ERR       => false
-    case FUT(x)       => x.isCompleted && x.value.get.isSuccess
     case TRY(b, _, _) => b
     case UN           => false
 
@@ -304,9 +302,12 @@ enum ANY:
 
   def pFN(p: PATH): FN = FN(p, xFN)
 
-  def toFUT: FUT = this match
-    case x: FUT => x
-    case x      => FUT(Future(x))
+  def toTASK: TASK = this match
+    case x: TASK => x
+    case x       => TASK(Task.now(x))
+
+  def modTASK(f: Task[ANY] => Task[ANY]): TASK =
+    toTASK.x.pipe(f).pipe(TASK(_))
 
   def matchType(a: ANY): ANY = a match
     case _: SEQ   => toSEQ
@@ -316,7 +317,7 @@ enum ANY:
     case _: NUM   => toNUM
     case _: TF    => toTF
     case _: CMD   => toString.pipe(CMD(_))
-    case _: FUT   => toFUT
+    case _: TASK  => toTASK
     case _: TRY   => toTRY
     case _: ERR   => toERR
     case FN(p, _) => pFN(p)
@@ -326,7 +327,7 @@ enum ANY:
     case SEQ(x)   => x.map(f).toSEQ
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
-    case FUT(x)   => x.map(f).pipe(FUT(_))
+    case TASK(x)  => x.map(f).pipe(TASK(_))
     case x: TRY   => x.toTry.map(f).toTRY
     case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
@@ -337,7 +338,7 @@ enum ANY:
     case SEQ(x)   => x.flatMap(f(_).toSEQ.x).toSEQ
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
-    case FUT(x)   => x.flatMap(f(_).toFUT.x).pipe(FUT(_))
+    case TASK(x)  => x.flatMap(f(_).toTASK.x).pipe(TASK(_))
     case x: TRY   => x.toTry.flatMap(f(_).toTry).toTRY
     case _        => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
@@ -361,10 +362,9 @@ enum ANY:
   def flat: ANY = flatMap(x => x)
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (SEQ(x), _)               => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
-    case (FUT(x), _)               => x.zipWith(t.toFUT.x)(f).pipe(FUT(_))
-    case (_, _: SEQ) | (_, _: FUT) => t.zip(this, (x, y) => f(y, x))
-    case _                         => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
+    case (SEQ(x), _) => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
+    case (_, _: SEQ) => t.zip(this, (x, y) => f(y, x))
+    case _           => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -412,20 +412,8 @@ enum ANY:
     case SEQ(x)   => x.filter(f).toSEQ
     case ARR(x)   => x.filter(f).toARR
     case FN(p, x) => x.filter(f).pFN(p)
-    case FUT(x) =>
-      x.filter(f)
-        .transform {
-          case Success(s) => Success(s)
-          case Failure(e) =>
-            Failure(e match
-              case e: java.util.NoSuchElementException =>
-                LinEx("FUT", "filter failed")
-              case e => e
-            )
-        }
-        .pipe(FUT(_))
-    case x: TRY => x.toTry.filter(f).toTRY
-    case _      => toARR.filter(f)
+    case x: TRY   => x.toTry.filter(f).toTRY
+    case _        => toARR.filter(f)
   def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
     case _      => filter(g)

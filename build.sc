@@ -26,7 +26,8 @@ object sclin extends ScalaModule with PublishModule {
     ivy"com.lihaoyi::mainargs:0.3.0",
     ivy"com.lihaoyi::os-lib:0.8.1",
     ivy"com.lihaoyi::fansi:0.4.0",
-    ivy"com.lihaoyi::upickle:2.0.0"
+    ivy"com.lihaoyi::upickle:2.0.0",
+    ivy"io.monix::monix:3.4.0"
   )
 
   def cmdoc() = T.command {
