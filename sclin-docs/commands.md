@@ -67,9 +67,9 @@ Converts `a` to `ERR` with message `b`.
 
 ## CMD: [``` >~ ```](#cmd-)
 
-Stack: ``` a -> FUT ```
+Stack: ``` a -> TASK ```
 
-Converts `a` to `FUT`.
+Converts `a` to `TASK`.
 
 
 ## CMD: [``` >!? ```](#cmd--1)
@@ -144,9 +144,9 @@ Empty `MAP`.
 
 ## CMD: [``` ()~ ```](#cmd--6)
 
-Stack: ``` -> FUT ```
+Stack: ``` -> TASK ```
 
-Empty `FUT`.
+Empty `TASK`.
 
 
 ## CMD: [``` ()! ```](#cmd--7)
@@ -612,7 +612,7 @@ Stack: ``` f' -> TRY' ```
 
 ## CMD: [``` ~Q ```](#cmd-q-3)
 
-Stack: ``` f' -> FUT' ```
+Stack: ``` f' -> TASK' ```
 
 [``` Q ```](#cmd-q-1)s `f` asynchronously, returning a future.
 
@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [6 7 9 2 5 1 8 0 3 4]
+-> [1 8 0 3 2 9 7 4 5 6]
 ```
 
 
@@ -2046,7 +2046,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [2 5 3 4 1]
+-> [4 3 2 1 5]
 ```
 
 
@@ -2120,44 +2120,16 @@ See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
 
 ## CMD: [``` ~_ ```](#cmd-_-6)
 
-Stack: ``` (a >FUT)' -> _' ```
+Stack: ``` (a >TASK)' -> _' ```
 
 Synchronously waits for `a` to complete, leaving the result on the stack.
 
 
-## CMD: [``` ~_~ ```](#cmd-_-7)
+## CMD: [``` ~_! ```](#cmd-_-7)
 
-Stack: ``` (a >FUT)' (ms >NUM)' -> _' ```
-
-[``` ~_ ```](#cmd-_-6) but if `a` is not completed before `ms`, then an error is thrown.
-
-
-## CMD: [``` ~_! ```](#cmd-_-8)
-
-Stack: ``` (a >FUT)' -> TRY' ```
+Stack: ``` (a >TASK)' -> TRY' ```
 
 [``` ~_ ```](#cmd-_-6) with result wrapped in a `TRY`.
-
-
-## CMD: [``` ~_!~ ```](#cmd-_-9)
-
-Stack: ``` (a >FUT)' (ms >NUM)' -> TRY' ```
-
-[``` ~_! ```](#cmd-_-8) but if `a` is not completed before `ms`, then an error is thrown.
-
-
-## CMD: [``` ~> ```](#cmd--90)
-
-Stack: ``` (a >FUT)' (f: (x TRY) -> >TRY)' -> TRY' ```
-
-Transforms the result of `a` into a new `FUT` using `f`.
-
-
-## CMD: [``` ~>~ ```](#cmd--91)
-
-Stack: ``` (a >FUT)' (f: (x TRY) -> >FUT)' -> TRY' ```
-
-`~>` but with `f`'s result converted to `FUT` instead of `TRY`.
 
 
 ## CMD: [``` sleep ```](#cmd-sleep)
