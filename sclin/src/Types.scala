@@ -29,6 +29,7 @@ enum ANY:
   case FN(p: PATH, x: List[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
+  case FUT(x: CancelableFuture[ANY])
   case TRY(b: Boolean, x: ANY, e: Throwable)
   case UN
 
@@ -105,6 +106,7 @@ enum ANY:
     case FN(_, x)     => !x.isEmpty
     case _: ERR       => false
     case TRY(b, _, _) => b
+    case FUT(x)       => x.isCompleted && x.value.get.isSuccess
     case UN           => false
 
   def toTF: TF = this match
@@ -304,10 +306,16 @@ enum ANY:
 
   def toTASK: TASK = this match
     case x: TASK => x
-    case x       => TASK(Task.now(x))
+    case FUT(x)  => Task.fromFuture(x).pipe(TASK(_))
+    case x       => Task.pure(x).pipe(TASK(_))
 
   def modTASK(f: Task[ANY] => Task[ANY]): TASK =
     toTASK.x.pipe(f).pipe(TASK(_))
+
+  def toFUT: FUT = this match
+    case x: FUT  => x
+    case TASK(x) => x.runToFuture.pipe(FUT(_))
+    case x       => CancelableFuture.pure(x).pipe(FUT(_))
 
   def matchType(a: ANY): ANY = a match
     case _: SEQ   => toSEQ
@@ -318,6 +326,7 @@ enum ANY:
     case _: TF    => toTF
     case _: CMD   => toString.pipe(CMD(_))
     case _: TASK  => toTASK
+    case _: FUT   => toFUT
     case _: TRY   => toTRY
     case _: ERR   => toERR
     case FN(p, _) => pFN(p)
@@ -328,6 +337,7 @@ enum ANY:
     case ARR(x)   => x.map(f).toARR
     case FN(p, x) => x.map(f).pFN(p)
     case TASK(x)  => x.map(f).pipe(TASK(_))
+    case FUT(x)   => x.map(f).pipe(FUT(_))
     case x: TRY   => x.toTry.map(f).toTRY
     case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
@@ -339,6 +349,7 @@ enum ANY:
     case ARR(x)   => x.flatMap(f(_).toARR.x).toARR
     case FN(p, x) => x.flatMap(f(_).toARR.x).pFN(p)
     case TASK(x)  => x.flatMap(f(_).toTASK.x).pipe(TASK(_))
+    case FUT(x)   => x.map(f).pipe(FUT(_))
     case x: TRY   => x.toTry.flatMap(f(_).toTry).toTRY
     case _        => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match

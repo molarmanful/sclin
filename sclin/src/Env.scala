@@ -206,7 +206,8 @@ case class ENV(
 
   def execA(c: ANY): ENV = c match
     case CMD(x)       => this.cmd(x)
-    case _: TASK       => push(c).await
+    case _: TASK      => push(c).toFUT
+    case _: FUT       => push(c).await
     case TRY(b, x, e) => if b then push(x) else throw e
     case ERR(x)       => throw x
     case _            => push(c)

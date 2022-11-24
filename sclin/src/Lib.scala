@@ -754,30 +754,24 @@ extension (env: ENV)
     env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
   )
   def await: ENV =
-    env.vec1(x => Await.result(x.toTASK.x.runToFuture, Duration.Inf))
-  def awaitTRY: ENV = env.vec1(x =>
-    Await.ready(x.toTASK.x.runToFuture, Duration.Inf).value.get.toTRY
-  )
+    env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
+  def awaitTRY: ENV =
+    env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
   def timeout: ENV = env.vec2((x, n) =>
     val n1 = n.toNUM.x.toLong
     x.modTASK(
       _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after $n1"))
     )
   )
-  def runAsync: ENV = env.arg2((x, y, env) =>
-    x.vec2(
-      y,
-      (t, f) =>
-        t.toTASK.x.runAsync(a =>
-          env.pushs(Vector(a.fold(Failure(_), Success(_)).toTRY, f)).evale
-        )
-        UN
-    )
+  def toFUT: ENV = env.vec1(_.toFUT)
+  def cancelFUT: ENV = env.arg1((x, env) =>
+    x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
   )
-  def forkTASK: ENV   = env.vec1(x => x.modTASK(t => t.executeAsync))
-  def memoTASK: ENV   = env.vec1(x => x.modTASK(t => t.memoize))
-  def memoTASK$ : ENV = env.vec1(x => x.modTASK(t => t.memoizeOnSuccess))
+  def forkTASK: ENV     = env.vec1(_.modTASK(_.executeAsync))
+  def memoTASK: ENV     = env.vec1(_.modTASK(_.memoize))
+  def memoTASK$ : ENV   = env.vec1(_.modTASK(_.memoizeOnSuccess))
+  def uncancelTASK: ENV = env.vec1(_.modTASK(_.uncancelable))
 
   def sleep: ENV = env.vec1(n =>
     val n1 = n.toNUM.x.toLong
@@ -2367,19 +2361,21 @@ extension (env: ENV)
     case "pack" => pack
 
     /*
-    @s (a >TASK)' -> _'
+    @s (a >FUT)' -> _'
     Synchronously waits for `a` to complete, leaving the result on the stack.
      */
     case "~_" => await
     /*
-    @s (a >TASK)' -> TRY'
+    @s (a >FUT)' -> TRY'
     #{~_} with result wrapped in a `TRY`.
      */
     case "~_!" => awaitTRY
-    case "~>"  => runAsync
+    case "~>"  => toFUT
     case "~<"  => forkTASK
     case "~:"  => memoTASK
     case "~:&" => memoTASK$
+    case "~^"  => uncancelTASK
+    case "~$"  => cancelFUT
     /*
     @s (ms >NUM)' ->
     Sleeps the current thread for `ms` milliseconds.
