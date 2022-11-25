@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [1 8 0 3 2 9 7 4 5 6]
+-> [6 8 1 2 4 3 7 5 0 9]
 ```
 
 
@@ -2046,7 +2046,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 3 2 1 5]
+-> [1 2 4 3 5]
 ```
 
 
@@ -2120,14 +2120,14 @@ See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
 
 ## CMD: [``` ~_ ```](#cmd-_-6)
 
-Stack: ``` (a >TASK)' -> _' ```
+Stack: ``` (a >FUT)' -> _' ```
 
 Synchronously waits for `a` to complete, leaving the result on the stack.
 
 
 ## CMD: [``` ~_! ```](#cmd-_-7)
 
-Stack: ``` (a >TASK)' -> TRY' ```
+Stack: ``` (a >FUT)' -> TRY' ```
 
 [``` ~_ ```](#cmd-_-6) with result wrapped in a `TRY`.
 
