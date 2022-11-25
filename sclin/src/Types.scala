@@ -39,13 +39,18 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x)       => x
-    case NUM(x)       => x.toString
-    case FN(_, x)     => x.mkString(" ")
-    case CMD(x)       => x
-    case ERR(x)       => x.toString
-    case TF(x)        => if x then "$T" else "$F"
-    case _: TASK      => "(…)~"
+    case STR(x)   => x
+    case NUM(x)   => x.toString
+    case FN(_, x) => x.mkString(" ")
+    case CMD(x)   => x
+    case ERR(x)   => x.toString
+    case TF(x)    => if x then "$T" else "$F"
+    case _: TASK  => "(…)~"
+    case FUT(x) =>
+      s"(${x.value match
+          case Some(t) => t.toTRY.toForm
+          case _       => "…"
+        })~>"
     case TRY(b, x, e) => (if b then x else e).toString
     case UN           => ""
     case _            => join("")
@@ -107,6 +112,7 @@ enum ANY:
     case _: ERR       => false
     case TRY(b, _, _) => b
     case FUT(x)       => x.isCompleted && x.value.get.isSuccess
+    case _: TASK      => true
     case UN           => false
 
   def toTF: TF = this match

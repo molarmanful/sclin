@@ -757,12 +757,6 @@ extension (env: ENV)
     env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
   def awaitTRY: ENV =
     env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
-  def timeout: ENV = env.vec2((x, n) =>
-    val n1 = n.toNUM.x.toLong
-    x.modTASK(
-      _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after $n1"))
-    )
-  )
   def toFUT: ENV = env.vec1(_.toFUT)
   def cancelFUT: ENV = env.arg1((x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
@@ -772,6 +766,44 @@ extension (env: ENV)
   def memoTASK: ENV     = env.vec1(_.modTASK(_.memoize))
   def memoTASK$ : ENV   = env.vec1(_.modTASK(_.memoizeOnSuccess))
   def uncancelTASK: ENV = env.vec1(_.modTASK(_.uncancelable))
+  def timeoutTASK: ENV = env.vec2((x, n) =>
+    val n1 = n.toNUM.x.toLong
+    x.modTASK(
+      _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after ${n1}ms"))
+    )
+  )
+  def seqTASK: ENV = env.mod1 {
+    case MAP(x) =>
+      x.values
+        .map(_.toTASK.x)
+        .pipe(Task.sequence)
+        .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
+        .pipe(TASK(_))
+    case Itr(x) =>
+      x.toSEQ.x
+        .map(_.toTASK.x)
+        .pipe(Task.sequence)
+        .map(_.toSEQ.matchType(x))
+        .pipe(TASK(_))
+    case x => x.toTASK
+  }
+  def parTASK: ENV = env.mod1 {
+    case MAP(x) =>
+      x.values
+        .map(_.toTASK.x)
+        .pipe(Task.parSequence)
+        .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
+        .pipe(TASK(_))
+    case Itr(x) =>
+      x.toSEQ.x
+        .map(_.toTASK.x)
+        .pipe(Task.parSequence)
+        .map(_.toSEQ.matchType(x))
+        .pipe(TASK(_))
+    case x => x.toTASK
+  }
+  def raceTASK: ENV =
+    env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).pipe(TASK(_)))
 
   def sleep: ENV = env.vec1(n =>
     val n1 = n.toNUM.x.toLong
@@ -2371,11 +2403,15 @@ extension (env: ENV)
      */
     case "~_!" => awaitTRY
     case "~>"  => toFUT
+    case "~$"  => cancelFUT
+    case "~|>" => seqTASK
+    case "~||" => parTASK
+    case "~>>" => raceTASK
     case "~<"  => forkTASK
     case "~:"  => memoTASK
     case "~:&" => memoTASK$
-    case "~^"  => uncancelTASK
-    case "~$"  => cancelFUT
+    case "~$_" => uncancelTASK
+    case "~%"  => timeoutTASK
     /*
     @s (ms >NUM)' ->
     Sleeps the current thread for `ms` milliseconds.
