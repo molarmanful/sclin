@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [1 8 7 2 3 0 5 4 9 6]
+-> [3 8 0 9 6 4 1 5 7 2]
 ```
 
 
@@ -1580,6 +1580,10 @@ Transposes a collection of collections matrix-style.
 ```
 [[1 2 3][4 5 6][7 8 9]] tpose
 -> [[1 4 7] [2 5 8] [3 6 9]]
+```
+```
+[[1 2][3 4 5][6]] tpose
+-> [[1 3 6] [2 4] [5]]
 ```
 
 
@@ -2027,8 +2031,22 @@ Stack: ``` a f' -> _' ```
 
 Finds first element of `a` where predicate `f` is truthy.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+Returns `UN` if not found.
 ```
 [5 1 2 4 3] ( 2% ! ) find
+-> 2
+```
+
+
+## CMD: [``` find: ```](#cmd-find-1)
+
+Stack: ``` a f' -> NUM' ```
+
+Finds index of first element of `a` where predicate `f` is truthy.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+Returns `-1` if not found.
+```
+[5 1 2 4 3] ( 2% ! ) find:
 -> 2
 ```
 
@@ -2057,7 +2075,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 5 2 1 4]
+-> [1 2 3 4 5]
 ```
 
 
