@@ -1524,7 +1524,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [4 9 2 3 8 6 7 1 0 5]
+-> [1 8 7 2 3 0 5 4 9 6]
 ```
 
 
@@ -1569,6 +1569,17 @@ Cartesian product of iterable-of-iterables `a` to `n`.
 ```
 ["abc" "def" "ghi"] Q* >A
 -> ["adg" "adh" "adi" "aeg" "aeh" "aei" "afg" "afh" "afi" "bdg" "bdh" "bdi" "beg" "beh" "bei" "bfg" "bfh" "bfi" "cdg" "cdh" "cdi" "ceg" "ceh" "cei" "cfg" "cfh" "cfi"]
+```
+
+
+## CMD: [``` tpose ```](#cmd-tpose)
+
+Stack: ``` a[_*] -> _[_*] ```
+
+Transposes a collection of collections matrix-style.
+```
+[[1 2 3][4 5 6][7 8 9]] tpose
+-> [[1 4 7] [2 5 8] [3 6 9]]
 ```
 
 
@@ -2046,7 +2057,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 5 2 4 1]
+-> [3 5 2 1 4]
 ```
 
 
