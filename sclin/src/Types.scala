@@ -483,6 +483,12 @@ enum ANY:
     case MAP(x) => x.find { case (a, b) => f(a, b) }
     case _      => find(g)
 
+  def findIndex(f: ANY => Boolean): Int = this match
+    case SEQ(x)   => x.indexWhere(f)
+    case ARR(x)   => x.indexWhere(f)
+    case FN(p, x) => x.indexWhere(f)
+    case _        => toARR.findIndex(f)
+
   def uniqBy(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.distinctBy(f).toSEQ
     case ARR(x)   => x.distinctBy(f).toARR

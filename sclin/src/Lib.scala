@@ -689,6 +689,10 @@ extension (env: ENV)
     )
   )
 
+  def findi: ENV = env.mod2((x, y) =>
+    y.vec1(f => x.findIndex(a => env.evalA1(Vector(a), f).toBool).pipe(NUM(_)))
+  )
+
   def uniq: ENV = env.mod2((x, y) =>
     y.vec1(f =>
       x.uniqByM(
@@ -2003,6 +2007,9 @@ extension (env: ENV)
     ```sclin
     [[1 2 3][4 5 6][7 8 9]] tpose
     ```
+    ```sclin
+    [[1 2][3 4 5][6]] tpose
+    ```
      */
     case "tpose" => tpose
 
@@ -2320,11 +2327,22 @@ extension (env: ENV)
     @s a f' -> _'
     Finds first element of `a` where predicate `f` is truthy.
     See #{fltr} for the signature of `f`.
+    Returns `UN` if not found.
     ```sclin
     [5 1 2 4 3] ( 2% ! ) find
     ```
      */
     case "find" => find
+    /*
+    @s a f' -> NUM'
+    Finds index of first element of `a` where predicate `f` is truthy.
+    See #{fltr} for the signature of `f`.
+    Returns `-1` if not found.
+    ```sclin
+    [5 1 2 4 3] ( 2% ! ) find:
+    ```
+     */
+    case "find:" => findi
     /*
     @s a f' -> _'
     Uniquifies elements of `a` with mapper `f`.
