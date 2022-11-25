@@ -1,8 +1,6 @@
 package sclin
 
 import monix.eval.Task
-import monix.execution.CancelableFuture
-import monix.execution.Scheduler.Implicits.global
 import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.concurrent._

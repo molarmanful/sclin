@@ -29,7 +29,7 @@ enum ANY:
   case FN(p: PATH, x: List[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
-  case FUT(x: CancelableFuture[ANY])
+  case FUT(x: FUTW[ANY])
   case TRY(b: Boolean, x: ANY, e: Throwable)
   case UN
 

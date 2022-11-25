@@ -1,5 +1,6 @@
 package sclin
 
+import monix.execution.CancelableFuture
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.VectorMap
 import spire.math.Real
@@ -10,6 +11,7 @@ type FILE = Option[os.Path]
 type ARRW[T]    = Vector[T]
 type SEQW[T]    = LazyList[T]
 type MAPW[K, V] = VectorMap[K, V]
+type FUTW[T]    = CancelableFuture[T]
 
 type NUMF = Real
 
