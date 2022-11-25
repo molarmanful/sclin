@@ -1,2 +1,2 @@
 101I>a \; map
-  "Fizz""Buzz", over 3 5, % ! *` c>< dup \pop |# n>o
+  "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
