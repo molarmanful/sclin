@@ -1,2 +1,2 @@
-[0] dup >o.
-dup ! \>o tap +` @
+0dup >o.
+dup !0+ \>o tap +` @

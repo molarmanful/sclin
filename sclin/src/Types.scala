@@ -44,7 +44,7 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
-    case TF(x)    => if x then "$T" else "$F"
+    case TF(x)    => x.boolNUM.toString
     case _: TASK  => "(…)~"
     case FUT(x) =>
       s"(${x.value match
@@ -75,8 +75,9 @@ enum ANY:
     case TRY(b, x, e) =>
       if b then s"YES(${x.toForm})"
       else s"NO(${ERR(e).toForm})"
-    case UN => "UN"
-    case _  => toString
+    case TF(x) => if x then "$T" else "$F"
+    case UN    => "UN"
+    case _     => toString
 
   def cmp(t: ANY): Int = (this, t) match
     case (Itr(x), _) if !x.toBool => UN.cmp(t)
