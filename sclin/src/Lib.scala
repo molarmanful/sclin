@@ -283,9 +283,9 @@ extension (env: ENV)
       case _      => a.toARR
     val x1 = f(x)
     x1.map(f)
-      .transpose
+      .pipe(ANY.transpose)
       .map(g(_, x))
-      .pipe(g(_, x1.headOption.getOrElse(UN.toSEQ)))
+      .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
   )
 
   def toCodePt: ENV =
@@ -1996,7 +1996,14 @@ extension (env: ENV)
     ["abc" "def" "ghi"] Q* >A
     ```
      */
-    case "Q*"    => cProd
+    case "Q*" => cProd
+    /*
+    @s a[_*] -> _[_*]
+    Transposes a collection of collections matrix-style.
+    ```sclin
+    [[1 2 3][4 5 6][7 8 9]] tpose
+    ```
+     */
     case "tpose" => tpose
 
     /*

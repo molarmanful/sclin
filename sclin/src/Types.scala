@@ -381,7 +381,7 @@ enum ANY:
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (SEQ(x), _) => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
     case (_, _: SEQ) => t.zip(this, (x, y) => f(y, x))
-    case _           => toARR.x.zip(t.toARR.x).map { case (x, y) => f(x, y) }.toARR
+    case _           => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -801,3 +801,8 @@ object ANY:
   def cPow[A](seed: SEQW[A], n: Int): SEQW[SEQW[A]] = cProd(
     LazyList.fill(n)(seed)
   )
+
+  def transpose[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] =
+    ls.filter(_.nonEmpty) match
+      case LazyList() => LazyList.empty
+      case xs         => xs.map(_.head) #:: transpose(xs.map(_.tail))
