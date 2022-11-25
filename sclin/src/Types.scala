@@ -44,7 +44,7 @@ enum ANY:
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
-    case TF(x)    => x.boolNUM.toString
+    case _: TF    => toNUM.toString
     case _: TASK  => "(…)~"
     case FUT(x) =>
       s"(${x.value match
