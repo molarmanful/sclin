@@ -774,36 +774,26 @@ extension (env: ENV)
       _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after ${n1}ms"))
     )
   )
-  def seqTASK: ENV = env.mod1 {
-    case MAP(x) =>
-      x.values
-        .map(_.toTASK.x)
-        .pipe(Task.sequence)
-        .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
-        .pipe(TASK(_))
-    case Itr(x) =>
-      x.toSEQ.x
-        .map(_.toTASK.x)
-        .pipe(Task.sequence)
-        .map(_.toSEQ.matchType(x))
-        .pipe(TASK(_))
-    case x => x.toTASK
-  }
-  def parTASK: ENV = env.mod1 {
-    case MAP(x) =>
-      x.values
-        .map(_.toTASK.x)
-        .pipe(Task.parSequence)
-        .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
-        .pipe(TASK(_))
-    case Itr(x) =>
-      x.toSEQ.x
-        .map(_.toTASK.x)
-        .pipe(Task.parSequence)
-        .map(_.toSEQ.matchType(x))
-        .pipe(TASK(_))
-    case x => x.toTASK
-  }
+  def itrTASKW(t: ANY, f: Iterable[Task[ANY]] => Task[Iterable[ANY]]): ANY =
+    t match
+      case MAP(x) =>
+        x.values
+          .map(_.toTASK.x)
+          .pipe(f)
+          .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
+          .pipe(TASK(_))
+      case Itr(x) =>
+        x.toSEQ.x
+          .map(_.toTASK.x)
+          .pipe(f)
+          .map(_.toSEQ.matchType(x))
+          .pipe(TASK(_))
+      case x => x.toTASK
+  def seqTASK: ENV = env.mod1(itrTASKW(_, Task.sequence))
+  def parTASK: ENV = env.mod1(itrTASKW(_, Task.parSequence))
+  def parnTASK: ENV =
+    env.mod2((x, n) => itrTASKW(x, Task.parSequenceN(n.toInt)))
+  def parunTASK: ENV = env.mod1(itrTASKW(_, Task.parSequenceUnordered))
   def raceTASK: ENV =
     env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).pipe(TASK(_)))
 
@@ -924,6 +914,11 @@ extension (env: ENV)
     Converts `a` to `TASK`.
      */
     case ">~" => toTASK
+    /*
+    @s a -> FUT'
+    Converts `a` to `FUT`.
+     */
+    case "~>" => toFUT
     /*
     @s a -> TRY
     Converts `a` to `TRY`.
@@ -2416,28 +2411,73 @@ extension (env: ENV)
     case "pack" => pack
 
     /*
-    @s (a >FUT)' -> _'
+    @s (a >FUT[x])' -> x'
     Synchronously waits for `a` to complete, leaving the result on the stack.
      */
     case "~_" => await
     /*
-    @s (a >FUT)' -> TRY'
+    @s (a >FUT[x])' -> TRY[x]'
     #{~_} with result wrapped in a `TRY`.
      */
     case "~_!" => awaitTRY
-    case "~>"  => toFUT
-    case "~$"  => cancelFUT
-    case "~|>" => seqTASK
-    case "~||" => parTASK
-    case "~>>" => raceTASK
-    case "~<"  => forkTASK
-    case "~:"  => memoTASK
-    case "~:&" => memoTASK$
-    case "~$_" => uncancelTASK
-    case "~%"  => timeoutTASK
     /*
-    @s (ms >NUM)' ->
-    Sleeps the current thread for `ms` milliseconds.
+    @s (a >FUT)' ->
+    Cancels `a`.
+     */
+    case "~$" => cancelFUT
+    /*
+    @s a[>TASK*] -> TASK[_[_*]]
+    Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
+     */
+    case "~|>" => seqTASK
+    /*
+    @s a[>TASK*] -> TASK[_[_*]]
+    Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
+     */
+    case "~||" => parTASK
+    /*
+    @s a[>TASK*] (n >NUM) -> TASK[_[_*]]
+    #{~||} but with at most `n` concurrently running `TASK`s.
+     */
+    case "~||>" => parTASK
+    /*
+    @s a[>TASK*] -> TASK[_[_*]]
+    #{~||} but results are also unordered.
+     */
+    case "~//" => parunTASK
+    /*
+    @s a[>TASK*] -> TASK
+    Races a collection of `TASK`s, returning the first to complete.
+     */
+    case "~>>" => raceTASK
+    /*
+    @s (a >TASK)' -> TASK'
+    Ensures that `a` runs on a separate thread.
+     */
+    case "~<" => forkTASK
+    /*
+    @s (a >TASK)' -> TASK'
+    Ensures that `a` is memoized such that subsequent runs of the task return the same value.
+     */
+    case "~:" => memoTASK
+    /*
+    @s (a >TASK)' -> TASK'
+    #{~:} but only if `a` completes successfully.
+     */
+    case "~:&" => memoTASK$
+    /*
+    @s (a >TASK)' -> TASK'
+    Ensures that `a` is uncancellable.
+     */
+    case "~$_" => uncancelTASK
+    /*
+    @s (a >TASK)' (n >NUM)' -> TASK'
+    Ensures that `a` will error if not completed within `n` milliseconds.
+     */
+    case "~%" => timeoutTASK
+    /*
+    @s (n >NUM)' -> TASK[n]'
+    Creates an asynchronous `TASK` that will complete after `n` milliseconds.
      */
     case "sleep" => sleep
 
