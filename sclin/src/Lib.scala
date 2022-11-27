@@ -292,8 +292,8 @@ extension (env: ENV)
     _.map(_.toInt.toChar.toString.sSTR).toString.sSTR
   )
 
-  def split: ENV   = env.str2a(_.split(_))
-  def ssplit: ENV  = env.str1a(_.split(raw"\s"))
+  def split: ENV   = env.str2a(_.split(_, -1))
+  def ssplit: ENV  = env.str1a(_.split(raw"\s", -1))
   def join: ENV    = env.mod2((x, y) => y.str1(x.join))
   def toUpper: ENV = env.str1(_.toUpperCase)
   def toLower: ENV = env.str1(_.toLowerCase)
