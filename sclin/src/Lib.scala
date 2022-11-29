@@ -592,6 +592,15 @@ extension (env: ENV)
     z.vec1(f => x.rfoldLeft(y)((a, b) => env.evalA1(Vector(a, b), f)))
   )
 
+  def reduce: ENV = env.mod2((x, y) =>
+    y.vec1(f =>
+      x.reduceLeftM(
+        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
+        (a, b) => env.evalA1(Vector(a, b), f)
+      )
+    )
+  )
+
   def scan: ENV = env.mod3((x, y, z) =>
     z.vec1(f =>
       x.scanLeftM(y)(
@@ -1338,7 +1347,7 @@ extension (env: ENV)
      */
     case "I" => trunc
     /*
-    @s (a >NUM)' -> (1 | 0)'
+    @s (a >NUM)' -> TF'
     Whether `a` is an integer.
      */
     case "I?" => isInt
@@ -2138,9 +2147,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     #{Q}s `f` on each element of `a`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
+    If `a` is `MAP`, then the signature of `f` is `k v -> _`,
     where `k=>v` is the key-value pair.
-    Otherwise, the signature of `f` is `x -> _ |`,
+    Otherwise, the signature of `f` is `x -> _`,
     where `x` is the element.
     ```sclin
     [1 2 3 4] 1.+ map
@@ -2159,7 +2168,7 @@ extension (env: ENV)
      */
     case "tap" => tapMap
     /*
-    @s a b (f: x y -> _ |)' -> _'
+    @s a b (f: x y -> _)' -> _'
     #{Q}s `f` over each element-wise pair of `a` and `b`.
     Iterables of differing length truncate to the shorter length when zipped.
     ```sclin
@@ -2174,7 +2183,7 @@ extension (env: ENV)
      */
     case "zip" => zip
     /*
-    @s a b c d (f: x y -> _ |)' -> _'
+    @s a b c d (f: x y -> _)' -> _'
     #{zip} but instead of truncating,
     uses `c` and `d` as fill elements for `a` and `b` respectively.
     ```sclin
@@ -2189,7 +2198,7 @@ extension (env: ENV)
      */
     case "zip~" => zip$
     /*
-    @s a b (f: x y -> _ |)' -> _'
+    @s a b (f: x y -> _)' -> _'
     #{Q}s `f` over each table-wise pair of `a` and `b`.
     ```sclin
     [1 2 3 4] [2 3 4 5] \++ tbl
@@ -2215,9 +2224,9 @@ extension (env: ENV)
     /*
     @s a b f' -> _'
     #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
-    If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
+    If `a` is `MAP`, then the signature of `f` is `k x v -> _`,
     where `k=>v` is the key-value pair and `x` is the accumulator.
-    Otherwise, the signature of `f` is `x y -> _ |`,
+    Otherwise, the signature of `f` is `x y -> _`,
     where `x` is the accumulator and `y` is the value.
     ```sclin
     [1 2 3 4] 0 \+ fold
@@ -2239,6 +2248,26 @@ extension (env: ENV)
      */
     case "rfold" => rfold
     /*
+    @s a f' -> _'
+    #{fold} without initial accumulator, instead using the first element of `a`.
+    If `a` is empty, then an error is thrown.
+    ```sclin
+    [1 2 3 4] \+ fold~
+    ```
+    ```sclin
+    [1 5 10 4 3] \| fold~
+    ```
+     */
+    case "fold~" => reduce
+    /*
+    @s a b f' -> _'
+    #{fold} with intermediate values.
+    ```sclin
+    [1 2 3 4] 0 \+ scan
+    ```
+     */
+    case "scan" => scan
+    /*
     @s a -> NUM'
     Sum of `a`. Equivalent to `0 \+ rfold`.
      */
@@ -2248,14 +2277,6 @@ extension (env: ENV)
     Product of `a`. Equivalent to `1 \* rfold`.
      */
     case "*/" => env.push(NUM(1)).push(CMD("*")).rfold
-    /*
-    @s a b f' -> _'
-    #{fold} with intermediate values.
-    ```sclin
-    [1 2 3 4] 0 \+ scan
-    ```
-     */
-    case "scan" => scan
     // TODO: this doc sucks
     /*
     @s a f' -> _'
@@ -2271,9 +2292,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> >TF |`,
+    If `a` is `MAP`, then the signature of `f` is `k v -> >TF`,
     where `k=>v` is the key-value pair.
-    Otherwise, the signature of `f` is `x -> >TF |`,
+    Otherwise, the signature of `f` is `x -> >TF`,
     where `x` is the element.
     ```sclin
     [5 1 2 4 3] 2.> fltr
@@ -2360,9 +2381,9 @@ extension (env: ENV)
     /*
     @s a f' -> _'
     Sorts elements of `a` with comparator `f`.
-    If `a` is `MAP`, then the signature of `f` is `j k v w -> >TF |`,
-    where `j=>v` and `k=>w` are key-value pairs to compare.
-    Otherwise, the signature of `f` is `x y -> >TF |`,
+    If `a` is `MAP`, then the signature of `f` is `ARR[k v] ARR[j w] -> >TF`,
+    where `k=>v` and `j=>w` are key-value pairs to compare.
+    Otherwise, the signature of `f` is `x y -> >TF`,
     where `x` and `y` are elements to compare.
     ```sclin
     [1 5 2 3 4] \< sort~

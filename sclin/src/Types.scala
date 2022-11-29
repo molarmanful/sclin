@@ -348,7 +348,7 @@ enum ANY:
     case x: TRY   => x.toTry.map(f).toTRY
     case _        => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
-    case MAP(x) => x.map { case (a, b) => f(a, b) }.toMAP
+    case MAP(x) => x.map(f.tupled).toMAP
     case _      => map(g)
 
   def flatMap(f: ANY => ANY): ANY = this match
@@ -380,17 +380,17 @@ enum ANY:
   def flat: ANY = flatMap(x => x)
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (SEQ(x), _) => x.zip(t.toSEQ.x).map { case (x, y) => f(x, y) }.toSEQ
-    case (_, _: SEQ) => t.zip(this, (x, y) => f(y, x))
+    case (SEQ(x), _) => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
+    case (_, _: SEQ) => t.zip(this, (a, b) => f(b, a))
     case _           => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
       case (SEQ(x), _) =>
-        x.zipAll(t.toSEQ.x, d1, d2).map { case (x, y) => f(x, y) }.toSEQ
+        x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).toSEQ
       case (_, _: SEQ) => t.zipAll(this, d1, d2, (x, y) => f(y, x)).toSEQ
       case _ =>
-        toARR.x.zipAll(t.toARR.x, d1, d2).map { case (x, y) => f(x, y) }.toARR
+        toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
 
@@ -416,6 +416,24 @@ enum ANY:
         )
       case x => f(a, x)
 
+  def reduceLeft(f: (ANY, ANY) => ANY): ANY = try
+    this match
+      case SEQ(x) => x.reduceLeft(f)
+      case ARR(x) => x.reduceLeft(f)
+      case _      => toARR.reduceLeft(f)
+  catch
+    case e: java.lang.UnsupportedOperationException =>
+      throw LinEx("ITR", s"unable to reduce empty $getType")
+    case e => throw e
+  def reduceLeftM(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
+    this match
+      case _: MAP =>
+        toARR.reduceLeft {
+          case (a, ARR(k +: v +: _)) => f(a, (k, v))
+          case _                     => ???
+        }
+      case _ => reduceLeft(g)
+
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case SEQ(x) => x.scanLeft(a)(f).toSEQ
     case ARR(x) => x.scanLeft(a)(f).toARR
@@ -433,7 +451,7 @@ enum ANY:
     case x: TRY   => x.toTry.filter(f).toTRY
     case _        => toARR.filter(f)
   def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
-    case MAP(x) => x.filter { case (a, b) => f(a, b) }.toMAP
+    case MAP(x) => x.filter(f.tupled).toMAP
     case _      => filter(g)
 
   def any(f: ANY => Boolean): Boolean = this match
@@ -442,7 +460,7 @@ enum ANY:
     case FN(p, x) => x.exists(f)
     case _        => toARR.any(f)
   def anyM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
-    case MAP(x) => x.exists { case (a, b) => f(a, b) }
+    case MAP(x) => x.exists(f.tupled)
     case _      => any(g)
 
   def all(f: ANY => Boolean): Boolean = this match
@@ -451,7 +469,7 @@ enum ANY:
     case FN(p, x) => x.forall(f)
     case _        => toARR.all(f)
   def allM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
-    case MAP(x) => x.forall { case (a, b) => f(a, b) }
+    case MAP(x) => x.forall(f.tupled)
     case _      => all(g)
 
   def takeWhile(f: ANY => Boolean): ANY = this match
@@ -460,7 +478,7 @@ enum ANY:
     case FN(p, x) => x.takeWhile(f).pFN(p)
     case _        => toARR.takeWhile(f)
   def takeWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
-    case MAP(x) => x.takeWhile { case (a, b) => f(a, b) }.toMAP
+    case MAP(x) => x.takeWhile(f.tupled).toMAP
     case _      => takeWhile(g)
 
   def dropWhile(f: ANY => Boolean): ANY = this match
@@ -469,7 +487,7 @@ enum ANY:
     case FN(p, x) => x.dropWhile(f).pFN(p)
     case _        => toARR.dropWhile(f)
   def dropWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
-    case MAP(x) => x.dropWhile { case (a, b) => f(a, b) }.toMAP
+    case MAP(x) => x.dropWhile(f.tupled).toMAP
     case _      => dropWhile(g)
 
   def find(f: ANY => Boolean): Option[ANY] = this match
@@ -481,7 +499,7 @@ enum ANY:
       f: (ANY, ANY) => Boolean,
       g: ANY => Boolean
   ): Option[ANY | (ANY, ANY)] = this match
-    case MAP(x) => x.find { case (a, b) => f(a, b) }
+    case MAP(x) => x.find(f.tupled)
     case _      => find(g)
 
   def findIndex(f: ANY => Boolean): Int = this match
@@ -497,7 +515,7 @@ enum ANY:
     case _        => toARR.uniqBy(f)
   def uniqByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
-      x.toSeq.distinctBy { case (a, b) => f(a, b) }.to(VectorMap).toMAP
+      x.toSeq.distinctBy(f.tupled).to(VectorMap).toMAP
     case _ => uniqBy(g)
 
   def sortBy(f: ANY => ANY): ANY = this match
@@ -507,7 +525,7 @@ enum ANY:
     case _        => toARR.sortBy(f)
   def sortByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
-      x.toSeq.sortBy { case (a, b) => f(a, b) }(OrdANY).to(VectorMap).toMAP
+      x.toSeq.sortBy(f.tupled)(OrdANY).to(VectorMap).toMAP
     case _ => sortBy(g)
 
   def sortWith(f: (ANY, ANY) => Boolean): ANY = this match
@@ -530,9 +548,7 @@ enum ANY:
   def partitionM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
       case MAP(x) =>
-        x.partition { case (a, b) => f(a, b) }.pipe { case (a, b) =>
-          (a.toMAP, b.toMAP)
-        }
+        x.partition(f.tupled).pipe { case (a, b) => (a.toMAP, b.toMAP) }
       case _ => partition(g)
 
   def groupBy(f: ANY => ANY): Map[ANY, ANY] = this match
@@ -542,7 +558,7 @@ enum ANY:
     case _        => toARR.groupBy(f)
   def groupByM(f: (ANY, ANY) => ANY, g: ANY => ANY): Map[ANY, ANY] = this match
     case MAP(x) =>
-      x.groupBy { case (a, b) => f(a, b) }.view.mapValues(_.toMAP).toMap
+      x.groupBy(f.tupled).view.mapValues(_.toMAP).toMap
     case _ => groupBy(g)
 
   def span(f: ANY => Boolean): (ANY, ANY) = this match
@@ -552,11 +568,8 @@ enum ANY:
     case _        => toARR.span(f)
   def spanM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
-      case MAP(x) =>
-        x.span { case (a, b) => f(a, b) }.pipe { case (a, b) =>
-          (a.toMAP, b.toMAP)
-        }
-      case _ => span(g)
+      case MAP(x) => x.span(f.tupled).pipe { case (a, b) => (a.toMAP, b.toMAP) }
+      case _      => span(g)
 
   def packBy(f: (ANY, ANY) => Boolean): ANY = this match
     case SEQ(x)   => x.packBy(f).map(_.toSEQ).toSEQ
