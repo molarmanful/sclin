@@ -676,7 +676,7 @@ Rounds `a` towards 0.
 
 ## CMD: [``` I? ```](#cmd-i-2)
 
-Stack: ``` (a >NUM)' -> (1 | 0)' ```
+Stack: ``` (a >NUM)' -> TF' ```
 
 Whether `a` is an integer.
 
@@ -1531,7 +1531,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [6 7 3 9 5 2 1 8 0 4]
+-> [0 3 6 2 8 1 9 7 4 5]
 ```
 
 
@@ -1775,9 +1775,9 @@ Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
 Stack: ``` a f' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` on each element of `a`.
-If `a` is `MAP`, then the signature of `f` is `k v -> _ |`,
+If `a` is `MAP`, then the signature of `f` is `k v -> _`,
 where `k=>v` is the key-value pair.
-Otherwise, the signature of `f` is `x -> _ |`,
+Otherwise, the signature of `f` is `x -> _`,
 where `x` is the element.
 ```
 [1 2 3 4] 1.+ map
@@ -1806,7 +1806,7 @@ Stack: ``` a f' -> a ```
 
 ## CMD: [``` zip ```](#cmd-zip)
 
-Stack: ``` a b (f: x y -> _ |)' -> _' ```
+Stack: ``` a b (f: x y -> _)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each element-wise pair of `a` and `b`.
 Iterables of differing length truncate to the shorter length when zipped.
@@ -1826,7 +1826,7 @@ Iterables of differing length truncate to the shorter length when zipped.
 
 ## CMD: [``` zip~ ```](#cmd-zip-1)
 
-Stack: ``` a b c d (f: x y -> _ |)' -> _' ```
+Stack: ``` a b c d (f: x y -> _)' -> _' ```
 
 [``` zip ```](#cmd-zip) but instead of truncating,
 uses `c` and `d` as fill elements for `a` and `b` respectively.
@@ -1846,7 +1846,7 @@ uses `c` and `d` as fill elements for `a` and `b` respectively.
 
 ## CMD: [``` tbl ```](#cmd-tbl)
 
-Stack: ``` a b (f: x y -> _ |)' -> _' ```
+Stack: ``` a b (f: x y -> _)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each table-wise pair of `a` and `b`.
 ```
@@ -1889,9 +1889,9 @@ Atomic/recursive [``` map ```](#cmd-map).
 Stack: ``` a b f' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` to combine each accumulator and element starting from initial accumulator `b`.
-If `a` is `MAP`, then the signature of `f` is `k x v -> _ |`,
+If `a` is `MAP`, then the signature of `f` is `k x v -> _`,
 where `k=>v` is the key-value pair and `x` is the accumulator.
-Otherwise, the signature of `f` is `x y -> _ |`,
+Otherwise, the signature of `f` is `x y -> _`,
 where `x` is the accumulator and `y` is the value.
 ```
 [1 2 3 4] 0 \+ fold
@@ -1918,6 +1918,33 @@ Atomic/recursive [``` fold ```](#cmd-fold).
 ```
 
 
+## CMD: [``` fold~ ```](#cmd-fold-1)
+
+Stack: ``` a f' -> _' ```
+
+[``` fold ```](#cmd-fold) without initial accumulator, instead using the first element of `a`.
+If `a` is empty, then an error is thrown.
+```
+[1 2 3 4] \+ fold~
+-> 10
+```
+```
+[1 5 10 4 3] \| fold~
+-> 10
+```
+
+
+## CMD: [``` scan ```](#cmd-scan)
+
+Stack: ``` a b f' -> _' ```
+
+[``` fold ```](#cmd-fold) with intermediate values.
+```
+[1 2 3 4] 0 \+ scan
+-> [0 1 3 6 10]
+```
+
+
 ## CMD: [``` +/ ```](#cmd--89)
 
 Stack: ``` a -> NUM' ```
@@ -1930,17 +1957,6 @@ Sum of `a`. Equivalent to `0 \+ rfold`.
 Stack: ``` a -> NUM' ```
 
 Product of `a`. Equivalent to `1 \* rfold`.
-
-
-## CMD: [``` scan ```](#cmd-scan)
-
-Stack: ``` a b f' -> _' ```
-
-[``` fold ```](#cmd-fold) with intermediate values.
-```
-[1 2 3 4] 0 \+ scan
--> [0 1 3 6 10]
-```
 
 
 ## CMD: [``` walk ```](#cmd-walk)
@@ -1974,9 +1990,9 @@ A multi-purpose function for creating, modifying, and traversing nested structur
 Stack: ``` a f' -> _' ```
 
 Keeps elements of `a` that satisfy predicate `f`.
-If `a` is `MAP`, then the signature of `f` is `k v -> >TF |`,
+If `a` is `MAP`, then the signature of `f` is `k v -> >TF`,
 where `k=>v` is the key-value pair.
-Otherwise, the signature of `f` is `x -> >TF |`,
+Otherwise, the signature of `f` is `x -> >TF`,
 where `x` is the element.
 ```
 [5 1 2 4 3] 2.> fltr
@@ -2082,7 +2098,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [3 2 4 5 1]
+-> [1 2 3 4 5]
 ```
 
 
@@ -2091,9 +2107,9 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 Stack: ``` a f' -> _' ```
 
 Sorts elements of `a` with comparator `f`.
-If `a` is `MAP`, then the signature of `f` is `j k v w -> >TF |`,
-where `j=>v` and `k=>w` are key-value pairs to compare.
-Otherwise, the signature of `f` is `x y -> >TF |`,
+If `a` is `MAP`, then the signature of `f` is `ARR[k v] ARR[j w] -> >TF`,
+where `k=>v` and `j=>w` are key-value pairs to compare.
+Otherwise, the signature of `f` is `x y -> >TF`,
 where `x` and `y` are elements to compare.
 ```
 [1 5 2 3 4] \< sort~
