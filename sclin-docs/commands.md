@@ -1401,6 +1401,13 @@ Stack: ``` a -> _ ```
 Flattens `a` by one depth.
 
 
+## CMD: [``` rflat ```](#cmd-rflat)
+
+Stack: ``` a -> _ ```
+
+Flattens `a` recursively.
+
+
 ## CMD: [``` rep ```](#cmd-rep)
 
 Stack: ``` a -> SEQ ```
@@ -1545,7 +1552,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [1 9 3 6 4 8 5 0 7 2]
+-> [1 6 5 0 2 9 4 8 7 3]
 ```
 
 
@@ -1898,6 +1905,13 @@ Atomic/recursive [``` map ```](#cmd-map).
 ```
 
 
+## CMD: [``` mold ```](#cmd-mold)
+
+Stack: ``` a b -> _ ```
+
+Convert `a` to the shape of `b`.
+
+
 ## CMD: [``` fold ```](#cmd-fold)
 
 Stack: ``` a b f' -> _' ```
@@ -2112,7 +2126,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 5 4 2 3]
+-> [2 4 1 3 5]
 ```
 
 
