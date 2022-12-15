@@ -378,6 +378,9 @@ enum ANY:
         }.toMAP
       case _ => flatMap$(g)
   def flat: ANY = flatMap(x => x)
+  def rflat: ANY = this match
+    case Itr(_) => flatMap(_.rflat)
+    case x      => Vector(x).toARR
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (SEQ(x), _) => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
@@ -397,6 +400,14 @@ enum ANY:
   def rmap(f: ANY => ANY): ANY = this match
     case Itr(_) => mapM((k, v) => (k, v.rmap(f)), _.rmap(f))
     case x      => f(x)
+
+  def toShape(t: ANY): ANY =
+    val f = flat
+    var i = -1
+    t.rmap(_ =>
+      i += 1
+      f.get(NUM(i))
+    )
 
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case SEQ(x) => x.foldLeft(a)(f)

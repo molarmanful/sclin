@@ -562,9 +562,12 @@ extension (env: ENV)
       )
     )
   )
+  def flat: ENV = env.mod1(_.flat)
+  def rflat: ENV = env.mod1(_.rflat)
   def rmap: ENV =
     env.mod2((x, y) => y.vec1(f => x.rmap(a => env.evalA1(Vector(a), f))))
-  def flat: ENV = env.mod1(_.flat)
+  def toShape: ENV =
+    env.mod2(_.toShape(_))
 
   def zip: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
@@ -1876,6 +1879,11 @@ extension (env: ENV)
      */
     case "flat" => flat
     /*
+    @s a -> _
+    Flattens `a` recursively.
+     */
+    case "rflat" => rflat
+    /*
     @s a -> SEQ
     Infinite `SEQ` with `a` repeated.
     ```sclin
@@ -2233,6 +2241,11 @@ extension (env: ENV)
     ```
      */
     case "rmap" => rmap
+    /*
+    @s a b -> _
+    Convert `a` to the shape of `b`.
+     */
+    case "mold" => toShape
     /*
     @s a b f' -> _'
     #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
