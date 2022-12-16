@@ -380,7 +380,7 @@ enum ANY:
   def flat: ANY = flatMap(x => x)
   def rflat: ANY = this match
     case Itr(_) => flatMap(_.rflat)
-    case x      => Vector(x).toARR
+    case x      => x
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (SEQ(x), _) => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
@@ -402,11 +402,14 @@ enum ANY:
     case x      => f(x)
 
   def toShape(t: ANY): ANY =
-    val f = rflat
-    var i = -1
+    val q = toSEQ.rflat.toSEQ.x
+    var f = LazyList.continually(q).flatten
     t.rmap(_ =>
-      i += 1
-      f.get(NUM(i))
+      f match
+        case x #:: xs =>
+          f = xs
+          x
+        case _ => UN
     )
 
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
@@ -417,6 +420,15 @@ enum ANY:
     this match
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
       case _      => foldLeft(a)(g)
+
+  def foldRight[T](a: T)(f: (ANY, T) => T): T = this match
+    case SEQ(x) => x.foldRight(a)(f)
+    case ARR(x) => x.foldRight(a)(f)
+    case _      => toARR.foldRight(a)(f)
+  def foldRightM[T](a: T)(f: ((ANY, ANY), T) => T, g: (ANY, T) => T): T =
+    this match
+      case MAP(x) => x.foldRight(a)((b, c) => f(b, c))
+      case _      => foldRight(a)(g)
 
   def rfoldLeft[T](a: T)(f: (T, ANY) => T): T =
     this match

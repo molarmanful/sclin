@@ -218,8 +218,14 @@ extension (env: ENV)
 
   def len: ENV = env.mod1(_.length.pipe(NUM(_)))
 
-  def rep: ENV = env.mod1(LazyList.continually(_).toSEQ)
-  def cyc: ENV = env.mod1(LazyList.continually(_).toSEQ.flat)
+  def rep: ENV  = env.mod1(LazyList.continually(_).toSEQ)
+  def cyc: ENV  = env.mod1(LazyList.continually(_).toSEQ.flat)
+  def ones: ENV = env.vec1(_.toInt.pipe(Vector.fill(_)(NUM(1)).toARR))
+  def one$ : ENV =
+    env.mod1(_.foldRight(NUM(1))((x, y) => Vector.fill(x.toInt)(y).toARR))
+  def toShape: ENV =
+    env.mod2(_.toShape(_))
+
   def itr: ENV = env.mod2((x, y) =>
     y.vec1(f => LazyList.iterate(x)(s => env.evalA1(Vector(s), f)).toSEQ)
   )
@@ -562,12 +568,10 @@ extension (env: ENV)
       )
     )
   )
-  def flat: ENV = env.mod1(_.flat)
+  def flat: ENV  = env.mod1(_.flat)
   def rflat: ENV = env.mod1(_.rflat)
   def rmap: ENV =
     env.mod2((x, y) => y.vec1(f => x.rmap(a => env.evalA1(Vector(a), f))))
-  def toShape: ENV =
-    env.mod2(_.toShape(_))
 
   def zip: ENV = env.mod3((x, y, z) =>
     z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
@@ -1903,6 +1907,21 @@ extension (env: ENV)
      */
     case "cyc" => cyc
     /*
+    @s (a >NUM)' -> ARR[1*]'
+    Length-`a` `ARR` of 1's.
+     */
+    case "I*" => ones
+    /*
+    @s (a >ARR) -> ARR
+    `ARR` of 1's with dimensions `a`.
+     */
+    case "I^" => one$
+    /*
+    @s a b -> _
+    Convert the shape of `a` to the shape of `b`.
+     */
+    case "mold" => toShape
+    /*
     @s a (f: b -> _) -> SEQ
     Infinite `SEQ` of `f` successively #{Q}ed to `a`.
     ```sclin
@@ -2241,11 +2260,6 @@ extension (env: ENV)
     ```
      */
     case "rmap" => rmap
-    /*
-    @s a b -> _
-    Convert `a` to the shape of `b`.
-     */
-    case "mold" => toShape
     /*
     @s a b f' -> _'
     #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
