@@ -1909,16 +1909,28 @@ extension (env: ENV)
     /*
     @s (a >NUM)' -> ARR[1*]'
     Length-`a` `ARR` of 1's.
+    ```sclin
+    10I*
+    ```
      */
     case "I*" => ones
     /*
     @s (a >ARR) -> ARR
     `ARR` of 1's with dimensions `a`.
+    ```sclin
+    [2 3 4] I^
+    ```
      */
     case "I^" => one$
     /*
     @s a b -> _
     Convert the shape of `a` to the shape of `b`.
+    ```sclin
+    $W [2 3 4] I^ mold
+    ```
+    ```sclin
+    $W [1 2 3] I* mold
+    ```
      */
     case "mold" => toShape
     /*
