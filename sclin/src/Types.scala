@@ -402,7 +402,7 @@ enum ANY:
     case x      => f(x)
 
   def toShape(t: ANY): ANY =
-    val f = flat
+    val f = rflat
     var i = -1
     t.rmap(_ =>
       i += 1
