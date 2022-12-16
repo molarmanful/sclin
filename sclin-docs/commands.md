@@ -1434,6 +1434,27 @@ Infinite `SEQ` with elements of `a` cycled.
 ```
 
 
+## CMD: [``` I* ```](#cmd-i-3)
+
+Stack: ``` (a >NUM)' -> ARR[1*]' ```
+
+Length-`a` `ARR` of 1's.
+
+
+## CMD: [``` I^ ```](#cmd-i-4)
+
+Stack: ``` (a >ARR) -> ARR ```
+
+`ARR` of 1's with dimensions `a`.
+
+
+## CMD: [``` mold ```](#cmd-mold)
+
+Stack: ``` a b -> _ ```
+
+Convert the shape of `a` to the shape of `b`.
+
+
 ## CMD: [``` itr ```](#cmd-itr)
 
 Stack: ``` a (f: b -> _) -> SEQ ```
@@ -1552,7 +1573,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [7 8 4 9 2 6 5 1 0 3]
+-> [9 6 7 8 3 0 5 4 1 2]
 ```
 
 
@@ -1905,13 +1926,6 @@ Atomic/recursive [``` map ```](#cmd-map).
 ```
 
 
-## CMD: [``` mold ```](#cmd-mold)
-
-Stack: ``` a b -> _ ```
-
-Convert `a` to the shape of `b`.
-
-
 ## CMD: [``` fold ```](#cmd-fold)
 
 Stack: ``` a b f' -> _' ```
@@ -2126,7 +2140,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 1 5 2 3]
+-> [2 1 5 3 4]
 ```
 
 
