@@ -1589,7 +1589,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [8 6 1 5 3 0 7 9 2 4]
+-> [9 5 3 0 1 8 2 4 7 6]
 ```
 
 
@@ -1828,6 +1828,13 @@ Stack: ``` (a >STR)' (r >STR)' (f: MAP -> >STR)' -> STR' ```
 Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
 
 
+## CMD: [``` /#^ ```](#cmd--91)
+
+Stack: ``` (a >STR)' (r >STR)' (s >STR)' -> STR' ```
+
+Replace first match of regex `r` on `a` with `s`.
+
+
 ## CMD: [``` map ```](#cmd-map)
 
 Stack: ``` a f' -> _' ```
@@ -2003,14 +2010,14 @@ Stack: ``` a b f' -> _' ```
 ```
 
 
-## CMD: [``` +/ ```](#cmd--91)
+## CMD: [``` +/ ```](#cmd--92)
 
 Stack: ``` a -> NUM' ```
 
 Sum of `a`. Equivalent to `0 \+ rfold`.
 
 
-## CMD: [``` */ ```](#cmd--92)
+## CMD: [``` */ ```](#cmd--93)
 
 Stack: ``` a -> NUM' ```
 
@@ -2156,7 +2163,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 1 2 5 3]
+-> [3 2 5 1 4]
 ```
 
 
@@ -2242,67 +2249,67 @@ Stack: ``` (a >FUT[x])' -> TRY[x]' ```
 [``` ~_ ```](#cmd-_-6) with result wrapped in a `TRY`.
 
 
-## CMD: [``` ~$ ```](#cmd--93)
+## CMD: [``` ~$ ```](#cmd--94)
 
 Stack: ``` (a >FUT)' -> ```
 
 Cancels `a`.
 
 
-## CMD: [``` ~|> ```](#cmd--94)
+## CMD: [``` ~|> ```](#cmd--95)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
 
 
-## CMD: [``` ~|| ```](#cmd--95)
+## CMD: [``` ~|| ```](#cmd--96)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
 
 
-## CMD: [``` ~||> ```](#cmd--96)
+## CMD: [``` ~||> ```](#cmd--97)
 
 Stack: ``` a[>TASK*] (n >NUM) -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--95) but with at most `n` concurrently running `TASK`s.
+[``` ~|| ```](#cmd--96) but with at most `n` concurrently running `TASK`s.
 
 
-## CMD: [``` ~// ```](#cmd--97)
+## CMD: [``` ~// ```](#cmd--98)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--95) but results are also unordered.
+[``` ~|| ```](#cmd--96) but results are also unordered.
 
 
-## CMD: [``` ~>> ```](#cmd--98)
+## CMD: [``` ~>> ```](#cmd--99)
 
 Stack: ``` a[>TASK*] -> TASK ```
 
 Races a collection of `TASK`s, returning the first to complete.
 
 
-## CMD: [``` ~< ```](#cmd--99)
+## CMD: [``` ~< ```](#cmd--100)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` runs on a separate thread.
 
 
-## CMD: [``` ~: ```](#cmd--100)
+## CMD: [``` ~: ```](#cmd--101)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` is memoized such that subsequent runs of the task return the same value.
 
 
-## CMD: [``` ~:& ```](#cmd--101)
+## CMD: [``` ~:& ```](#cmd--102)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
-[``` ~: ```](#cmd--100) but only if `a` completes successfully.
+[``` ~: ```](#cmd--101) but only if `a` completes successfully.
 
 
 ## CMD: [``` ~$_ ```](#cmd-_-8)
@@ -2312,7 +2319,7 @@ Stack: ``` (a >TASK)' -> TASK' ```
 Ensures that `a` is uncancellable.
 
 
-## CMD: [``` ~% ```](#cmd--102)
+## CMD: [``` ~% ```](#cmd--103)
 
 Stack: ``` (a >TASK)' (n >NUM)' -> TASK' ```
 
