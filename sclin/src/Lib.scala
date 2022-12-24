@@ -392,7 +392,7 @@ extension (env: ENV)
     env.mod2(loop)
 
   def sub: ENV   = env.num2(_ - _)
-  def sub$ : ENV = env.str2(_.replace(_, ""))
+  def sub$ : ENV = env.str2((x, y) => x.filterNot(y.contains))
   def sub$$ : ENV =
     def loop(x: ANY, y: ANY): ANY = (x, y) match
       case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
