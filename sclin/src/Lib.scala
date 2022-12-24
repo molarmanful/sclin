@@ -319,6 +319,8 @@ extension (env: ENV)
       .replaceAllIn(x.toSTR.x, m => env.evalA1(Vector(m.matchMAP), f).toSTR.x)
       .sSTR
   )
+  def rsubFirst: ENV =
+    env.vec3((x, r, f) => r.toSTR.x.r.replaceFirstIn(x.toSTR.x, f.toSTR.x).sSTR)
 
   def wrap$ : ENV   = env.modx(2, _.toARR)
   def wrap: ENV     = env.modx(1, _.toARR)
@@ -2194,6 +2196,11 @@ extension (env: ENV)
     Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
      */
     case "/#" => rsub
+    /*
+    @s (a >STR)' (r >STR)' (s >STR)' -> STR'
+    Replace first match of regex `r` on `a` with `s`.
+     */
+    case "/#^" => rsubFirst
 
     /*
     @s a f' -> _'
