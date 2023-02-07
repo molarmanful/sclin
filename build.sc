@@ -8,7 +8,7 @@ import scalalib.publish._
 
 object sclin extends ScalaModule with PublishModule {
 
-  def scalaVersion                       = "3.2.1"
+  def scalaVersion                       = "3.2.2"
   override def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
     description = "Scala implementation of lin",
