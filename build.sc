@@ -1,5 +1,5 @@
 import $file.docp
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
@@ -41,11 +41,9 @@ object sclin extends ScalaModule with PublishModule {
       .pipe(os.write.over(os.pwd / "sclin-docs" / "commands.md", _))
   }
 
-  object test extends Tests with TestModule.Munit {
+  object test extends ScalaTests with TestModule.Munit {
 
-    def ivyDeps = Agg(
-      ivy"org.scalameta::munit:1.0.0-M8"
-    )
+    def ivyDeps = Agg(ivy"org.scalameta::munit:1.0.0-M8")
 
   }
 

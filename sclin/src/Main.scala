@@ -5,11 +5,10 @@ import scala.util.chaining._
 
 object Main:
 
-  implicit object PathRead
-      extends TokensReader[os.Path](
-        "path",
-        strs => Right(os.Path(strs.head, os.pwd))
-      )
+  implicit object PathRead extends TokensReader.Simple[os.Path]:
+
+    def shortName               = "path"
+    def read(strs: Seq[String]) = Right(os.Path(strs.head, os.pwd))
 
   @main def sclin(
       @arg(short = 'f', doc = "Execute file.") file: Option[os.Path],
