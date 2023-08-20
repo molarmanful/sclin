@@ -66,7 +66,7 @@ case class DocParser(
 # COMMANDS
 
 ${xs.map { case DocCmd(name, _, _) => s"[``` $name ```](#${cs1(name)})" }
-        .mkString(",\n")}
+        .mkString("\n")}
 
 
 ${xs.map(_.md(cs1)).mkString("\n")}
