@@ -180,7 +180,7 @@ extension (env: ENV)
   def nix: ENV = env.arg1((x, env) =>
     env.modStack(s =>
       val i = env.iStack(x.toInt)
-      if 0 < i && i < s.length then s.patch(i, Nil, 1) else s
+      if 0 <= i && i < s.length then s.patch(i, Nil, 1) else s
     )
   )
 
@@ -193,8 +193,10 @@ extension (env: ENV)
 
   def rot: ENV  = env.mods3((x, y, z) => Vector(y, z, x))
   def rotu: ENV = env.mods3((x, y, z) => Vector(z, x, y))
-  def roll: ENV =
-    env.arg1((x, env) => env.push(x).pick.push(x).push(NUM(1)).add.nix)
+  def roll: ENV = env.arg1((x, env) =>
+    val a = env.getStack(x.toInt)
+    env.push(x).nix.push(a)
+  )
   def rollu: ENV = env.arg1((x, env) =>
     val a = env.getStack(0)
     env.modStack(s => s.patch(env.iStack(x.toInt), Vector(a), 0)).pop
@@ -1150,6 +1152,12 @@ extension (env: ENV)
     /*
     @s (a @ n) b* (n >NUM) -> a b* a
     #{dup}s `n`th item from top of stack.
+    ```sclin
+    4 3 2 1 0 3pick
+    ```
+    ```sclin
+    4 3 2 1 0 1_ pick
+    ```
      */
     case "pick" => pick
     /*
@@ -1197,6 +1205,12 @@ extension (env: ENV)
     /*
     @s (a @ n) b* c (n >NUM) -> c b* a
     #{swap}s `c` with `n`th item from top of stack.
+    ```sclin
+    4 3 2 1 0 3trade
+    ```
+    ```sclin
+    4 3 2 1 0 1_ trade
+    ```
      */
     case "trade" => trade
     /*
@@ -1210,11 +1224,23 @@ extension (env: ENV)
     /*
     @s (a @ n) b* (n >NUM) -> b* a
     #{rot}s to top `n`th item from top of stack.
+    ```sclin
+    4 3 2 1 0 3roll
+    ```
+    ```sclin
+    4 3 2 1 0 1_ roll
+    ```
      */
     case "roll" => roll
     /*
     @s b* c (n >NUM) -> (c @ n) b*
     #{rot_}s `c` to `n`th from top of stack.
+    ```sclin
+    4 3 2 1 0 3roll_
+    ```
+    ```sclin
+    4 3 2 1 0 1_ roll_
+    ```
      */
     case "roll_" => rollu
     /*
