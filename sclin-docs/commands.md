@@ -1,6 +1,283 @@
 
 # COMMANDS
 
+[``` type ```](#cmd-type),
+[``` form ```](#cmd-form),
+[``` >Q ```](#cmd-q),
+[``` >A ```](#cmd-a),
+[``` >M ```](#cmd-m),
+[``` >S ```](#cmd-s),
+[``` >N ```](#cmd-n),
+[``` >F ```](#cmd-f),
+[``` >E ```](#cmd-e),
+[``` >~ ```](#cmd-),
+[``` ~> ```](#cmd--1),
+[``` >!? ```](#cmd--2),
+[``` >? ```](#cmd--3),
+[``` N>d ```](#cmd-nd),
+[``` >TT ```](#cmd-tt),
+[``` UN ```](#cmd-un),
+[``` $T ```](#cmd-t),
+[``` $F ```](#cmd-f-1),
+[``` () ```](#cmd--4),
+[``` [] ```](#cmd--5),
+[``` {} ```](#cmd--6),
+[``` ()~ ```](#cmd--7),
+[``` ()! ```](#cmd--8),
+[``` $PI ```](#cmd-pi),
+[``` $E ```](#cmd-e-1),
+[``` $PHI ```](#cmd-phi),
+[``` $rng ```](#cmd-rng),
+[``` $LINE ```](#cmd-line),
+[``` $FILE ```](#cmd-file),
+[``` $W ```](#cmd-w),
+[``` $N ```](#cmd-n-1),
+[``` $P ```](#cmd-p),
+[``` $L* ```](#cmd-l),
+[``` $ABC ```](#cmd-abc),
+[``` $abc ```](#cmd-abc-1),
+[``` g@ ```](#cmd-g),
+[``` g; ```](#cmd-g-1),
+[``` g;; ```](#cmd-g-2),
+[``` n\ ```](#cmd-n-2),
+[``` @$ ```](#cmd--9),
+[``` @$$ ```](#cmd--10),
+[``` i> ```](#cmd-i),
+[``` >o ```](#cmd-o),
+[``` n>o ```](#cmd-no),
+[``` f>o ```](#cmd-fo),
+[``` dup ```](#cmd-dup),
+[``` dups ```](#cmd-dups),
+[``` dupd ```](#cmd-dupd),
+[``` over ```](#cmd-over),
+[``` ddup ```](#cmd-ddup),
+[``` edup ```](#cmd-edup),
+[``` pick ```](#cmd-pick),
+[``` pop ```](#cmd-pop),
+[``` clr ```](#cmd-clr),
+[``` nip ```](#cmd-nip),
+[``` ppop ```](#cmd-ppop),
+[``` qpop ```](#cmd-qpop),
+[``` nix ```](#cmd-nix),
+[``` swap ```](#cmd-swap),
+[``` rev ```](#cmd-rev),
+[``` swapd ```](#cmd-swapd),
+[``` tuck ```](#cmd-tuck),
+[``` trade ```](#cmd-trade),
+[``` rot ```](#cmd-rot),
+[``` rot_ ```](#cmd-rot_),
+[``` roll ```](#cmd-roll),
+[``` roll_ ```](#cmd-roll_),
+[``` dip ```](#cmd-dip),
+[``` \ ```](#cmd--11),
+[``` # ```](#cmd--12),
+[``` Q ```](#cmd-q-1),
+[``` @@ ```](#cmd--13),
+[``` @~ ```](#cmd--14),
+[``` @ ```](#cmd--15),
+[``` ; ```](#cmd--16),
+[``` ;; ```](#cmd--17),
+[``` g@@ ```](#cmd-g-3),
+[``` g@~ ```](#cmd-g-4),
+[``` &# ```](#cmd--18),
+[``` |# ```](#cmd--19),
+[``` ?# ```](#cmd--20),
+[``` ??# ```](#cmd--21),
+[``` *# ```](#cmd--22),
+[``` !# ```](#cmd--23),
+[``` !Q ```](#cmd-q-2),
+[``` ~Q ```](#cmd-q-3),
+[``` >! ```](#cmd--24),
+[``` ' ```](#cmd--25),
+[``` '_ ```](#cmd-_),
+[``` end ```](#cmd-end),
+[``` E ```](#cmd-e-2),
+[``` I ```](#cmd-i-1),
+[``` I? ```](#cmd-i-2),
+[``` |_ ```](#cmd-_-1),
+[``` |~ ```](#cmd--26),
+[``` |^ ```](#cmd--27),
+[``` X>b ```](#cmd-xb),
+[``` b>X ```](#cmd-bx),
+[``` >n/d ```](#cmd-nd-1),
+[``` prec? ```](#cmd-prec),
+[``` _ ```](#cmd-_-2),
+[``` __ ```](#cmd-__),
+[``` _` ```](#cmd-_-3),
+[``` + ```](#cmd--28),
+[``` ++ ```](#cmd--29),
+[``` +` ```](#cmd--30),
+[``` - ```](#cmd--),
+[``` -- ```](#cmd---),
+[``` -` ```](#cmd---1),
+[``` * ```](#cmd--31),
+[``` ** ```](#cmd--32),
+[``` *` ```](#cmd--33),
+[``` / ```](#cmd--34),
+[``` /~ ```](#cmd--35),
+[``` // ```](#cmd--36),
+[``` /` ```](#cmd--37),
+[``` % ```](#cmd--38),
+[``` /% ```](#cmd--39),
+[``` %% ```](#cmd--40),
+[``` %` ```](#cmd--41),
+[``` ^ ```](#cmd--42),
+[``` ^~ ```](#cmd--43),
+[``` ^^ ```](#cmd--44),
+[``` ^` ```](#cmd--45),
+[``` e^ ```](#cmd-e-3),
+[``` abs ```](#cmd-abs),
+[``` sin ```](#cmd-sin),
+[``` cos ```](#cmd-cos),
+[``` tan ```](#cmd-tan),
+[``` sin_ ```](#cmd-sin_),
+[``` cos_ ```](#cmd-cos_),
+[``` tan_ ```](#cmd-tan_),
+[``` tan_II ```](#cmd-tan_ii),
+[``` sinh ```](#cmd-sinh),
+[``` cosh ```](#cmd-cosh),
+[``` tanh ```](#cmd-tanh),
+[``` sinh_ ```](#cmd-sinh_),
+[``` cosh_ ```](#cmd-cosh_),
+[``` tanh_ ```](#cmd-tanh_),
+[``` log ```](#cmd-log),
+[``` ln ```](#cmd-ln),
+[``` logX ```](#cmd-logx),
+[``` P? ```](#cmd-p-1),
+[``` P/ ```](#cmd-p-2),
+[``` ! ```](#cmd--46),
+[``` !` ```](#cmd--47),
+[``` & ```](#cmd--48),
+[``` && ```](#cmd--49),
+[``` &` ```](#cmd--50),
+[``` &&` ```](#cmd--51),
+[``` | ```](#cmd--52),
+[``` || ```](#cmd--53),
+[``` |` ```](#cmd--54),
+[``` ||` ```](#cmd--55),
+[``` <=> ```](#cmd--56),
+[``` <=>` ```](#cmd--57),
+[``` = ```](#cmd--58),
+[``` =` ```](#cmd--59),
+[``` != ```](#cmd--60),
+[``` !=` ```](#cmd--61),
+[``` < ```](#cmd--62),
+[``` <` ```](#cmd--63),
+[``` > ```](#cmd--64),
+[``` >` ```](#cmd--65),
+[``` <= ```](#cmd--66),
+[``` <=` ```](#cmd--67),
+[``` >= ```](#cmd--68),
+[``` >=` ```](#cmd--69),
+[``` : ```](#cmd--70),
+[``` :r ```](#cmd-r),
+[``` :` ```](#cmd--71),
+[``` := ```](#cmd--72),
+[``` :- ```](#cmd---2),
+[``` :? ```](#cmd--73),
+[``` :?` ```](#cmd--74),
+[``` len ```](#cmd-len),
+[``` , ```](#cmd--75),
+[``` ,, ```](#cmd--76),
+[``` ,' ```](#cmd--77),
+[``` ,,' ```](#cmd--78),
+[``` ,` ```](#cmd--79),
+[``` ,_ ```](#cmd-_-4),
+[``` ,,_ ```](#cmd-_-5),
+[``` tk ```](#cmd-tk),
+[``` dp ```](#cmd-dp),
+[``` flat ```](#cmd-flat),
+[``` rflat ```](#cmd-rflat),
+[``` rep ```](#cmd-rep),
+[``` cyc ```](#cmd-cyc),
+[``` I* ```](#cmd-i-3),
+[``` I^ ```](#cmd-i-4),
+[``` mold ```](#cmd-mold),
+[``` itr ```](#cmd-itr),
+[``` fold_ ```](#cmd-fold_),
+[``` >kv ```](#cmd-kv),
+[``` =>kv ```](#cmd-kv-1),
+[``` >k ```](#cmd-k),
+[``` >v ```](#cmd-v),
+[``` a>b ```](#cmd-ab),
+[``` O>a ```](#cmd-oa),
+[``` a>O ```](#cmd-ao),
+[``` I>a ```](#cmd-ia),
+[``` a>I ```](#cmd-ai),
+[``` shuf ```](#cmd-shuf),
+[``` perm ```](#cmd-perm),
+[``` comb ```](#cmd-comb),
+[``` ^set ```](#cmd-set),
+[``` Q* ```](#cmd-q-4),
+[``` tpose ```](#cmd-tpose),
+[``` S>c ```](#cmd-sc),
+[``` c>S ```](#cmd-cs),
+[``` <> ```](#cmd--80),
+[``` <>: ```](#cmd--81),
+[``` c<> ```](#cmd-c),
+[``` w<> ```](#cmd-w-1),
+[``` n<> ```](#cmd-n-3),
+[``` s<> ```](#cmd-s-1),
+[``` >< ```](#cmd--82),
+[``` c>< ```](#cmd-c-1),
+[``` w>< ```](#cmd-w-2),
+[``` n>< ```](#cmd-n-4),
+[``` A>a ```](#cmd-aa),
+[``` a>A ```](#cmd-aa-1),
+[``` >Aa ```](#cmd-aa-2),
+[``` /? ```](#cmd--83),
+[``` /?& ```](#cmd--84),
+[``` /?` ```](#cmd--85),
+[``` /?' ```](#cmd--86),
+[``` /?* ```](#cmd--87),
+[``` /?^ ```](#cmd--88),
+[``` /?$ ```](#cmd--89),
+[``` /# ```](#cmd--90),
+[``` /#^ ```](#cmd--91),
+[``` map ```](#cmd-map),
+[``` tap ```](#cmd-tap),
+[``` zip ```](#cmd-zip),
+[``` zip~ ```](#cmd-zip-1),
+[``` tbl ```](#cmd-tbl),
+[``` mapf ```](#cmd-mapf),
+[``` rmap ```](#cmd-rmap),
+[``` fold ```](#cmd-fold),
+[``` rfold ```](#cmd-rfold),
+[``` fold~ ```](#cmd-fold-1),
+[``` scan ```](#cmd-scan),
+[``` +/ ```](#cmd--92),
+[``` */ ```](#cmd--93),
+[``` walk ```](#cmd-walk),
+[``` fltr ```](#cmd-fltr),
+[``` any ```](#cmd-any),
+[``` all ```](#cmd-all),
+[``` tk* ```](#cmd-tk-1),
+[``` dp* ```](#cmd-dp-1),
+[``` find ```](#cmd-find),
+[``` find: ```](#cmd-find-1),
+[``` uniq ```](#cmd-uniq),
+[``` sort ```](#cmd-sort),
+[``` sort~ ```](#cmd-sort-1),
+[``` part ```](#cmd-part),
+[``` group ```](#cmd-group),
+[``` span ```](#cmd-span),
+[``` pack ```](#cmd-pack),
+[``` ~_ ```](#cmd-_-6),
+[``` ~_! ```](#cmd-_-7),
+[``` ~$ ```](#cmd--94),
+[``` ~|> ```](#cmd--95),
+[``` ~|| ```](#cmd--96),
+[``` ~||> ```](#cmd--97),
+[``` ~// ```](#cmd--98),
+[``` ~>> ```](#cmd--99),
+[``` ~< ```](#cmd--100),
+[``` ~: ```](#cmd--101),
+[``` ~:& ```](#cmd--102),
+[``` ~$_ ```](#cmd-_-8),
+[``` ~% ```](#cmd--103),
+[``` sleep ```](#cmd-sleep)
+
+
 
 ## CMD: [``` type ```](#cmd-type)
 
@@ -280,10 +557,9 @@ Newline character.
 Stack: ``` (a >STR) -> ```
 
 Loads ID `a` into local scope.
-```
+```sclin
 "outer"=$a ( \a @$ a ) # $a
 #a "inner"
--> "inner" "outer"
 ```
 
 
@@ -292,10 +568,9 @@ Loads ID `a` into local scope.
 Stack: ``` (a >STR) -> ```
 
 Loads ID `a` into global scope.
-```
+```sclin
 \a @$$ ( "inner" =$a $a ) # a
 #a "outer"
--> "inner" "outer"
 ```
 
 
@@ -374,13 +649,11 @@ Stack: ``` a b c -> a b c a b c ```
 Stack: ``` (a @ n) b* (n >NUM) -> a b* a ```
 
 [``` dup ```](#cmd-dup)s `n`th item from top of stack.
-```
+```sclin
 4 3 2 1 0 3pick
--> 4 3 2 1 0 3
 ```
-```
+```sclin
 4 3 2 1 0 1_ pick
--> 4 3 2 1 0 4
 ```
 
 
@@ -459,13 +732,11 @@ Stack: ``` a b -> b a b ```
 Stack: ``` (a @ n) b* c (n >NUM) -> c b* a ```
 
 [``` swap ```](#cmd-swap)s `c` with `n`th item from top of stack.
-```
+```sclin
 4 3 2 1 0 3trade
--> 4 0 2 1 3
 ```
-```
+```sclin
 4 3 2 1 0 1_ trade
--> 0 3 2 1 4
 ```
 
 
@@ -488,13 +759,11 @@ Stack: ``` a b c -> c a b ```
 Stack: ``` (a @ n) b* (n >NUM) -> b* a ```
 
 [``` rot ```](#cmd-rot)s to top `n`th item from top of stack.
-```
+```sclin
 4 3 2 1 0 3roll
--> 4 2 1 0 3
 ```
-```
+```sclin
 4 3 2 1 0 1_ roll
--> 3 2 1 0 4
 ```
 
 
@@ -503,13 +772,11 @@ Stack: ``` (a @ n) b* (n >NUM) -> b* a ```
 Stack: ``` b* c (n >NUM) -> (c @ n) b* ```
 
 [``` rot_ ```](#cmd-rot_)s `c` to `n`th from top of stack.
-```
+```sclin
 4 3 2 1 0 3roll_
--> 4 0 3 2 1
 ```
-```
+```sclin
 4 3 2 1 0 1_ roll_
--> 0 4 3 2 1
 ```
 
 
@@ -532,9 +799,8 @@ Wraps `a` in `FN`.
 Stack: ``` a* f -> _* ```
 
 Executes `f`.
-```
+```sclin
 1 2 ( 3 + 4 ) #
--> 1 5 4
 ```
 
 
@@ -543,9 +809,8 @@ Executes `f`.
 Stack: ``` f' -> _' ```
 
 Evaluates `f` ([``` # ```](#cmd--12) but only preserves resulting top of stack).
-```
+```sclin
 1 2 ( dups 3+` ) Q
--> 1 2 [1 2 3]
 ```
 
 
@@ -668,9 +933,8 @@ Throws `e`.
 Stack: ``` (a >ARR) f -> ARR ```
 
 [``` # ```](#cmd--12)s `f` on `a` as if it were a stack.
-```
+```sclin
 [1 2 3 4] ( 5 swap ) '
--> [1 2 3 5 4]
 ```
 
 
@@ -679,9 +943,8 @@ Stack: ``` (a >ARR) f -> ARR ```
 Stack: ``` (a* >ARR) f -> _* ```
 
 [``` # ```](#cmd--12)s `f` on the stack as if it were an `ARR`.
-```
+```sclin
 1 2 3 4 1.+.map '_
--> 2 3 4 5
 ```
 
 
@@ -739,13 +1002,11 @@ Rounds `a` towards ∞.
 Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM*]' ```
 
 Converts `a` from decimal to `ARR` of base-`b` digits.
-```
+```sclin
 153 2X>b
--> [1 0 0 1 1 0 0 1]
 ```
-```
+```sclin
 153 16X>b
--> [9 9]
 ```
 
 
@@ -754,13 +1015,11 @@ Converts `a` from decimal to `ARR` of base-`b` digits.
 Stack: ``` (a >ARR[>NUM*]) (b >NUM)' -> NUM' ```
 
 Converts base-`b` digits to decimal.
-```
+```sclin
 [1 0 0 1 1 0 0 1] 2b>X
--> 153
 ```
-```
+```sclin
 [9 9] 16b>X
--> 153
 ```
 
 
@@ -769,13 +1028,11 @@ Converts base-`b` digits to decimal.
 Stack: ``` (a >NUM)' -> ARR[NUM NUM]' ```
 
 Converts `a` to a numerator-denominator pair.
-```
+```sclin
 4 6/ >n/d
--> [2 3]
 ```
-```
+```sclin
 $PI >n/d
--> [68417829380157871863019543882359730131241 21778071482940061661655974875633165533184]
 ```
 
 
@@ -784,13 +1041,11 @@ $PI >n/d
 Stack: ``` (a >NUM)' -> ARR[NUM NUM]' ```
 
 Whether `a` is an exact value (i.e. represented in full precision).
-```
+```sclin
 2 3/ prec?
--> 1
 ```
-```
+```sclin
 $PI prec?
--> 0
 ```
 
 
@@ -856,13 +1111,11 @@ Stack: ``` a b -> _ ```
 
 Remove occurrences of `b` from `a`.
 If `a` is `MAP`, then removal is performed on keys instead of values.
-```
+```sclin
 [1 2 3 4] 2-`
--> [1 3 4]
 ```
-```
+```sclin
 {0 1, 2 3, } 2-`
--> {0=>1}
 ```
 
 
@@ -886,13 +1139,11 @@ Stack: ``` a b -> _ ```
 
 `a` replicated according to `b`.
 If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
-```
+```sclin
 [1 2 3 4] [0 2 0 3] *` >A
--> [2 2 4 4 4]
 ```
-```
+```sclin
 [1 2 3 4] 3*` >A
--> [1 2 3 4 1 2 3 4 1 2 3 4]
 ```
 
 
@@ -922,9 +1173,8 @@ Atomic [``` /` ```](#cmd--37).
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` chunked to size `b`.
-```
+```sclin
 [1 2 3 4 5] 2/` >A
--> [[1 2] [3 4] [5]]
 ```
 
 
@@ -954,9 +1204,8 @@ Atomic [``` %` ```](#cmd--41).
 Stack: ``` a (b >NUM)' -> SEQ ```
 
 `a` windowed to size `b`.
-```
+```sclin
 [1 2 3 4 5] 3%` >A
--> [[1 2 3] [2 3 4] [3 4 5]]
 ```
 
 
@@ -986,9 +1235,8 @@ Atomic [``` ^` ```](#cmd--45).
 Stack: ``` a (n >NUM)' -> SEQ' ```
 
 Cartesian power of seed `a` to `n`.
-```
+```sclin
 "abc" 3^` >A
--> ["aaa" "aab" "aac" "aba" "abb" "abc" "aca" "acb" "acc" "baa" "bab" "bac" "bba" "bbb" "bbc" "bca" "bcb" "bcc" "caa" "cab" "cac" "cba" "cbb" "cbc" "cca" "ccb" "ccc"]
 ```
 
 
@@ -1130,9 +1378,8 @@ Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance o
 Stack: ``` (a >NUM)' -> MAP[(NUM => NUM)*] ```
 
 Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
-```
+```sclin
 340P/
--> {2=>2 5=>1 17=>1}
 ```
 
 
@@ -1445,13 +1692,11 @@ Flattens `a` recursively.
 Stack: ``` a -> SEQ ```
 
 Infinite `SEQ` with `a` repeated.
-```
+```sclin
 5rep 10tk >A
--> [5 5 5 5 5 5 5 5 5 5]
 ```
-```
+```sclin
 [1 2 3] rep 10tk >A
--> [[1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
 ```
 
 
@@ -1460,9 +1705,8 @@ Infinite `SEQ` with `a` repeated.
 Stack: ``` a -> SEQ ```
 
 Infinite `SEQ` with elements of `a` cycled.
-```
+```sclin
 [1 2 3] cyc 10tk >A
--> [1 2 3 1 2 3 1 2 3 1]
 ```
 
 
@@ -1471,9 +1715,8 @@ Infinite `SEQ` with elements of `a` cycled.
 Stack: ``` (a >NUM)' -> ARR[1*]' ```
 
 Length-`a` `ARR` of 1's.
-```
+```sclin
 10I*
--> [1 1 1 1 1 1 1 1 1 1]
 ```
 
 
@@ -1482,9 +1725,8 @@ Length-`a` `ARR` of 1's.
 Stack: ``` (a >ARR) -> ARR ```
 
 `ARR` of 1's with dimensions `a`.
-```
+```sclin
 [2 3 4] I^
--> [[[1 1 1 1] [1 1 1 1] [1 1 1 1]] [[1 1 1 1] [1 1 1 1] [1 1 1 1]]]
 ```
 
 
@@ -1493,13 +1735,11 @@ Stack: ``` (a >ARR) -> ARR ```
 Stack: ``` a b -> _ ```
 
 Convert the shape of `a` to the shape of `b`.
-```
+```sclin
 $W [2 3 4] I^ mold
--> [[[0 1 2 3] [4 5 6 7] [8 9 10 11]] [[12 13 14 15] [16 17 18 19] [20 21 22 23]]]
 ```
-```
+```sclin
 $W [1 2 3] I* mold
--> [[0] [1 2] [3 4 5]]
 ```
 
 
@@ -1508,13 +1748,11 @@ $W [1 2 3] I* mold
 Stack: ``` a (f: b -> _) -> SEQ ```
 
 Infinite `SEQ` of `f` successively [``` Q ```](#cmd-q-1)ed to `a`.
-```
+```sclin
 1 1.+ itr 10tk >A
--> [1 2 3 4 5 6 7 8 9 10]
 ```
-```
+```sclin
 1 ( 1+ 1 swap / ) itr 10tk >A
--> [1 1/2 2/3 3/5 5/8 8/13 13/21 21/34 34/55 55/89]
 ```
 
 
@@ -1525,9 +1763,8 @@ Stack: ``` a (f: b -> _ _ | ) -> SEQ ```
 `SEQ` generated from `f` successively [``` Q ```](#cmd-q-1)ed to `a`,
 where `x` is the new current item and `y` is the next `b` to be subsequently [``` Q ```](#cmd-q-1)ed to `f`.
 Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack.
-```
+```sclin
 0 1, ( ,_ tuck + dups \swap dip ) fold_ 10tk >A
--> [1 1 2 3 5 8 13 21 34 55]
 ```
 
 
@@ -1536,13 +1773,11 @@ Generation stops if `f` [``` Q ```](#cmd-q-1)ed to `a` results in an empty stack
 Stack: ``` a -> (SEQ | ARR)[ARR[k v]*] ```
 
 `SEQ` of key/value pairs in `a`.
-```
+```sclin
 ["a" "b" "c" "d"] >kv >A
--> [[0 "a"] [1 "b"] [2 "c"] [3 "d"]]
 ```
-```
+```sclin
 {"x""a", "y""b", "z""c", } >kv >A
--> [["x" "a"] ["y" "b"] ["z" "c"]]
 ```
 
 
@@ -1551,9 +1786,8 @@ Stack: ``` a -> (SEQ | ARR)[ARR[k v]*] ```
 Stack: ``` a -> MAP[(_ => _)*] ```
 
 [``` >kv ```](#cmd-kv) and [``` >M ```](#cmd-m).
-```
+```sclin
 ["a" "b" "c" "d"] =>kv
--> {0=>"a" 1=>"b" 2=>"c" 3=>"d"}
 ```
 
 
@@ -1562,9 +1796,8 @@ Stack: ``` a -> MAP[(_ => _)*] ```
 Stack: ``` a -> SEQ | ARR ```
 
 Keys in `a`.
-```
+```sclin
 {"x" "a", "y" "b", "z" "c", } >k >A
--> ["x" "y" "z"]
 ```
 
 
@@ -1573,9 +1806,8 @@ Keys in `a`.
 Stack: ``` a -> SEQ | ARR ```
 
 Values in `a`.
-```
+```sclin
 {"x""a", "y""b", "z""c", } >v >A
--> ["a" "b" "c"]
 ```
 
 
@@ -1619,9 +1851,8 @@ Exclusive range from `a` to 1.
 Stack: ``` a -> _ ```
 
 Shuffles `a`.
-```
+```sclin
 10O>a shuf
--> [5 6 0 7 9 3 1 2 4 8]
 ```
 
 
@@ -1630,9 +1861,8 @@ Shuffles `a`.
 Stack: ``` a -> SEQ ```
 
 All permutations of `a`.
-```
+```sclin
 [1 2 3] perm >A
--> [[1 2 3] [1 3 2] [2 1 3] [2 3 1] [3 1 2] [3 2 1]]
 ```
 
 
@@ -1641,9 +1871,8 @@ All permutations of `a`.
 Stack: ``` a (n >NUM)' -> SEQ' ```
 
 All length-`n` combinations of `a`.
-```
+```sclin
 [1 2 3] 2comb >A
--> [[1 2] [1 3] [2 3]]
 ```
 
 
@@ -1652,9 +1881,8 @@ All length-`n` combinations of `a`.
 Stack: ``` a -> SEQ ```
 
 All subsets of `a`.
-```
+```sclin
 [1 2 3] ^set >A
--> [[] [1] [2] [3] [1 2] [1 3] [2 3] [1 2 3]]
 ```
 
 
@@ -1663,9 +1891,8 @@ All subsets of `a`.
 Stack: ``` a[_*] -> SEQ' ```
 
 Cartesian product of iterable-of-iterables `a` to `n`.
-```
+```sclin
 ["abc" "def" "ghi"] Q* >A
--> ["adg" "adh" "adi" "aeg" "aeh" "aei" "afg" "afh" "afi" "bdg" "bdh" "bdi" "beg" "beh" "bei" "bfg" "bfh" "bfi" "cdg" "cdh" "cdi" "ceg" "ceh" "cei" "cfg" "cfh" "cfi"]
 ```
 
 
@@ -1674,13 +1901,11 @@ Cartesian product of iterable-of-iterables `a` to `n`.
 Stack: ``` a[_*] -> _[_*] ```
 
 Transposes a collection of collections matrix-style.
-```
+```sclin
 [[1 2 3][4 5 6][7 8 9]] tpose
--> [[1 4 7] [2 5 8] [3 6 9]]
 ```
-```
+```sclin
 [[1 2][3 4 5][6]] tpose
--> [[1 3 6] [2 4] [5]]
 ```
 
 
@@ -1689,9 +1914,8 @@ Transposes a collection of collections matrix-style.
 Stack: ``` (a >STR)' -> ARR[NUM*]' ```
 
 Converts `a` to codepoints.
-```
+```sclin
 "hello"S>c
--> [104 101 108 108 111]
 ```
 
 
@@ -1700,9 +1924,8 @@ Converts `a` to codepoints.
 Stack: ``` (a >ARR[NUM*]) -> STR ```
 
 Converts iterable of codepoints to `STR`.
-```
+```sclin
 [104 101 108 108 111] c>S
--> "hello"
 ```
 
 
@@ -1876,13 +2099,11 @@ If `a` is `MAP`, then the signature of `f` is `k v -> _`,
 where `k=>v` is the key-value pair.
 Otherwise, the signature of `f` is `x -> _`,
 where `x` is the element.
-```
+```sclin
 [1 2 3 4] 1.+ map
--> [2 3 4 5]
 ```
-```
+```sclin
 {0 1, 2 3, 4 5, } ( over + ) map
--> {0=>1 2=>5 4=>9}
 ```
 
 
@@ -1891,13 +2112,8 @@ where `x` is the element.
 Stack: ``` a f' -> a ```
 
 [``` map ```](#cmd-map) but `a` is preserved (i.e. leaving only side effects of `f`).
-```
+```sclin
 [1 2 3 4] ( 1+ n>o ) tap
--> [1 2 3 4]
-2
-3
-4
-5
 ```
 
 
@@ -1907,17 +2123,14 @@ Stack: ``` a b (f: x y -> _)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each element-wise pair of `a` and `b`.
 Iterables of differing length truncate to the shorter length when zipped.
-```
+```sclin
 [1 2 3 4] [2 3 4 5] \, zip
--> [[1 2] [2 3] [3 4] [4 5]]
 ```
-```
+```sclin
 [1 2 3 4] [2 3] \+ zip
--> [3 5]
 ```
-```
+```sclin
 [1 2 3 4] {1 "a", 3 "b", "x" "c", } \, zip
--> [[1 [1 "a"]] [2 [3 "b"]] [3 ["x" "c"]]]
 ```
 
 
@@ -1927,17 +2140,14 @@ Stack: ``` a b c d (f: x y -> _)' -> _' ```
 
 [``` zip ```](#cmd-zip) but instead of truncating,
 uses `c` and `d` as fill elements for `a` and `b` respectively.
-```
+```sclin
 [1 2 3 4] [2 3 4 5] UN UN \, zip~
--> [[1 2] [2 3] [3 4] [4 5]]
 ```
-```
+```sclin
 [1 2 3 4] [2 3] UN UN \+ zip~
--> [3 5 3 4]
 ```
-```
+```sclin
 [1 2 3 4] {1 "a", 3 "b", "x" "c", } UN UN \, zip~
--> [[1 [1 "a"]] [2 [3 "b"]] [3 ["x" "c"]] [4 UN]]
 ```
 
 
@@ -1946,9 +2156,8 @@ uses `c` and `d` as fill elements for `a` and `b` respectively.
 Stack: ``` a b (f: x y -> _)' -> _' ```
 
 [``` Q ```](#cmd-q-1)s `f` over each table-wise pair of `a` and `b`.
-```
+```sclin
 [1 2 3 4] [2 3 4 5] \++ tbl
--> [["12" "13" "14" "15"] ["22" "23" "24" "25"] ["32" "33" "34" "35"] ["42" "43" "44" "45"]]
 ```
 
 
@@ -1957,9 +2166,8 @@ Stack: ``` a b (f: x y -> _)' -> _' ```
 Stack: ``` a f' -> _' ```
 
 [``` map ```](#cmd-map) and [``` flat ```](#cmd-flat).
-```
+```sclin
 1224P/ \*` mapf
--> [2 2 2 3 3 17]
 ```
 
 
@@ -1968,16 +2176,8 @@ Stack: ``` a f' -> _' ```
 Stack: ``` a f' -> _' ```
 
 Atomic/recursive [``` map ```](#cmd-map).
-```
+```sclin
 [[1 2] 3 4 [5 [6 7]]] ( dup n>o ) rmap
--> [[1 2] 3 4 [5 [6 7]]]
-1
-2
-3
-4
-5
-6
-7
 ```
 
 
@@ -1990,13 +2190,11 @@ If `a` is `MAP`, then the signature of `f` is `k x v -> _`,
 where `k=>v` is the key-value pair and `x` is the accumulator.
 Otherwise, the signature of `f` is `x y -> _`,
 where `x` is the accumulator and `y` is the value.
-```
+```sclin
 [1 2 3 4] 0 \+ fold
--> 10
 ```
-```
+```sclin
 "1011"_` =>kv 0 ( rot 2 swap ^ * + ) fold
--> 0
 ```
 
 
@@ -2005,13 +2203,11 @@ where `x` is the accumulator and `y` is the value.
 Stack: ``` a b f' -> _' ```
 
 Atomic/recursive [``` fold ```](#cmd-fold).
-```
+```sclin
 [[1 2] 3 4 [5 [6 7]]] 0 \+ rfold
--> 28
 ```
-```
+```sclin
 [[1 2] 3 4 [5 [6 7]]] [] \+` rfold
--> [1 2 3 4 5 6 7]
 ```
 
 
@@ -2021,13 +2217,11 @@ Stack: ``` a f' -> _' ```
 
 [``` fold ```](#cmd-fold) without initial accumulator, instead using the first element of `a`.
 If `a` is empty, then an error is thrown.
-```
+```sclin
 [1 2 3 4] \+ fold~
--> 10
 ```
-```
+```sclin
 [1 5 10 4 3] \| fold~
--> 10
 ```
 
 
@@ -2036,9 +2230,8 @@ If `a` is empty, then an error is thrown.
 Stack: ``` a b f' -> _' ```
 
 [``` fold ```](#cmd-fold) with intermediate values.
-```
+```sclin
 [1 2 3 4] 0 \+ scan
--> [0 1 3 6 10]
 ```
 
 
@@ -2061,24 +2254,11 @@ Product of `a`. Equivalent to `1 \* rfold`.
 Stack: ``` a f' -> _' ```
 
 A multi-purpose function for creating, modifying, and traversing nested structures.
-```
+```sclin
 [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dups f>o ) walk
--> [[1 2] 3 4 {"a"=>5 "b"=>[6 7]}]
-[[[1 2] 3 4 {"a"=>5 "b"=>[6 7]}]]
-[[1 2]]
-[1]
-[2]
-[3]
-[4]
-[{"a"=>5 "b"=>[6 7]}]
-["a" 5]
-["b" [6 7]]
-[6]
-[7]
 ```
-```
+```sclin
 [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len ( dup +` ) &# ) walk
--> [[1 2 1 2] 3 4 {"a"=>5 "b"=>[6 7 6 7]} [1 2 1 2] 3 4 {"a"=>5 "b"=>[6 7 6 7]}]
 ```
 
 
@@ -2091,9 +2271,8 @@ If `a` is `MAP`, then the signature of `f` is `k v -> >TF`,
 where `k=>v` is the key-value pair.
 Otherwise, the signature of `f` is `x -> >TF`,
 where `x` is the element.
-```
+```sclin
 [5 1 2 4 3] 2.> fltr
--> [5 4 3]
 ```
 
 
@@ -2103,9 +2282,8 @@ Stack: ``` a f' -> TF' ```
 
 Whether any elements of `a` satisfy predicate `f`.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 2.> any
--> $T
 ```
 
 
@@ -2115,9 +2293,8 @@ Stack: ``` a f' -> TF' ```
 
 Whether all elements of `a` satisfy predicate `f`.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 2.> all
--> $F
 ```
 
 
@@ -2127,9 +2304,8 @@ Stack: ``` a f' -> _' ```
 
 Takes elements of `a` until [``` Q ```](#cmd-q-1)ing `f` is falsy.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 4.!= tk*
--> [5 1 2]
 ```
 
 
@@ -2139,9 +2315,8 @@ Stack: ``` a f' -> _' ```
 
 Drops elements of `a` while predicate `f` is truthy.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 4.!= dp*
--> [4 3]
 ```
 
 
@@ -2152,9 +2327,8 @@ Stack: ``` a f' -> _' ```
 Finds first element of `a` where predicate `f` is truthy.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 Returns `UN` if not found.
-```
+```sclin
 [5 1 2 4 3] ( 2% ! ) find
--> 2
 ```
 
 
@@ -2165,9 +2339,8 @@ Stack: ``` a f' -> NUM' ```
 Finds index of first element of `a` where predicate `f` is truthy.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
 Returns `-1` if not found.
-```
+```sclin
 [5 1 2 4 3] ( 2% ! ) find:
--> 2
 ```
 
 
@@ -2177,9 +2350,8 @@ Stack: ``` a f' -> _' ```
 
 Uniquifies elements of `a` with mapper `f`.
 See [``` map ```](#cmd-map) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 3.% uniq
--> [5 1 3]
 ```
 
 
@@ -2189,13 +2361,11 @@ Stack: ``` a f' -> _' ```
 
 Sorts elements of `a` with mapper `f`.
 See [``` map ```](#cmd-map) for the signature of `f`.
-```
+```sclin
 ["a" "" "abc" "ab"] \len sort
--> ["" "a" "ab" "abc"]
 ```
-```
+```sclin
 [1 2 3 4 5] \$rng sort
--> [5 4 3 2 1]
 ```
 
 
@@ -2208,13 +2378,11 @@ If `a` is `MAP`, then the signature of `f` is `ARR[k v] ARR[j w] -> >TF`,
 where `k=>v` and `j=>w` are key-value pairs to compare.
 Otherwise, the signature of `f` is `x y -> >TF`,
 where `x` and `y` are elements to compare.
-```
+```sclin
 [1 5 2 3 4] \< sort~
--> [1 2 3 4 5]
 ```
-```
+```sclin
 [1 5 2 3 4] \> sort~
--> [5 4 3 2 1]
 ```
 
 
@@ -2224,9 +2392,8 @@ Stack: ``` a f' -> ARR[_ _]' ```
 
 Separates `a` into 2 parts based on predicate `f`.
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 2.> part
--> [[5 4 3] [1 2]]
 ```
 
 
@@ -2237,9 +2404,8 @@ Stack: ``` a f' -> MAP' ```
 Separates `a` groups based on `f`.
 Each result of `f` becomes a key in the resulting `MAP`.
 See [``` map ```](#cmd-map) for the signature of `f`.
-```
+```sclin
 "abc"^set >A \len group
--> {0=>[""] 2=>["ab" "ac" "bc"] 1=>["a" "b" "c"] 3=>["abc"]}
 ```
 
 
@@ -2249,9 +2415,8 @@ Stack: ``` a f' -> ARR[_ _]' ```
 
 Equivalent to a combination of [``` tk* ```](#cmd-tk-1) and [``` dp* ```](#cmd-dp-1).
 See [``` fltr ```](#cmd-fltr) for the signature of `f`.
-```
+```sclin
 [5 1 2 4 3] 2.% span
--> [[5 1] [2 4 3]]
 ```
 
 
@@ -2261,9 +2426,8 @@ Stack: ``` a f' -> _' ```
 
 Groups consecutive duplicate runs of `a` based on predicate `f`.
 See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
-```
+```sclin
 [1 1 2 3 3 4 6 4 4] \=` pack
--> [[1 1] [2] [3 3] [4] [6] [4 4]]
 ```
 
 

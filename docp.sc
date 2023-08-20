@@ -60,11 +60,18 @@ case class DocParser(
       }
   }
 
-  def md: String = s"""
+  def md: String = {
+    val cs1 = cs.map { case (a, b) => (b, a) }
+    s"""
 # COMMANDS
 
-${xs.map(_.md(cs.map { case (a, b) => (b, a) })).mkString("\n")}
+${xs.map { case DocCmd(name, _, _) => s"[``` $name ```](#${cs1(name)})" }
+        .mkString(",\n")}
+
+
+${xs.map(_.md(cs1)).mkString("\n")}
 """
+  }
 
 }
 
