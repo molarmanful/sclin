@@ -374,6 +374,14 @@ Stack: ``` a b c -> a b c a b c ```
 Stack: ``` (a @ n) b* (n >NUM) -> a b* a ```
 
 [``` dup ```](#cmd-dup)s `n`th item from top of stack.
+```
+4 3 2 1 0 3pick
+-> 4 3 2 1 0 3
+```
+```
+4 3 2 1 0 1_ pick
+-> 4 3 2 1 0 4
+```
 
 
 ## CMD: [``` pop ```](#cmd-pop)
@@ -451,6 +459,14 @@ Stack: ``` a b -> b a b ```
 Stack: ``` (a @ n) b* c (n >NUM) -> c b* a ```
 
 [``` swap ```](#cmd-swap)s `c` with `n`th item from top of stack.
+```
+4 3 2 1 0 3trade
+-> 4 0 2 1 3
+```
+```
+4 3 2 1 0 1_ trade
+-> 0 3 2 1 4
+```
 
 
 ## CMD: [``` rot ```](#cmd-rot)
@@ -472,6 +488,14 @@ Stack: ``` a b c -> c a b ```
 Stack: ``` (a @ n) b* (n >NUM) -> b* a ```
 
 [``` rot ```](#cmd-rot)s to top `n`th item from top of stack.
+```
+4 3 2 1 0 3roll
+-> 4 2 1 0 3
+```
+```
+4 3 2 1 0 1_ roll
+-> 3 2 1 0 4
+```
 
 
 ## CMD: [``` roll_ ```](#cmd-roll_)
@@ -479,6 +503,14 @@ Stack: ``` (a @ n) b* (n >NUM) -> b* a ```
 Stack: ``` b* c (n >NUM) -> (c @ n) b* ```
 
 [``` rot_ ```](#cmd-rot_)s `c` to `n`th from top of stack.
+```
+4 3 2 1 0 3roll_
+-> 4 0 3 2 1
+```
+```
+4 3 2 1 0 1_ roll_
+-> 0 4 3 2 1
+```
 
 
 ## CMD: [``` dip ```](#cmd-dip)
@@ -1589,7 +1621,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [7 5 2 8 9 3 0 4 6 1]
+-> [5 6 0 7 9 3 1 2 4 8]
 ```
 
 
@@ -2163,7 +2195,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [5 4 2 1 3]
+-> [5 4 3 2 1]
 ```
 
 
