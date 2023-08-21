@@ -193,6 +193,56 @@ enum ANY:
       case _: CMD => toSTR.remove(i)
       case _      => this
 
+  def add$$(t: ANY): ANY = (this, t) match
+    case (It(x), SEQ(y))      => SEQ(x.toSEQ.x #::: y)
+    case (ARR(x), ARR(y))     => ARR(x ++ y)
+    case (MAP(x), MAP(y))     => MAP(x ++ y)
+    case (FN(p, x), FN(_, y)) => FN(p, x ++ y)
+    case (FN(p, _), It(y))    => toARR.add$$(y).pFN(p)
+    case (SEQ(x), ARR(y))     => SEQ(x :++ y)
+    case (x, SEQ(y))          => SEQ(x #:: y)
+    case (SEQ(x), y)          => SEQ(x :+ y)
+    case (ARR(x), y)          => ARR(x :+ y)
+    case (x, ARR(y))          => ARR(x +: y)
+    case (FN(p, x), y)        => FN(p, x :+ y)
+    case (x, FN(p, y))        => FN(p, x +: y)
+    case (x, y)               => Vector(x).toARR.add$$(y)
+
+  def sub$$(t: ANY): ANY = (this, t) match
+    case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
+    case (ARR(x), It(y))  => x.filterNot(y.has).toARR
+    case (MAP(x), MAP(y)) => y.foldLeft(x)(_ - _._1).toMAP
+    case (MAP(x), It(y))  => y.foldLeft(x)(_ - _).toMAP
+    case (It(x), MAP(y))  => x.sub$$(y.keys.toARR)
+    case (It(x), It(y))   => x.sub$$(y.toSEQ)
+    case (Itr(x), y)      => x.sub$$(Vector(y).toARR)
+    case (FN(p, _), y)    => toARR.sub$$(y).pFN(p)
+    case (x, y)           => Vector(x).toARR.sub$$(y)
+
+  def mul$$(t: ANY): ANY = (this, t) match
+    case (Itr(x), Itr(y)) => x.zip(y, _ mul$$ _).flat
+    case (x: SEQ, y)      => LazyList.fill(y.toInt)(x).toSEQ.flat
+    case (x: ARR, y)      => Vector.fill(y.toInt)(x).toARR.flat
+    case (x: STR, y)      => toARR.mul$$(y).toString.sSTR
+    case (FN(p, _), y)    => toARR.mul$$(y).pFN(p)
+    case (x, y)           => Vector(x).toARR.mul$$(y)
+
+  def div$$(t: ANY): ANY = this match
+    case SEQ(x)   => x.grouped(t.toInt).map(_.toSEQ).toSEQ
+    case ARR(x)   => x.grouped(t.toInt).map(_.toARR).toSEQ
+    case MAP(x)   => x.grouped(t.toInt).map(_.toMAP).toSEQ
+    case _: STR   => toARR.div$$(t).map(_.toString.sSTR).toSEQ
+    case FN(p, x) => x.grouped(t.toInt).map(_.pFN(p)).toSEQ
+    case x        => Vector(x).toARR.div$$(t)
+
+  def mod$$(t: ANY): ANY = this match
+    case SEQ(x)   => x.sliding(t.toInt).map(_.toSEQ).toSEQ
+    case ARR(x)   => x.sliding(t.toInt).map(_.toARR).toSEQ
+    case MAP(x)   => x.sliding(t.toInt).map(_.toMAP).toSEQ
+    case _: STR   => toARR.mod$$(t).map(_.toString.sSTR).toSEQ
+    case FN(p, _) => toARR.mod$$(t).map(_.pFN(p)).toSEQ
+    case x        => Vector(x).toARR.mod$$(t)
+
   def take(n: Int): ANY = this match
     case SEQ(x)   => SEQ(if n < 0 then x.takeRight(-n) else x.take(n))
     case ARR(x)   => ARR(if n < 0 then x.takeRight(-n) else x.take(n))
@@ -531,6 +581,18 @@ enum ANY:
     case FN(p, x) => x.indexWhere(f)
     case _        => toARR.findIndex(f)
 
+  def delBy(f: ANY => Boolean): ANY = this match
+    case SEQ(x)   => x.delBy(f).toSEQ
+    case ARR(x)   => x.delBy(f).toARR
+    case FN(p, x) => x.delBy(f).pFN(p)
+    case _        => toARR.delBy(f)
+  def delByM(
+      f: (ANY, ANY) => Boolean,
+      g: ANY => Boolean
+  ): ANY = this match
+    case MAP(x) => x.delBy(f.tupled).to(VectorMap).toMAP
+    case _      => delBy(g)
+
   def uniqBy(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.distinctBy(f).toSEQ
     case ARR(x)   => x.distinctBy(f).toARR
@@ -540,6 +602,18 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.distinctBy(f.tupled).to(VectorMap).toMAP
     case _ => uniqBy(g)
+
+  def uniqWith(f: (ANY, ANY) => Boolean): ANY = this match
+    case SEQ(x)   => x.uniqWith(f).toSEQ
+    case ARR(x)   => x.uniqWith(f).toARR
+    case FN(p, x) => x.uniqWith(f).pFN(p)
+    case _        => toARR.uniqWith(f)
+  def uniqWithM(
+      f: ((ANY, ANY), (ANY, ANY)) => Boolean,
+      g: (ANY, ANY) => Boolean
+  ): ANY = this match
+    case MAP(x) => x.toSeq.uniqWith(f).to(VectorMap).toMAP
+    case _      => uniqWith(g)
 
   def sortBy(f: ANY => ANY): ANY = this match
     case SEQ(x)   => x.sortBy(f)(OrdANY).toSEQ
@@ -700,6 +774,15 @@ object ANY:
           loop(zs, res ++ Iterable(Iterable(y) ++ z))
       loop(xs)
 
+    def uniqWith(f: (T, T) => Boolean): Iterable[T] =
+      xs.foldLeft(Iterable.empty)((acc, x) =>
+        if acc.exists(f(x, _)) then acc else acc ++ Iterable(x)
+      )
+
+    def delBy(f: T => Boolean): Iterable[T] =
+      val (x, y) = xs.span(f)
+      x ++ y.drop(1)
+
   extension [T](xs: SEQW[T])
 
     def packBy(f: (T, T) => Boolean): SEQW[SEQW[T]] = xs match
@@ -707,6 +790,14 @@ object ANY:
       case x #:: xs =>
         val (ys, zs) = xs.span(f(x, _))
         (x #:: ys) #:: zs.packBy(f)
+
+    def uniqWith(f: (T, T) => Boolean): SEQW[T] = xs match
+      case LazyList() => LazyList.empty
+      case x #:: xs   => x #:: xs.filter(!f(x, _)).uniqWith(f)
+
+    def delBy(f: T => Boolean): SEQW[T] = xs match
+      case LazyList() => LazyList.empty
+      case x #:: xs   => if f(x) then xs else x #:: xs.delBy(f)
 
   extension (x: Iterable[ANY])
 

@@ -213,7 +213,7 @@ extension (env: ENV)
     x.set(z0, z1)
   )
 
-  def del: ENV = env.mod2(_.remove(_))
+  def idel: ENV = env.mod2(_.remove(_))
 
   def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolTF))
   def has$$ : ENV = env.mod2(_.has(_).boolTF)
@@ -376,51 +376,17 @@ extension (env: ENV)
       case _      => x.str1(_.reverse)
     env.mod1(loop)
 
-  def add: ENV   = env.num2(_ + _)
-  def add$ : ENV = env.str2(_ ++ _)
-  def add$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = (x, y) match
-      case (It(x), SEQ(y))      => SEQ(x.toSEQ.x #::: y)
-      case (ARR(x), ARR(y))     => ARR(x ++ y)
-      case (MAP(x), MAP(y))     => MAP(x ++ y)
-      case (FN(p, x), FN(_, y)) => FN(p, x ++ y)
-      case (FN(p, _), It(y))    => loop(x.toARR, y).pFN(p)
-      case (SEQ(x), ARR(y))     => SEQ(x :++ y)
-      case (_, SEQ(y))          => SEQ(x #:: y)
-      case (SEQ(x), _)          => SEQ(x :+ y)
-      case (ARR(x), _)          => ARR(x :+ y)
-      case (_, ARR(y))          => ARR(x +: y)
-      case (FN(p, x), _)        => FN(p, x :+ y)
-      case (_, FN(p, y))        => FN(p, x +: y)
-      case _                    => loop(Vector(x).toARR, y)
-    env.mod2(loop)
+  def add: ENV    = env.num2(_ + _)
+  def add$ : ENV  = env.str2(_ ++ _)
+  def add$$ : ENV = env.mod2(_ add$$ _)
 
-  def sub: ENV   = env.num2(_ - _)
-  def sub$ : ENV = env.str2((x, y) => x.filterNot(y.contains))
-  def sub$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = (x, y) match
-      case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
-      case (ARR(x), It(y))  => x.filterNot(y.has).toARR
-      case (MAP(x), MAP(y)) => y.foldLeft(x)(_ - _._1).toMAP
-      case (MAP(x), It(y))  => y.foldLeft(x)(_ - _).toMAP
-      case (It(x), MAP(y))  => loop(x, y.keys.toARR)
-      case (It(x), It(y))   => loop(x, y.toSEQ)
-      case (Itr(x), _)      => loop(x, Vector(y).toARR)
-      case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
-      case _                => loop(Vector(x).toARR, y)
-    env.mod2(loop)
+  def sub: ENV    = env.num2(_ - _)
+  def sub$ : ENV  = env.str2((x, y) => x.filterNot(y.contains))
+  def sub$$ : ENV = env.mod2(_ sub$$ _)
 
-  def mul: ENV   = env.num2(_ * _)
-  def mul$ : ENV = env.strnum(_ * _.intValue)
-  def mul$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = (x, y) match
-      case (Itr(x), Itr(y)) => x.zip(y, loop).flat
-      case (_: SEQ, _)      => LazyList.fill(y.toInt)(x).toSEQ.flat
-      case (_: ARR, _)      => Vector.fill(y.toInt)(x).toARR.flat
-      case (_: STR, _)      => loop(x.toARR, y).toString.sSTR
-      case (FN(p, _), _)    => loop(x.toARR, y).pFN(p)
-      case _                => loop(Vector(x).toARR, y)
-    env.mod2(loop)
+  def mul: ENV    = env.num2(_ * _)
+  def mul$ : ENV  = env.strnum(_ * _.intValue)
+  def mul$$ : ENV = env.mod2(_ mul$$ _)
 
   def div: ENV = env.num2(
     (x, y) => if y == 0 then throw ArithmeticException() else x / y,
@@ -430,16 +396,8 @@ extension (env: ENV)
     (x, y) => if y == 0 then throw ArithmeticException() else x.fquot(y),
     "bad /~"
   )
-  def div$ : ENV = env.strnumq((x, y) => x.grouped(y.intValue).to(LazyList))
-  def div$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = x match
-      case SEQ(x)   => x.grouped(y.toInt).map(_.toSEQ).toSEQ
-      case ARR(x)   => x.grouped(y.toInt).map(_.toARR).toSEQ
-      case MAP(x)   => x.grouped(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.sSTR).toSEQ
-      case FN(p, x) => x.grouped(y.toInt).map(_.pFN(p)).toSEQ
-      case _        => loop(Vector(x).toARR, y)
-    env.mod2((x, y) => y.vec1(loop(x, _)))
+  def div$ : ENV  = env.strnumq((x, y) => x.grouped(y.intValue).to(LazyList))
+  def div$$ : ENV = env.mod2((x, y) => y.vec1(x div$$ _))
 
   def mod: ENV = env.num2(
     (x, y) => if y == 0 then throw ArithmeticException() else x.fmod(y),
@@ -448,16 +406,8 @@ extension (env: ENV)
   def divmod: ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
   )
-  def mod$ : ENV = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
-  def mod$$ : ENV =
-    def loop(x: ANY, y: ANY): ANY = x match
-      case SEQ(x)   => x.sliding(y.toInt).map(_.toSEQ).toSEQ
-      case ARR(x)   => x.sliding(y.toInt).map(_.toARR).toSEQ
-      case MAP(x)   => x.sliding(y.toInt).map(_.toMAP).toSEQ
-      case _: STR   => loop(x.toARR, y).map(_.toString.sSTR).toSEQ
-      case FN(p, _) => loop(x.toARR, y).map(_.pFN(p)).toSEQ
-      case _        => loop(Vector(x).toARR, y)
-    env.mod2((x, y) => y.vec1(loop(x, _)))
+  def mod$ : ENV  = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
+  def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _))
 
   def pow: ENV = env.num2(
     (x, y) =>
@@ -548,80 +498,54 @@ extension (env: ENV)
   def neq: ENV    = eql.not
   def neq$$ : ENV = eql$$.not
 
-  def map: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.mapM(
-        (a, b) => env.evalA2(Vector(a, b), f),
-        a => env.evalA1(Vector(a), f)
-      )
-    )
-  )
-  def tapMap: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.mapM(
-        (a, b) => env.evalA2(Vector(a, b), f).pipe(_ => (a, b)),
-        a => env.evalA1(Vector(a), f).pipe(_ => a)
-      )
-    )
-  )
-  def flatMap: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.flatMapM(
-        (a, b) => env.evalA1(Vector(a, b), f),
-        a => env.evalA1(Vector(a), f)
-      )
-    )
-  )
+  def SIG_1f1(f: ANY)(a: ANY): ANY     = env.evalA1(Vector(a), f)
+  def SIG_1f_(f: ANY)(a: ANY): ANY     = SIG_1f1(f)(a).pipe(_ => a)
+  def SIG_1fb(f: ANY)(a: ANY): Boolean = SIG_1f1(f)(a).toBool
+
+  def SIG_2f1(f: ANY)(a: ANY, b: ANY): ANY = env.evalA1(Vector(a, b), f)
+  def SIG_2f_(f: ANY)(a: ANY, b: ANY): (ANY, ANY) =
+    SIG_2f1(f)(a, b).pipe(_ => (a, b))
+  def SIG_2fb(f: ANY)(a: ANY, b: ANY): Boolean    = SIG_2f1(f)(a, b).toBool
+  def SIG_2f2(f: ANY)(a: ANY, b: ANY): (ANY, ANY) = env.evalA2(Vector(a, b), f)
+
+  def SIG_1y2f1(f: ANY)(a: ANY, b: (ANY, ANY)): ANY =
+    env.evalA1(Vector(b._1, a, b._2), f)
+  def SIG_2x2fb(f: ANY)(a: (ANY, ANY), b: (ANY, ANY)): Boolean =
+    env
+      .evalA1(Vector(Vector(a._1, a._2).toARR, Vector(b._1, b._2).toARR), f)
+      .toBool
+
+  def map: ENV =
+    env.mod2((x, y) => y.vec1(f => x.mapM(SIG_2f2(f), SIG_1f1(f))))
+  def tapMap: ENV =
+    env.mod2((x, y) => y.vec1(f => x.mapM(SIG_2f_(f), SIG_1f_(f))))
+  def flatMap: ENV =
+    env.mod2((x, y) => y.vec1(f => x.flatMapM(SIG_2f1(f), SIG_1f1(f))))
   def flat: ENV  = env.mod1(_.flat)
   def rflat: ENV = env.mod1(_.rflat)
-  def rmap: ENV =
-    env.mod2((x, y) => y.vec1(f => x.rmap(a => env.evalA1(Vector(a), f))))
+  def rmap: ENV  = env.mod2((x, y) => y.vec1(f => x.rmap(SIG_1f1(f))))
 
-  def zip: ENV = env.mod3((x, y, z) =>
-    z.vec1(f => x.zip(y, (a, b) => env.evalA1(Vector(a, b), f)))
-  )
+  def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y, SIG_2f1(f))))
   def zip$ : ENV = env.modx(
     5,
     {
-      case Vector(x, y, v, w, z) =>
-        z.vec1(f => x.zipAll(y, v, w, (a, b) => env.evalA1(Vector(a, b), f)))
-      case _ => ???
+      case Vector(x, y, v, w, z) => z.vec1(f => x.zipAll(y, v, w, SIG_2f1(f)))
+      case _                     => ???
     }
   )
-  def tbl: ENV = env.mod3((x, y, z) =>
-    z.vec1(f => x.table(y, (a, b) => env.evalA1(Vector(a, b), f)))
-  )
+  def tbl: ENV = env.mod3((x, y, z) => z.vec1(f => x.table(y, SIG_2f1(f))))
 
-  def fold: ENV = env.mod3((x, y, z) =>
-    z.vec1(f =>
-      x.foldLeftM(y)(
-        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
-        (a, b) => env.evalA1(Vector(a, b), f)
-      )
-    )
-  )
+  def fold: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.foldLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
 
-  def rfold: ENV = env.mod3((x, y, z) =>
-    z.vec1(f => x.rfoldLeft(y)((a, b) => env.evalA1(Vector(a, b), f)))
-  )
+  def rfold: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.rfoldLeft(y)(SIG_2f1(f))))
 
-  def reduce: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.reduceLeftM(
-        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
-        (a, b) => env.evalA1(Vector(a, b), f)
-      )
-    )
-  )
+  def reduce: ENV =
+    env.mod2((x, y) => y.vec1(f => x.reduceLeftM(SIG_1y2f1(f), SIG_2f1(f))))
 
-  def scan: ENV = env.mod3((x, y, z) =>
-    z.vec1(f =>
-      x.scanLeftM(y)(
-        (a, b) => env.evalA1(Vector(b._1, a, b._2), f),
-        (a, b) => env.evalA1(Vector(a, b), f)
-      )
-    )
-  )
+  def scan: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.scanLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
 
   def walk: ENV = env.mod2((x, y) =>
     y.vec1(f =>
@@ -654,55 +578,22 @@ extension (env: ENV)
     )
   )
 
-  def fltr: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.filterM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      )
-    )
-  )
+  def fltr: ENV =
+    env.mod2((x, y) => y.vec1(f => x.filterM(SIG_2fb(f), SIG_1fb(f))))
 
-  def any: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.anyM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      ).boolTF
-    )
-  )
-  def all: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.allM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      ).boolTF
-    )
-  )
+  def any: ENV =
+    env.mod2((x, y) => y.vec1(f => x.anyM(SIG_2fb(f), SIG_1fb(f)).boolTF))
+  def all: ENV =
+    env.mod2((x, y) => y.vec1(f => x.allM(SIG_2fb(f), SIG_1fb(f)).boolTF))
 
-  def tkwl: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.takeWhileM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      )
-    )
-  )
-  def dpwl: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.dropWhileM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      )
-    )
-  )
+  def tkwl: ENV =
+    env.mod2((x, y) => y.vec1(f => x.takeWhileM(SIG_2fb(f), SIG_1fb(f))))
+  def dpwl: ENV =
+    env.mod2((x, y) => y.vec1(f => x.dropWhileM(SIG_2fb(f), SIG_1fb(f))))
 
   def find: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      x.findM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      ) match
+      x.findM(SIG_2fb(f), SIG_1fb(f)) match
         case Some((a, b)) => Vector(a, b).toARR
         case Some(a: ANY) => a
         case _            => UN
@@ -713,66 +604,38 @@ extension (env: ENV)
     y.vec1(f => x.findIndex(a => env.evalA1(Vector(a), f).toBool).pipe(NUM(_)))
   )
 
-  def uniq: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.uniqByM(
-        (a, b) => env.evalA1(Vector(a, b), f),
-        a => env.evalA1(Vector(a), f)
-      )
-    )
-  )
-  def sort: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.sortByM(
-        (a, b) => env.evalA1(Vector(a, b), f),
-        a => env.evalA1(Vector(a), f)
-      )
-    )
-  )
-  def sort$ : ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.sortWithM(
-        { case ((i, j), (a, b)) =>
-          env.evalA1(Vector(Vector(i, j).toARR, Vector(a, b).toARR), f).toBool
-        },
-        (a, b) => env.evalA1(Vector(a, b), f).toBool
-      )
-    )
-  )
+  def del: ENV =
+    env.mod2((x, y) => y.vec1(f => x.delByM(SIG_2fb(f), SIG_1fb(f))))
+
+  def uniq: ENV =
+    env.mod2((x, y) => y.vec1(f => x.uniqByM(SIG_2f1(f), SIG_1f1(f))))
+  def uniq$ : ENV =
+    env.mod2((x, y) => y.vec1(f => x.uniqWithM(SIG_2x2fb(f), SIG_2fb(f))))
+
+  def sort: ENV =
+    env.mod2((x, y) => y.vec1(f => x.sortByM(SIG_2f1(f), SIG_1f1(f))))
+  def sort$ : ENV =
+    env.mod2((x, y) => y.vec1(f => x.sortWithM(SIG_2x2fb(f), SIG_2fb(f))))
+
   def part: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      x.partitionM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      ).pipe { case (a, b) => Vector(a, b).toARR }
+      val (a, b) = x.partitionM(SIG_2fb(f), SIG_1fb(f))
+      Vector(a, b).toARR
     )
   )
-  def group: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.groupByM(
-        (a, b) => env.evalA1(Vector(a, b), f),
-        a => env.evalA1(Vector(a), f)
-      ).toMAP
-    )
-  )
+
+  def group: ENV =
+    env.mod2((x, y) => y.vec1(f => x.groupByM(SIG_2f1(f), SIG_1f1(f)).toMAP))
+
   def span: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      x.spanM(
-        (a, b) => env.evalA1(Vector(a, b), f).toBool,
-        a => env.evalA1(Vector(a), f).toBool
-      ).pipe { case (a, b) => Vector(a, b).toARR }
+      val (a, b) = x.spanM(SIG_2fb(f), SIG_1fb(f))
+      Vector(a, b).toARR
     )
   )
-  def pack: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
-      x.packByM(
-        { case ((i, j), (a, b)) =>
-          env.evalA1(Vector(Vector(i, j).toARR, Vector(a, b).toARR), f).toBool
-        },
-        (a, b) => env.evalA1(Vector(a, b), f).toBool
-      )
-    )
-  )
+
+  def pack: ENV =
+    env.mod2((x, y) => y.vec1(f => x.packByM(SIG_2x2fb(f), SIG_2fb(f))))
 
   def evalTASK: ENV = env.arg1((x, env) =>
     env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
@@ -961,8 +824,11 @@ extension (env: ENV)
     Converts `a` to type of `b`.
      */
     case ">TT" => matchType
+    // TODO: doc
     case ">>M" => lineMAP
+    // TODO: doc
     case "js>" => fromJSON
+    // TODO: doc
     case ">js" => toJSON
 
     /*
@@ -1841,7 +1707,7 @@ extension (env: ENV)
     @s a i -> x
     Removes index `i` from `a`.
      */
-    case ":-" => del
+    case ":-" => idel
     /*
     @s a b' -> TF'
     Whether `a` has atomic `b`.
@@ -2443,6 +2309,15 @@ extension (env: ENV)
     case "find:" => findi
     /*
     @s a f' -> _'
+    Deletes first element of `a` where predicate `f` is truthy.
+    See #{fltr} for the signature of `f`.
+    ```sclin
+    [5 1 2 4 3] ( 2% ! ) del
+    ```
+     */
+    case "del" => del
+    /*
+    @s a f' -> _'
     Uniquifies elements of `a` with mapper `f`.
     See #{map} for the signature of `f`.
     ```sclin
@@ -2450,6 +2325,8 @@ extension (env: ENV)
     ```
      */
     case "uniq" => uniq
+    // TODO: docs
+    case "uniq~" => uniq$
     /*
     @s a f' -> _'
     Sorts elements of `a` with mapper `f`.

@@ -13,9 +13,7 @@ object Main:
   @main def sclin(
       @arg(short = 'f', doc = "Execute file.") file: Option[os.Path],
       @arg(short = 'e', doc = "Execute string.") eval: Option[String],
-      @arg(
-        doc = "(Internal) Execute string with doc-style result."
-      ) doceval: Option[String],
+      @arg(hidden = true) doceval: Option[String],
       @arg(short = 's', doc = "Step mode.") step: Flag,
       @arg(short = 'v', doc = "Verbose mode.") verb: Flag,
       @arg(short = 'i', doc = "Implicit mode.") impl: Flag
