@@ -257,12 +257,16 @@
 [``` find: ```](#cmd-find-1)
 [``` del ```](#cmd-del)
 [``` uniq ```](#cmd-uniq)
+[``` uniq~ ```](#cmd-uniq-1)
 [``` sort ```](#cmd-sort)
 [``` sort~ ```](#cmd-sort-1)
 [``` part ```](#cmd-part)
 [``` group ```](#cmd-group)
 [``` span ```](#cmd-span)
 [``` pack ```](#cmd-pack)
+[``` union ```](#cmd-union)
+[``` intxn ```](#cmd-intxn)
+[``` diff ```](#cmd-diff)
 [``` ~_ ```](#cmd-_-6)
 [``` ~_! ```](#cmd-_-7)
 [``` ~$ ```](#cmd--94)
@@ -1899,7 +1903,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [3 1 2 9 7 8 4 6 5 0]
+-> [7 5 9 8 0 6 1 4 3 2]
 ```
 
 
@@ -2468,8 +2472,28 @@ Stack: ``` a f' -> _' ```
 Uniquifies elements of `a` with mapper `f`.
 See [``` map ```](#cmd-map) for the signature of `f`.
 ```
-[5 1 2 4 3] 3.% uniq
--> [5 1 3]
+[2 4 3 3 5 4 1] () uniq
+-> [2 4 3 5 1]
+```
+```
+[5 1 2 4 3] 2.% uniq
+-> [5 2]
+```
+
+
+## CMD: [``` uniq~ ```](#cmd-uniq-1)
+
+Stack: ``` a f' -> _' ```
+
+Uniquifies elements of `a` with comparator `f`.
+See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
+```
+[2 4 3 3 5 4 1] \=` uniq~
+-> [2 4 3 5 1]
+```
+```
+[2 4 3 3 5 4 1] 2.% uniq~
+-> [2 4 3]
 ```
 
 
@@ -2485,7 +2509,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [1 4 3 2 5]
+-> [2 1 3 4 5]
 ```
 
 
@@ -2554,6 +2578,44 @@ See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
 ```
 [1 1 2 3 3 4 6 4 4] \=` pack
 -> [[1 1] [2] [3 3] [4] [6] [4 4]]
+```
+
+
+## CMD: [``` union ```](#cmd-union)
+
+Stack: ``` a b f' -> _' ```
+
+Gets the union of `a` and `b` with comparator `f`.
+See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
+```
+[1 2 3 4] [2 4 6 8] \=` union
+-> [1 2 3 4 6 8]
+```
+
+
+## CMD: [``` intxn ```](#cmd-intxn)
+
+Stack: ``` a b f' -> _' ```
+
+Gets the intersection between `a` and `b` with comparator `f`.
+May hang if `a` or `b` are infinite.
+See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
+```
+[1 2 3 4] [2 4 6 8] \=` intxn
+-> [2 4]
+```
+
+
+## CMD: [``` diff ```](#cmd-diff)
+
+Stack: ``` a b f' -> _' ```
+
+Gets the difference between `a` and `b` with comparator `f`.
+Will hang if `b` is infinite.
+See [``` sort~ ```](#cmd-sort-1) for the signature of `f`.
+```
+[1 2 3 4] [2 4 6 8] \=` diff
+-> [1 3]
 ```
 
 
