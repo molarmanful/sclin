@@ -635,7 +635,14 @@ extension (env: ENV)
   )
 
   def pack: ENV =
-    env.mod2((x, y) => y.vec1(f => x.packByM(SIG_2x2fb(f), SIG_2fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.packWithM(SIG_2x2fb(f), SIG_2fb(f))))
+
+  def union: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.unionWith(y, SIG_2fb(f))))
+  def intersect: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.intersectWith(y, SIG_2fb(f))))
+  def diff: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.differWith(y, SIG_2fb(f))))
 
   def evalTASK: ENV = env.arg1((x, env) =>
     env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
@@ -2321,11 +2328,24 @@ extension (env: ENV)
     Uniquifies elements of `a` with mapper `f`.
     See #{map} for the signature of `f`.
     ```sclin
-    [5 1 2 4 3] 3.% uniq
+    [2 4 3 3 5 4 1] () uniq
+    ```
+    ```sclin
+    [5 1 2 4 3] 2.% uniq
     ```
      */
     case "uniq" => uniq
-    // TODO: docs
+    /*
+    @s a f' -> _'
+    Uniquifies elements of `a` with comparator `f`.
+    See #{sort~} for the signature of `f`.
+    ```sclin
+    [2 4 3 3 5 4 1] \=` uniq~
+    ```
+    ```sclin
+    [2 4 3 3 5 4 1] 2.% uniq~
+    ```
+     */
     case "uniq~" => uniq$
     /*
     @s a f' -> _'
@@ -2391,6 +2411,36 @@ extension (env: ENV)
     ```
      */
     case "pack" => pack
+
+    /*
+    @s a b f' -> _'
+    Gets the union of `a` and `b` with comparator `f`.
+    See #{sort~} for the signature of `f`.
+    ```sclin
+    [1 2 3 4] [2 4 6 8] \=` union
+    ```
+     */
+    case "union" => union
+    /*
+    @s a b f' -> _'
+    Gets the intersection between `a` and `b` with comparator `f`.
+    May hang if `a` or `b` are infinite.
+    See #{sort~} for the signature of `f`.
+    ```sclin
+    [1 2 3 4] [2 4 6 8] \=` intxn
+    ```
+     */
+    case "intxn" => intersect
+    /*
+    @s a b f' -> _'
+    Gets the difference between `a` and `b` with comparator `f`.
+    Will hang if `b` is infinite.
+    See #{sort~} for the signature of `f`.
+    ```sclin
+    [1 2 3 4] [2 4 6 8] \=` diff
+    ```
+     */
+    case "diff" => diff
 
     /*
     @s (a >FUT[x])' -> x'

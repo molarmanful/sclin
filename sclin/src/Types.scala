@@ -433,17 +433,17 @@ enum ANY:
     case x      => x
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (SEQ(x), _) => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
-    case (_, _: SEQ) => t.zip(this, (a, b) => f(b, a))
-    case _           => toARR.x.lazyZip(t.toARR.x).map(f).toARR
+    case (SEQ(x), _)   => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
+    case (_, _: SEQ)   => toSEQ.zip(t, f)
+    case (FN(p, x), _) => x.lazyZip(t.toARR.x).map(f).pFN(p)
+    case _             => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
-      case (SEQ(x), _) =>
-        x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).toSEQ
-      case (_, _: SEQ) => t.zipAll(this, d1, d2, (x, y) => f(y, x)).toSEQ
-      case _ =>
-        toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
+      case (SEQ(x), _)   => x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).toSEQ
+      case (_, _: SEQ)   => toSEQ.zipAll(t, d1, d2, f).toSEQ
+      case (FN(p, x), _) => x.zipAll(t.toARR.x, d1, d2).map(f.tupled).pFN(p)
+      case _             => toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
 
@@ -668,17 +668,35 @@ enum ANY:
       case MAP(x) => x.span(f.tupled).pipe { case (a, b) => (a.toMAP, b.toMAP) }
       case _      => span(g)
 
-  def packBy(f: (ANY, ANY) => Boolean): ANY = this match
-    case SEQ(x)   => x.packBy(f).map(_.toSEQ).toSEQ
-    case ARR(x)   => x.packBy(f).map(_.toARR).toARR
-    case FN(p, x) => x.packBy(f).map(_.pFN(p)).pFN(p)
-    case x        => toARR.packBy(f)
-  def packByM(
+  def packWith(f: (ANY, ANY) => Boolean): ANY = this match
+    case SEQ(x)   => x.packWith(f).map(_.toSEQ).toSEQ
+    case ARR(x)   => x.packWith(f).map(_.toARR).toARR
+    case FN(p, x) => x.packWith(f).map(_.pFN(p)).pFN(p)
+    case _        => toARR.packWith(f)
+  def packWithM(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
   ): ANY = this match
-    case MAP(x) => x.toSeq.packBy(f).map(_.to(VectorMap).toMAP).toSEQ
-    case _      => packBy(g)
+    case MAP(x) => x.toSeq.packWith(f).map(_.to(VectorMap).toMAP).toSEQ
+    case _      => packWith(g)
+
+  def unionWith(t: ANY, f: (ANY, ANY) => Boolean): ANY = (this, t) match
+    case (SEQ(x), _)   => x.unionWith(t.toSEQ.x, f).toSEQ
+    case (_, _: SEQ)   => toSEQ.unionWith(t, f)
+    case (FN(p, x), _) => x.unionWith(t.toARR.x, f).pFN(p)
+    case _             => toARR.x.unionWith(t.toARR.x, f).toARR
+
+  def intersectWith(t: ANY, f: (ANY, ANY) => Boolean): ANY = (this, t) match
+    case (SEQ(x), _)   => x.intersectWith(t.toSEQ.x, f).toSEQ
+    case (_, _: SEQ)   => toSEQ.intersectWith(t, f)
+    case (FN(p, x), _) => x.intersectWith(t.toARR.x, f).pFN(p)
+    case _             => toARR.x.intersectWith(t.toARR.x, f).toARR
+
+  def differWith(t: ANY, f: (ANY, ANY) => Boolean): ANY = (this, t) match
+    case (SEQ(x), _)   => x.differWith(t.toSEQ.x, f).toSEQ
+    case (_, _: SEQ)   => toSEQ.differWith(t, f)
+    case (FN(p, x), _) => x.differWith(t.toARR.x, f).pFN(p)
+    case _             => toARR.x.differWith(t.toARR.x, f).toARR
 
   def vec1(f: ANY => ANY): ANY = this match
     case Itr(_) => map(_.vec1(f))
@@ -762,7 +780,7 @@ object ANY:
 
   extension [T](xs: Iterable[T])
 
-    def packBy(f: (T, T) => Boolean): Iterable[Iterable[T]] =
+    def packWith(f: (T, T) => Boolean): Iterable[Iterable[T]] =
       def loop(
           xs: Iterable[T],
           res: Iterable[Iterable[T]] = Iterable.empty
@@ -783,13 +801,25 @@ object ANY:
       val (x, y) = xs.span(f)
       x ++ y.drop(1)
 
+    def unionWith(ys: Iterable[T], f: (T, T) => Boolean): Iterable[T] =
+      xs ++ ys.uniqWith(f).filter(y => !xs.exists(f(_, y)))
+
+    def intersectWith(ys: Iterable[T], f: (T, T) => Boolean): Iterable[T] =
+      if xs.isEmpty || ys.isEmpty then Iterable.empty
+      else xs.filter(x => ys.exists(f(x, _)))
+
+    def differWith(ys: Iterable[T], f: (T, T) => Boolean): Iterable[T] =
+      if xs.isEmpty then ys
+      else if ys.isEmpty then xs
+      else xs.filter(x => !ys.exists(f(x, _)))
+
   extension [T](xs: SEQW[T])
 
-    def packBy(f: (T, T) => Boolean): SEQW[SEQW[T]] = xs match
+    def packWith(f: (T, T) => Boolean): SEQW[SEQW[T]] = xs match
       case LazyList() => LazyList.empty
       case x #:: xs =>
         val (ys, zs) = xs.span(f(x, _))
-        (x #:: ys) #:: zs.packBy(f)
+        (x #:: ys) #:: zs.packWith(f)
 
     def uniqWith(f: (T, T) => Boolean): SEQW[T] = xs match
       case LazyList() => LazyList.empty
@@ -798,6 +828,9 @@ object ANY:
     def delBy(f: T => Boolean): SEQW[T] = xs match
       case LazyList() => LazyList.empty
       case x #:: xs   => if f(x) then xs else x #:: xs.delBy(f)
+
+    def unionWith(ys: SEQW[T], f: (T, T) => Boolean): SEQW[T] =
+      xs #::: ys.uniqWith(f).filter(y => !xs.exists(f(_, y)))
 
   extension (x: Iterable[ANY])
 
