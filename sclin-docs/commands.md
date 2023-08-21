@@ -255,6 +255,7 @@
 [``` dp* ```](#cmd-dp-1)
 [``` find ```](#cmd-find)
 [``` find: ```](#cmd-find-1)
+[``` del ```](#cmd-del)
 [``` uniq ```](#cmd-uniq)
 [``` sort ```](#cmd-sort)
 [``` sort~ ```](#cmd-sort-1)
@@ -1898,7 +1899,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [5 9 8 6 7 2 4 0 1 3]
+-> [3 1 2 9 7 8 4 6 5 0]
 ```
 
 
@@ -2448,6 +2449,18 @@ Returns `-1` if not found.
 ```
 
 
+## CMD: [``` del ```](#cmd-del)
+
+Stack: ``` a f' -> _' ```
+
+Deletes first element of `a` where predicate `f` is truthy.
+See [``` fltr ```](#cmd-fltr) for the signature of `f`.
+```
+[5 1 2 4 3] ( 2% ! ) del
+-> [1 2 4 3]
+```
+
+
 ## CMD: [``` uniq ```](#cmd-uniq)
 
 Stack: ``` a f' -> _' ```
@@ -2472,7 +2485,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 3 2 1 5]
+-> [1 4 3 2 5]
 ```
 
 
