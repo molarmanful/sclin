@@ -5,27 +5,15 @@ import com.github.lolgab.mill.crossplatform._
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
-// import scalajslib._
+import scalajslib._
 import scalalib._
 import scalalib.publish._
 
-trait Common extends ScalaModule {
-
-  def scalaVersion = "3.3.0"
-
-}
-
-// trait CommonJS extends ScalaJSModule {
-//
-//   def scalaJSVersion = "1.13.2"
-//   def moduleKind     = scalajslib.api.ModuleKind.ESModule
-//
-// }
-
 object sclin extends CrossPlatform {
 
-  trait Shared extends CrossPlatformScalaModule with Common with PublishModule {
+  trait Shared extends CrossPlatformScalaModule with PublishModule {
 
+    def scalaVersion                       = "3.3.0"
     override def publishVersion: T[String] = VcsVersion.vcsState().format()
     def pomSettings = PomSettings(
       description = "Scala implementation of lin",
@@ -71,6 +59,11 @@ object sclin extends CrossPlatform {
     }
 
   }
-  // object js extends Shared with CommonJS
+  object js extends Shared with ScalaJSModule {
+
+    def scalaJSVersion = "1.13.2"
+    def moduleKind     = scalajslib.api.ModuleKind.ESModule
+
+  }
 
 }

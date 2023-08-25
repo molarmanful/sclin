@@ -1,7 +1,6 @@
 package sclin
 
 import monix.execution.CancelableFuture
-import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.VectorMap
 import spire.math.Real
 import util.chaining._
