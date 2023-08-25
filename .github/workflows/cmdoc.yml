@@ -2,7 +2,7 @@ name: cmdoc
 
 on: push
 
-concurrency: 
+concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
@@ -10,26 +10,26 @@ jobs:
   cmdoc:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '*'
-    - run: npm ci
-    - uses: actions/setup-java@v3
-      with:
-        distribution: temurin
-        java-version: 19
-    - name: build
-      run: ./mill sclin.assembly
-    - name: generate docs
-      run: ./mill sclin.cmdoc
-    - name: run examples
-      run: node docr.js sclin-docs/commands.md
-    - name: commit + push
-      uses: actions-js/push@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: true
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '*'
+      - run: npm ci
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 19
+      - name: build
+        run: ./mill sclin.jvm.assembly
+      - name: generate docs
+        run: ./mill sclin.jvm.cmdoc
+      - name: run examples
+        run: node docr.js sclin-docs/commands.md
+      - name: commit + push
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true

@@ -6,7 +6,7 @@ import scala.collection.immutable.VectorMap
 import spire.math.Real
 import util.chaining._
 
-type FILE = Option[os.Path]
+type FILE = Option[String]
 
 type ARRW[T]    = Vector[T]
 type SEQW[T]    = LazyList[T]

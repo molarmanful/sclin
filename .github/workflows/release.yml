@@ -9,47 +9,47 @@ jobs:
   maven:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - uses: actions/setup-java@v3
-      with:
-        distribution: temurin
-        java-version: 19
-    - uses: coursier/cache-action@v6
-    - name: gpg
-      uses: crazy-max/ghaction-import-gpg@v5
-      with:
-        gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
-    - name: mvn release
-      env:
-        SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
-      run: |
-        ./mill mill.scalalib.PublishModule/publishAll \
-          __.publishArtifacts \
-          $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
-          --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
-          --sonatypeUri https://s01.oss.sonatype.org/service/local \
-          --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
-          --awaitTimeout 600000 \
-          --release true
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 19
+      - uses: coursier/cache-action@v6
+      - name: gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
+      - name: mvn release
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
+        run: |
+          ./mill mill.scalalib.PublishModule/publishAll \
+            __.publishArtifacts \
+            $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
+            --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
+            --sonatypeUri https://s01.oss.sonatype.org/service/local \
+            --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
+            --awaitTimeout 600000 \
+            --release true
   github:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - uses: actions/setup-java@v3
-      with:
-        distribution: temurin
-        java-version: 19
-    - uses: coursier/cache-action@v6
-    - name: build
-      run: ./mill sclin.assembly
-    - name: gh release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        file: out/sclin/assembly.dest/out.jar
-        asset_name: sclin
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 19
+      - uses: coursier/cache-action@v6
+      - name: build
+        run: ./mill sclin.jvm.assembly
+      - name: gh release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: out/sclin/jvm/assembly.dest/out.jar
+          asset_name: sclin

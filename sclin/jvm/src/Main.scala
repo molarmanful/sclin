@@ -24,10 +24,10 @@ object Main:
       val flags          = (step.value, verb.value, impl.value)
       try
         file match
-          case Some(f) => ENV.run(os.read(f), file, flags)
+          case Some(f) => ENV.run(os.read(f), file.map(_.toString), flags)
           case _ =>
             eval match
-              case Some(s) => ENV.run(s, file, flags)
+              case Some(s) => ENV.run(s, file.map(_.toString), flags)
               case _       => ()
       catch
         case e: java.nio.file.NoSuchFileException =>
