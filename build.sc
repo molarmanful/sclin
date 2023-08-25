@@ -5,6 +5,7 @@ import com.github.lolgab.mill.crossplatform._
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
+// import scalajslib._
 import scalalib._
 import scalalib.publish._
 
