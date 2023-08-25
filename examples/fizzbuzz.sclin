@@ -1,2 +1,2 @@
-101I>a \; map
+101I>a \; tap
   "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o

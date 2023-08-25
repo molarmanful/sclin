@@ -7,7 +7,7 @@
 Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
 ```
-101I>a >A \; map
+101I>a >A \; tap
   "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
 ```
 
@@ -33,7 +33,7 @@ Download the [latest executable JAR from releases](https://github.com/molarmanfu
 
 ### Building from Scratch
 
-Clone this repo, `cd` into it, and run `./mill sclin.assembly` (use `mill.bat` instead of `mill` if on Windows). The built JAR can be found at `out/sclin/assembly.dest/out.jar`.
+Clone this repo, `cd` into it, and run `./mill sclin.jvm.assembly` (use `mill.bat` instead of `mill` if on Windows). The built JAR can be found at `out/sclin/jvm/assembly.dest/out.jar`.
 
 ## Licensing
 
