@@ -11,23 +11,39 @@ object Main:
     def read(strs: Seq[String]) = Right(os.Path(strs.head, os.pwd))
 
   @main def sclin(
-      @arg(short = 'f', doc = "Execute file.") file: Option[os.Path],
-      @arg(short = 'e', doc = "Execute string.") eval: Option[String],
-      @arg(hidden = true) doceval: Option[String],
-      @arg(short = 's', doc = "Step mode.") step: Flag,
-      @arg(short = 'v', doc = "Verbose mode.") verb: Flag,
-      @arg(short = 'i', doc = "Implicit mode.") impl: Flag
+      @arg(short = 'f', doc = "Execute file.")
+      file: Option[os.Path],
+      @arg(short = 'e', doc = "Execute string.")
+      eval: Option[String],
+      @arg(hidden = true)
+      doceval: Option[String],
+      @arg(short = 's', doc = "Step mode.")
+      step: Flag,
+      @arg(short = 'v', doc = "Verbose mode.")
+      verb: Flag,
+      @arg(short = 'i', doc = "Implicit mode.")
+      impl: Flag,
+      @arg(doc = "Enable/disable ANSI in debug messages.")
+      nocolor: Flag
   ) = doceval match
     case Some(s) => ENV.docRun(s)
     case _ =>
-      def err(e: String) = println(fansi.Color.Red(e))
-      val flags          = (step.value, verb.value, impl.value)
+      def cflag(x: fansi.Attrs) = if nocolor.value then fansi.Attrs.Empty else x
+      def err(e: String)        = println(cflag(fansi.Color.Red)(e))
+      val flags = Map(
+        "s"  -> step.value,
+        "v"  -> verb.value,
+        "i"  -> impl.value,
+        "nc" -> nocolor.value
+      )
+
       try
         file match
-          case Some(f) => ENV.run(os.read(f), file.map(_.toString), flags)
+          case Some(f) =>
+            ENV.run(os.read(f), file.map(_.toString), flags, cflag)
           case _ =>
             eval match
-              case Some(s) => ENV.run(s, file.map(_.toString), flags)
+              case Some(s) => ENV.run(s, file.map(_.toString), flags, cflag)
               case _       => ()
       catch
         case e: java.nio.file.NoSuchFileException =>

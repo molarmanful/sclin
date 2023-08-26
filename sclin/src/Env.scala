@@ -35,20 +35,23 @@ case class ENV(
     ids: Map[String, PATH] = Map(),
     gids: TrieMap[String, PATH] = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
+    flags: Map[String, Boolean] = Map.empty,
     eS: Boolean = false,
     eV: Boolean = false,
-    eI: Boolean = false
+    eI: Boolean = false,
+    eNC: Boolean = false,
+    cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs.Empty
 ):
 
   def trace1: ENV =
-    println(fansi.Color.DarkGray(s"———(${code.p})"))
+    println(cflag(fansi.Color.DarkGray)(s"———(${code.p})"))
     println(code.x match
-      case List() => fansi.Color.Green("(EMPTY)")
+      case List() => cflag(fansi.Color.Green)("(EMPTY)")
       case c :: cs =>
         fansi.Str.join(
           Seq(
-            fansi.Bold.On(fansi.Color.Yellow(c.toForm)),
-            fansi.Color.DarkGray(
+            cflag(fansi.Bold.On ++ fansi.Color.Yellow)(c.toForm),
+            cflag(fansi.Color.DarkGray)(
               if cs.length > 5 then
                 s"${cs.take(5).map(_.toForm).mkString(" ")} …"
               else cs.map(_.toForm).mkString(" ")
@@ -60,7 +63,7 @@ case class ENV(
     this
 
   def trace2: ENV =
-    println(fansi.Color.DarkGray("———>"))
+    println(cflag(fansi.Color.DarkGray)("———>"))
     println(stack.map(_.toForm).mkString("\n"))
     this
 
@@ -223,7 +226,7 @@ case class ENV(
           .tap(e => if eS || eV then e.trace2)
           .pipe(e =>
             if eS then
-              print(fansi.Color.DarkGray("———? "))
+              print(cflag(fansi.Color.DarkGray)("———? "))
               io.StdIn.readLine match
                 case "v" => e.copy(eS = false, eV = true)
                 case _   => e
@@ -242,17 +245,19 @@ object ENV:
   def run(
       l: String,
       f: FILE = None,
-      o: (Boolean, Boolean, Boolean) = (false, false, false)
+      flags: Map[String, Boolean] = Map.empty,
+      cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs.Empty
   ): ENV =
-    val (s, v, i) = o
     ENV(
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
         (PATH(f, i), (STR(x), UN))
       }),
       FN(PATH(f, 0), List()),
-      eS = s,
-      eV = v,
-      eI = i
+      eS = flags("s"),
+      eV = flags("v"),
+      eI = flags("i"),
+      eNC = flags("nc"),
+      cflag = cflag
     )
       .loadLine(0)
       .exec
