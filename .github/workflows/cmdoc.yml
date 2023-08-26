@@ -23,9 +23,9 @@ jobs:
           distribution: temurin
           java-version: 19
       - name: build
-        run: ./mill sclin.jvm.assembly
+        run: ./mill sclin.assembly
       - name: generate docs
-        run: ./mill sclin.jvm.cmdoc
+        run: ./mill sclin.cmdoc
       - name: run examples
         run: node docr.js sclin-docs/commands.md
       - name: commit + push
