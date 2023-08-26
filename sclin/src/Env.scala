@@ -245,7 +245,7 @@ object ENV:
   def run(
       l: String,
       f: FILE = None,
-      flags: Map[String, Boolean] = Map.empty,
+      flags: Map[String, Boolean] = Map.empty.withDefaultValue(false),
       cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs.Empty
   ): ENV =
     ENV(

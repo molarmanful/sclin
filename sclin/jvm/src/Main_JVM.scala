@@ -35,7 +35,7 @@ object Main:
         "v"  -> verb.value,
         "i"  -> impl.value,
         "nc" -> nocolor.value
-      )
+      ).withDefaultValue(false)
 
       try
         file match
