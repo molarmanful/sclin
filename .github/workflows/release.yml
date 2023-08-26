@@ -51,5 +51,5 @@ jobs:
       - name: gh release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: out/sclin/jvm/assembly.dest/out.jar
+          file: out/sclin/assembly.dest/out.jar
           asset_name: sclin

@@ -17,7 +17,7 @@ readFile(fl, (e, data) => {
       console.log('EXEC:', x)
       return new Promise(resolve => {
         exec(
-          `out/sclin/jvm/assembly.dest/out.jar --doceval '${x.replace(
+          `out/sclin/assembly.dest/out.jar --doceval '${x.replace(
             /'/g,
             `'\\''`
           )}'`,

@@ -1,7 +1,5 @@
 import $file.docp
-import $ivy.`com.github.lolgab::mill-crossplatform::0.2.3`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
-import com.github.lolgab.mill.crossplatform._
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
@@ -32,12 +30,6 @@ object sclin extends ScalaModule with PublishModule {
     ivy"com.lihaoyi::os-lib:0.9.1"
   )
 
-  object test extends ScalaTests with TestModule.Munit {
-
-    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M8")
-
-  }
-
   def cmdoc() = T.command {
     os.read
       .lines(millSourcePath / "src" / "Lib.scala")
@@ -47,6 +39,12 @@ object sclin extends ScalaModule with PublishModule {
       .pipe(docp.DocParser.parse)
       .pipe(_.md)
       .pipe(os.write.over(os.pwd / "sclin-docs" / "commands.md", _))
+  }
+
+  object test extends ScalaTests with TestModule.Munit {
+
+    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M8")
+
   }
 
 }
