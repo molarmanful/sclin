@@ -200,10 +200,15 @@
 [``` >k ```](#cmd-k)
 [``` >v ```](#cmd-v)
 [``` a>b ```](#cmd-ab)
+[``` a-b ```](#cmd-a-b)
 [``` O>a ```](#cmd-oa)
+[``` O-a ```](#cmd-o-a)
 [``` a>O ```](#cmd-ao)
+[``` a-O ```](#cmd-a-o)
 [``` I>a ```](#cmd-ia)
+[``` I-a ```](#cmd-i-a)
 [``` a>I ```](#cmd-ai)
+[``` a-I ```](#cmd-a-i)
 [``` shuf ```](#cmd-shuf)
 [``` perm ```](#cmd-perm)
 [``` comb ```](#cmd-comb)
@@ -1868,11 +1873,25 @@ Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM*]' ```
 Exclusive range from `a` to `b`.
 
 
+## CMD: [``` a-b ```](#cmd-a-b)
+
+Stack: ``` (a >NUM)' (b >NUM)' -> ARR[NUM*]' ```
+
+Inclusive range from `a` to `b`.
+
+
 ## CMD: [``` O>a ```](#cmd-oa)
 
 Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from 0 to `a`.
+
+
+## CMD: [``` O-a ```](#cmd-o-a)
+
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
+
+Inclusive range from 0 to `a`.
 
 
 ## CMD: [``` a>O ```](#cmd-ao)
@@ -1882,11 +1901,25 @@ Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 Exclusive range from `a` to 0.
 
 
+## CMD: [``` a-O ```](#cmd-a-o)
+
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
+
+Inclusive range from `a` to 0.
+
+
 ## CMD: [``` I>a ```](#cmd-ia)
 
 Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 
 Exclusive range from 1 to `a`.
+
+
+## CMD: [``` I-a ```](#cmd-i-a)
+
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
+
+Inclusive range from 1 to `a`.
 
 
 ## CMD: [``` a>I ```](#cmd-ai)
@@ -1896,6 +1929,13 @@ Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
 Exclusive range from `a` to 1.
 
 
+## CMD: [``` a-I ```](#cmd-a-i)
+
+Stack: ``` (a >NUM)' -> ARR[NUM*]' ```
+
+Inclusive range from `a` to 1.
+
+
 ## CMD: [``` shuf ```](#cmd-shuf)
 
 Stack: ``` a -> _ ```
@@ -1903,7 +1943,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [2 1 4 7 9 5 3 6 0 8]
+-> [5 3 0 9 4 8 1 7 2 6]
 ```
 
 
@@ -2509,7 +2549,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 2 5 3 1]
+-> [1 4 2 3 5]
 ```
 
 
