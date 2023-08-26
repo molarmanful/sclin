@@ -259,10 +259,12 @@ extension (env: ENV)
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
-  def range: ENV = env.num2a((x, y) =>
-    Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1).iterator
-      .map(Real(_))
-      .toVector
+  def rhelper(r: (Real, Real) => Range): ENV =
+    env.num2a(r(_, _).iterator.map(Real(_)).toVector)
+  def range: ENV =
+    rhelper((x, y) => Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1))
+  def irange: ENV = rhelper((x, y) =>
+    Range.inclusive(x.intValue, y.intValue, (y > x).boolInt * 2 - 1)
   )
 
   def shuffle: ENV = env.mod1(_.shuffle)
@@ -1896,10 +1898,20 @@ extension (env: ENV)
      */
     case "a>b" => range
     /*
+    @s (a >NUM)' (b >NUM)' -> ARR[NUM*]'
+    Inclusive range from `a` to `b`.
+     */
+    case "a-b" => irange
+    /*
     @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from 0 to `a`.
      */
     case "O>a" => env.push(NUM(0)).swap.range
+    /*
+    @s (a >NUM)' -> ARR[NUM*]'
+    Inclusive range from 0 to `a`.
+     */
+    case "O-a" => env.push(NUM(0)).swap.irange
     /*
     @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from `a` to 0.
@@ -1907,14 +1919,29 @@ extension (env: ENV)
     case "a>O" => env.push(NUM(0)).range
     /*
     @s (a >NUM)' -> ARR[NUM*]'
+    Inclusive range from `a` to 0.
+     */
+    case "a-O" => env.push(NUM(0)).irange
+    /*
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from 1 to `a`.
      */
     case "I>a" => env.push(NUM(1)).swap.range
     /*
     @s (a >NUM)' -> ARR[NUM*]'
+    Inclusive range from 1 to `a`.
+     */
+    case "I-a" => env.push(NUM(1)).swap.irange
+    /*
+    @s (a >NUM)' -> ARR[NUM*]'
     Exclusive range from `a` to 1.
      */
     case "a>I" => env.push(NUM(1)).range
+    /*
+    @s (a >NUM)' -> ARR[NUM*]'
+    Inclusive range from `a` to 1.
+     */
+    case "a-I" => env.push(NUM(1)).irange
     /*
     @s a -> _
     Shuffles `a`.
