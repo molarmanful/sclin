@@ -5,7 +5,7 @@ import com.github.lolgab.mill.crossplatform._
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import scala.util.chaining._
-import scalajslib._
+// import scalajslib._
 import scalalib._
 import scalalib.publish._
 
@@ -59,11 +59,11 @@ object sclin extends CrossPlatform {
     }
 
   }
-  object js extends Shared with ScalaJSModule {
+  // object js extends Shared with ScalaJSModule {
 
-    def scalaJSVersion = "1.13.2"
-    def moduleKind     = scalajslib.api.ModuleKind.ESModule
+  //   def scalaJSVersion = "1.13.2"
+  //   def moduleKind     = scalajslib.api.ModuleKind.ESModule
 
-  }
+  // }
 
 }
