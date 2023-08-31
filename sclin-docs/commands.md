@@ -215,6 +215,12 @@
 [``` ^set ```](#cmd-set)
 [``` Q* ```](#cmd-q-4)
 [``` tpose ```](#cmd-tpose)
+[``` pad ```](#cmd-pad)
+[``` padl ```](#cmd-padl)
+[``` padc ```](#cmd-padc)
+[``` pad` ```](#cmd-pad-1)
+[``` padl` ```](#cmd-padl-1)
+[``` padc` ```](#cmd-padc-1)
 [``` S>c ```](#cmd-sc)
 [``` c>S ```](#cmd-cs)
 [``` <> ```](#cmd--80)
@@ -1943,7 +1949,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [4 0 8 3 5 1 7 9 2 6]
+-> [0 6 4 2 5 7 3 8 9 1]
 ```
 
 
@@ -2003,6 +2009,84 @@ Transposes a collection of collections matrix-style.
 ```
 [[1 2][3 4 5][6]] tpose
 -> [[1 3 6] [2 4] [5]]
+```
+
+
+## CMD: [``` pad ```](#cmd-pad)
+
+Stack: ``` (a >STR)' (b >NUM)' (c >STR)' -> STR' ```
+
+Atomic [``` pad` ```](#cmd-pad-1).
+
+
+## CMD: [``` padl ```](#cmd-padl)
+
+Stack: ``` (a >STR)' (b >NUM)' (c >STR)' -> STR' ```
+
+Atomic [``` padl` ```](#cmd-padl-1).
+
+
+## CMD: [``` padc ```](#cmd-padc)
+
+Stack: ``` (a >STR)' (b >NUM)' (c >STR)' -> STR' ```
+
+Atomic [``` padc` ```](#cmd-padc-1).
+
+
+## CMD: [``` pad` ```](#cmd-pad-1)
+
+Stack: ``` a[_*] (b >NUM)' c -> STR' ```
+
+Pads `a` from the right to length `b` using `c`.
+```
+[1 2 3 4] 9 0pad`
+-> [1 2 3 4 0 0 0 0 0]
+```
+```
+[1 2 3 4] 9 [5 6 7] pad`
+-> [1 2 3 4 5 6 7 5 6 7 5 6 7 5 6 7 5 6 7]
+```
+```
+[1 2 3 4] 3 0pad`
+-> [1 2 3 4]
+```
+
+
+## CMD: [``` padl` ```](#cmd-padl-1)
+
+Stack: ``` a[_*] (b >NUM)' c -> STR' ```
+
+Pads `a` from the right to length `b` using `c`.
+```
+[1 2 3 4] 9 0padl`
+-> [0 0 0 0 0 1 2 3 4]
+```
+```
+[1 2 3 4] 9 [5 6 7] padl`
+-> [5 6 7 5 6 7 5 6 7 5 6 7 5 6 7 1 2 3 4]
+```
+```
+[1 2 3 4] 3 0padl`
+-> [1 2 3 4]
+```
+
+
+## CMD: [``` padc` ```](#cmd-padc-1)
+
+Stack: ``` a[_*] (b >NUM)' c -> STR' ```
+
+Pads `a` from the right to length `b` using `c`.
+```
+[1 2 3 4] 9 0padc`
+-> [0 0 1 2 3 4 0 0 0]
+```
+```
+[1 2 3 4] 9 [5 6 7] padc`
+-> [5 6 7 5 6 7 1 2 3 4 5 6 7 5 6 7 5 6 7]
+```
+```
+[1 2 3 4] 3 0padc`
+-> [1 2 3 4]
 ```
 
 
@@ -2549,7 +2633,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 3 5 2 1]
+-> [4 5 3 2 1]
 ```
 
 
