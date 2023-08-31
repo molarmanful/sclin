@@ -296,6 +296,37 @@ extension (env: ENV)
       .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
   )
 
+  def padH(f: (String, Int, String) => String): ENV = env.vec3((x, y, z) =>
+    val x1 = x.toString
+    val y1 = y.toInt - x1.length
+    val z1 = z.toString
+    f(x1, y1, z1).sSTR
+  )
+  def padH1(s: String, n: Int): String =
+    LazyList.continually(s).flatten.take(n).mkString
+  def pad: ENV  = padH((x, y, z) => x + padH1(z, y))
+  def padl: ENV = padH((x, y, z) => padH1(z, y) + x)
+  def padc: ENV = padH((x, y, z) =>
+    val q  = y / 2
+    val y1 = y - q
+    padH1(z, q) + x.toString + padH1(z, y1)
+  )
+
+  def pad$H(f: (ANY, Int, ANY) => ANY): ENV = env.mod3((x, y, z) =>
+    y.vec1(y =>
+      val y1 = y.toInt - x.length
+      if x.toSEQ.x.drop(y1).isEmpty then f(x, y1, z) else x
+    )
+  )
+  def pad$H1(s: ANY, n: Int): ANY = ARR(Vector.empty).add$$(s).mul$$(NUM(n))
+  def pad$ : ENV                  = pad$H((x, y, z) => x.add$$(pad$H1(z, y)))
+  def padl$ : ENV                 = pad$H((x, y, z) => pad$H1(z, y).add$$(x))
+  def padc$ : ENV = pad$H((x, y, z) =>
+    val q  = y / 2
+    val y1 = y - q
+    pad$H1(z, q).add$$(x).add$$(pad$H1(z, y1))
+  )
+
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
   def fromCodePt: ENV = env.mod1(
@@ -1993,6 +2024,63 @@ extension (env: ENV)
     ```
      */
     case "tpose" => tpose
+    /*
+    @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
+    Atomic #{pad`}.
+     */
+    case "pad" => pad
+    /*
+    @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
+    Atomic #{padl`}.
+     */
+    case "padl" => padl
+    /*
+    @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
+    Atomic #{padc`}.
+     */
+    case "padc" => padc
+    /*
+    @s a[_*] (b >NUM)' c -> STR'
+    Pads `a` from the right to length `b` using `c`.
+    ```sclin
+    [1 2 3 4] 9 0pad`
+    ```
+    ```sclin
+    [1 2 3 4] 9 [5 6 7] pad`
+    ```
+    ```sclin
+    [1 2 3 4] 3 0pad`
+    ```
+     */
+    case "pad`" => pad$
+    /*
+    @s a[_*] (b >NUM)' c -> STR'
+    Pads `a` from the right to length `b` using `c`.
+    ```sclin
+    [1 2 3 4] 9 0padl`
+    ```
+    ```sclin
+    [1 2 3 4] 9 [5 6 7] padl`
+    ```
+    ```sclin
+    [1 2 3 4] 3 0padl`
+    ```
+     */
+    case "padl`" => padl$
+    /*
+    @s a[_*] (b >NUM)' c -> STR'
+    Pads `a` from the right to length `b` using `c`.
+    ```sclin
+    [1 2 3 4] 9 0padc`
+    ```
+    ```sclin
+    [1 2 3 4] 9 [5 6 7] padc`
+    ```
+    ```sclin
+    [1 2 3 4] 3 0padc`
+    ```
+     */
+    case "padc`" => padc$
 
     /*
     @s (a >STR)' -> ARR[NUM*]'
