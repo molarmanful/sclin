@@ -51,22 +51,18 @@ extension (env: ENV)
       if d > 0 then
         code match
           case c :: cs =>
-            loop(
-              cs,
-              c match
-                case CMD(x) if x.contains('(') => d + 1
-                case CMD(x) if x.contains(')') => d - 1
-                case _                         => d
-              ,
-              res :+ c
-            )
+            val d1 = c match
+              case CMD(x) if x.contains('(') => d + 1
+              case CMD(x) if x.contains(')') => d - 1
+              case _                         => d
+            loop(cs, d1, res :+ c)
           case _ => (code, res)
       else (code, res)
     val (code, res) = loop(env.code.x)
     val (cs, c) = res match
-      case cs :+ c => (cs, c)
-      case _       => (res, CMD(")"))
-    env.modCode(_ => code).pushs(Vector(FN(env.code.p, cs), c)).eval
+      case cs :+ c => (cs, c.toString)
+      case _       => (res, ")")
+    env.modCode(_ => code).push(FN(env.code.p, cs)).cmd(c)
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
@@ -153,10 +149,27 @@ extension (env: ENV)
   def fromJSON: ENV = env.vec1(_.toString.pipe(read(_)))
   def toJSON: ENV   = env.mod1(write(_).sSTR)
 
-  def locId: ENV =
-    env.arg1((x, env) => x.vef1(env)((env, c) => env.addLocId(c.toString)))
-  def globId: ENV =
-    env.arg1((x, env) => x.vef1(env)((env, c) => env.addGlobId(c.toString)))
+  def locId: ENV = env.arg1((x, env) =>
+    x.vef1(env)((env, cs) =>
+      cs.xFN.foldLeft(env)((env, c) => env.addLocId(c.toString))
+    )
+  )
+  def globId: ENV = env.arg1((x, env) =>
+    x.vef1(env)((env, cs) =>
+      cs.xFN.foldLeft(env)((env, c) => env.addGlobId(c.toString))
+    )
+  )
+
+  def lambda: ENV = env.arg1((x, env) =>
+    val x1 = x.xFN
+    env.arg(
+      x1.length,
+      (cs, env) =>
+        x1.lazyZip(cs).foldRight(env) { case ((k, v), env) =>
+          env.addLoc(k.toString, v)
+        }
+    )
+  )
 
   def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
@@ -778,14 +791,17 @@ extension (env: ENV)
 
   def cmd1(x: String): ENV = (x: @switch) match
 
-    case "("  => startFN
-    case ")"  => env
-    case ")~" => evalTASK
-    case ")!" => evalTRY
-    case "["  => startARR
-    case "]"  => endARR
-    case "{"  => startARR
-    case "}"  => endMAP
+    case "("   => startFN
+    case ")"   => env
+    case ")~"  => evalTASK
+    case ")!"  => evalTRY
+    case ")#"  => locId
+    case ")##" => globId
+    case ")="  => lambda
+    case "["   => startARR
+    case "]"   => endARR
+    case "{"   => startARR
+    case "}"   => endMAP
 
     // CMDOC START
 
@@ -993,7 +1009,7 @@ extension (env: ENV)
     case "n\\" => env.push(STR("\n"))
 
     /*
-    @s (a >STR) ->
+    @s (a >FN)' ->
     Loads ID `a` into local scope.
     ```sclin
     "outer"=$a ( \a @$ a ) # $a
@@ -1002,7 +1018,7 @@ extension (env: ENV)
      */
     case "@$" => locId
     /*
-    @s (a >STR) ->
+    @s (a >FN)' ->
     Loads ID `a` into global scope.
     ```sclin
     \a @$$ ( "inner" =$a $a ) # a
@@ -1010,6 +1026,8 @@ extension (env: ENV)
     ```
      */
     case "@$$" => globId
+    // TODO: docs
+    case "->" => lambda
 
     /*
     @s -> STR

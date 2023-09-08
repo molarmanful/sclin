@@ -1,4 +1,4 @@
-[ \queens \show ] @$.
+( queens show )#.
 8=$n queens show
 
 #queens.

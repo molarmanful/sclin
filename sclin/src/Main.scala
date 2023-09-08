@@ -40,10 +40,10 @@ object Main:
       try
         file match
           case Some(f) =>
-            ENV.run(os.read(f), file.map(_.toString), flags, cflag)
+            ENV.run(os.read(f), file, flags, cflag)
           case _ =>
             eval match
-              case Some(s) => ENV.run(s, file.map(_.toString), flags, cflag)
+              case Some(s) => ENV.run(s, file, flags, cflag)
               case _       => ()
       catch
         case e: java.nio.file.NoSuchFileException =>

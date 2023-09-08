@@ -130,8 +130,9 @@ case class ENV(
     case Some(p, _) => p
     case _          => throw LinEx("ID", "unknown id")
 
-  def optId(c: String): Option[PATH] = try Some(getId(c))
-  catch e => None
+  def optId(c: String): Option[PATH] =
+    try Some(getId(c))
+    catch e => None
 
   def addLocId(c: String): ENV =
     copy(ids = ids + (c -> getId(c)), scope = scope - c)
