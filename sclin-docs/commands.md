@@ -570,7 +570,7 @@ Newline character.
 
 ## CMD: [``` @$ ```](#cmd--9)
 
-Stack: ``` (a >STR) -> ```
+Stack: ``` (a >FN)' -> ```
 
 Loads ID `a` into local scope.
 ```
@@ -582,7 +582,7 @@ Loads ID `a` into local scope.
 
 ## CMD: [``` @$$ ```](#cmd--10)
 
-Stack: ``` (a >STR) -> ```
+Stack: ``` (a >FN)' -> ```
 
 Loads ID `a` into global scope.
 ```
@@ -1949,7 +1949,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [2 4 5 0 1 6 7 9 8 3]
+-> [9 6 5 1 7 2 3 8 4 0]
 ```
 
 
@@ -2633,7 +2633,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [5 4 3 2 1]
+-> [4 1 2 3 5]
 ```
 
 
