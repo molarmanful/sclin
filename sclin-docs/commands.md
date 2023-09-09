@@ -16,6 +16,9 @@
 [``` >? ```](#cmd--3)
 [``` N>d ```](#cmd-nd)
 [``` >TT ```](#cmd-tt)
+[``` >>M ```](#cmd-m-1)
+[``` js> ```](#cmd-js)
+[``` >js ```](#cmd-js-1)
 [``` UN ```](#cmd-un)
 [``` $T ```](#cmd-t)
 [``` $F ```](#cmd-f-1)
@@ -42,6 +45,7 @@
 [``` n\ ```](#cmd-n-2)
 [``` @$ ```](#cmd--9)
 [``` @$$ ```](#cmd--10)
+[``` -> ```](#cmd--)
 [``` i> ```](#cmd-i)
 [``` >o ```](#cmd-o)
 [``` n>o ```](#cmd-no)
@@ -107,9 +111,9 @@
 [``` + ```](#cmd--28)
 [``` ++ ```](#cmd--29)
 [``` +` ```](#cmd--30)
-[``` - ```](#cmd--)
+[``` - ```](#cmd---1)
 [``` -- ```](#cmd---)
-[``` -` ```](#cmd---1)
+[``` -` ```](#cmd---2)
 [``` * ```](#cmd--31)
 [``` ** ```](#cmd--32)
 [``` *` ```](#cmd--33)
@@ -173,7 +177,7 @@
 [``` :r ```](#cmd-r)
 [``` :` ```](#cmd--71)
 [``` := ```](#cmd--72)
-[``` :- ```](#cmd---2)
+[``` :- ```](#cmd---3)
 [``` :? ```](#cmd--73)
 [``` :?` ```](#cmd--74)
 [``` len ```](#cmd-len)
@@ -400,6 +404,45 @@ Stack: ``` a b -> _ ```
 Converts `a` to type of `b`.
 
 
+## CMD: [``` >>M ```](#cmd-m-1)
+
+Stack: ``` (a >STR)' -> MAP ```
+
+[``` >M ```](#cmd-m) using a multiline string.
+Each line of `a` is [``` # ```](#cmd--12)ed, and the resulting top 2 stack items form each key-value pair.
+```
+`` >>M
+"a" 1
+"b" 2
+"c" 3
+`
+-> {"a"=>1 "b"=>2 "c"=>3}
+```
+
+
+## CMD: [``` js> ```](#cmd-js)
+
+Stack: ``` (a >STR)' -> _ ```
+
+Converts `a` from JSON to `ANY`.
+```
+g; js>
+{"a": 1, "b": 2, "c": [3, 4]}
+-> {"b"=>2 "c"=>[3 4] "a"=>1}
+```
+
+
+## CMD: [``` >js ```](#cmd-js-1)
+
+Stack: ``` a -> STR ```
+
+Converts `a` from `ANY` to JSON.
+```
+{"a" 1, "b" 2, "c" [3 4] , } >js
+-> "{\"a\":1,\"b\":2,\"c\":[3,4]}"
+```
+
+
 ## CMD: [``` UN ```](#cmd-un)
 
 Stack: ``` -> UN ```
@@ -589,6 +632,19 @@ Loads ID `a` into global scope.
 \a @$$ ( "inner" =$a $a ) # a
 #a "outer"
 -> "inner" "outer"
+```
+
+
+## CMD: [``` -> ```](#cmd--)
+
+Stack: ``` _* (a >FN) -> _* ```
+
+Stores stack items into local variables defined by `a`.
+Somewhat analogous to function arguments in other languages.
+```
+1 2 3 ;
+( a b c ) -> $c $b $a
+-> 3 2 1
 ```
 
 
@@ -1129,7 +1185,7 @@ Stack: ``` a b -> _ ```
 Concatenates `a` and `b`.
 
 
-## CMD: [``` - ```](#cmd--)
+## CMD: [``` - ```](#cmd---1)
 
 Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
@@ -1140,10 +1196,10 @@ Stack: ``` (a >NUM)' (b >NUM)' -> NUM' ```
 
 Stack: ``` (a >STR)' (b >STR)' -> STR' ```
 
-Atomic [``` -` ```](#cmd---1).
+Atomic [``` -` ```](#cmd---2).
 
 
-## CMD: [``` -` ```](#cmd---1)
+## CMD: [``` -` ```](#cmd---2)
 
 Stack: ``` a b -> _ ```
 
@@ -1625,7 +1681,7 @@ Stack: ``` a >ARR[i b] -> x ```
 Sets value at index `i` in `a` to `b`.
 
 
-## CMD: [``` :- ```](#cmd---2)
+## CMD: [``` :- ```](#cmd---3)
 
 Stack: ``` a i -> x ```
 
@@ -1949,7 +2005,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [9 6 5 1 7 2 3 8 4 0]
+-> [9 0 6 2 1 8 5 7 4 3]
 ```
 
 
@@ -2633,7 +2689,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 1 2 3 5]
+-> [4 3 5 2 1]
 ```
 
 
