@@ -880,11 +880,35 @@ extension (env: ENV)
     Converts `a` to type of `b`.
      */
     case ">TT" => matchType
-    // TODO: doc
+    /*
+    @s (a >STR)' -> MAP
+    #{>M} using a multiline string.
+    Each line of `a` is #{#}ed, and the resulting top 2 stack items form each key-value pair.
+    ```sclin
+    `` >>M
+    "a" 1
+    "b" 2
+    "c" 3
+    `
+    ```
+     */
     case ">>M" => lineMAP
-    // TODO: doc
+    /*
+    @s (a >STR)' -> _
+    Converts `a` from JSON to `ANY`.
+    ```sclin
+    g; js>
+    {"a": 1, "b": 2, "c": [3, 4]}
+    ```
+     */
     case "js>" => fromJSON
-    // TODO: doc
+    /*
+    @s a -> STR
+    Converts `a` from `ANY` to JSON.
+    ```sclin
+    {"a" 1, "b" 2, "c" [3 4] , } >js
+    ```
+     */
     case ">js" => toJSON
 
     /*
@@ -1026,7 +1050,15 @@ extension (env: ENV)
     ```
      */
     case "@$$" => globId
-    // TODO: docs
+    /*
+    @s _* (a >FN) -> _*
+    Stores stack items into local variables defined by `a`.
+    Somewhat analogous to function arguments in other languages.
+    ```sclin
+    1 2 3 ;
+    ( a b c ) -> $c $b $a
+    ```
+     */
     case "->" => lambda
 
     /*
