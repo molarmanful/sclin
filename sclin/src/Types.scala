@@ -80,6 +80,8 @@ enum ANY:
     case _     => toString
 
   def cmp(t: ANY): Int = (this, t) match
+    case (TF(x), _)               => if x then 1 else -1
+    case (_, TF(x))               => -t.cmp(this)
     case (Itr(x), _) if !x.toBool => UN.cmp(t)
     case (_, Itr(x)) if !x.toBool => cmp(UN)
     case (Itr(x), _) =>
