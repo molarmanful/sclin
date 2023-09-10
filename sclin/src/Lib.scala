@@ -2387,19 +2387,25 @@ extension (env: ENV)
      */
     case "scan" => scan
     /*
-    @s a -> NUM'
+    @s a -> NUM
     Sum of `a`. Equivalent to `0 \+ rfold`.
      */
     case "+/" => env.push(NUM(0)).push(CMD("+")).rfold
     /*
-    @s a -> NUM'
+    @s a -> NUM
     Product of `a`. Equivalent to `1 \* rfold`.
      */
     case "*/" => env.push(NUM(1)).push(CMD("*")).rfold
-    // TODO: docs
-    case "&/" => env.push(CMD("&")).reduce
-    // TODO: docs
-    case "|/" => env.push(CMD("|")).reduce
+    /*
+    @s a -> _
+    Minimum of `a`. Equivalent to ``` \&` fold~ ```.
+     */
+    case "&/" => env.push(CMD("&`")).reduce
+    /*
+    @s a -> _
+    Maximum of `a`. Equivalent to ``` \|` fold~ ```.
+     */
+    case "|/" => env.push(CMD("|`")).reduce
     // TODO: this doc sucks
     /*
     @s a f' -> _'
