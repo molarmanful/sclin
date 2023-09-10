@@ -583,13 +583,10 @@ extension (env: ENV)
 
   def fold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.foldLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
-
   def rfold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldLeft(y)(SIG_2f1(f))))
-
   def reduce: ENV =
     env.mod2((x, y) => y.vec1(f => x.reduceLeftM(SIG_1y2f1(f), SIG_2f1(f))))
-
   def scan: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.scanLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
 
@@ -2399,6 +2396,10 @@ extension (env: ENV)
     Product of `a`. Equivalent to `1 \* rfold`.
      */
     case "*/" => env.push(NUM(1)).push(CMD("*")).rfold
+    // TODO: docs
+    case "&/" => env.push(CMD("&")).reduce
+    // TODO: docs
+    case "|/" => env.push(CMD("|")).reduce
     // TODO: this doc sucks
     /*
     @s a f' -> _'
