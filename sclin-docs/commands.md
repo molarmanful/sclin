@@ -262,6 +262,8 @@
 [``` scan ```](#cmd-scan)
 [``` +/ ```](#cmd--92)
 [``` */ ```](#cmd--93)
+[``` &/ ```](#cmd--94)
+[``` |/ ```](#cmd--95)
 [``` walk ```](#cmd-walk)
 [``` fltr ```](#cmd-fltr)
 [``` any ```](#cmd-any)
@@ -284,17 +286,17 @@
 [``` diff ```](#cmd-diff)
 [``` ~_ ```](#cmd-_-6)
 [``` ~_! ```](#cmd-_-7)
-[``` ~$ ```](#cmd--94)
-[``` ~|> ```](#cmd--95)
-[``` ~|| ```](#cmd--96)
-[``` ~||> ```](#cmd--97)
-[``` ~// ```](#cmd--98)
-[``` ~>> ```](#cmd--99)
-[``` ~< ```](#cmd--100)
-[``` ~: ```](#cmd--101)
-[``` ~:& ```](#cmd--102)
+[``` ~$ ```](#cmd--96)
+[``` ~|> ```](#cmd--97)
+[``` ~|| ```](#cmd--98)
+[``` ~||> ```](#cmd--99)
+[``` ~// ```](#cmd--100)
+[``` ~>> ```](#cmd--101)
+[``` ~< ```](#cmd--102)
+[``` ~: ```](#cmd--103)
+[``` ~:& ```](#cmd--104)
 [``` ~$_ ```](#cmd-_-8)
-[``` ~% ```](#cmd--103)
+[``` ~% ```](#cmd--105)
 [``` sleep ```](#cmd-sleep)
 
 
@@ -2005,7 +2007,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [2 6 5 3 8 9 0 4 1 7]
+-> [2 6 4 9 5 1 3 8 7 0]
 ```
 
 
@@ -2506,16 +2508,30 @@ Stack: ``` a b f' -> _' ```
 
 ## CMD: [``` +/ ```](#cmd--92)
 
-Stack: ``` a -> NUM' ```
+Stack: ``` a -> NUM ```
 
 Sum of `a`. Equivalent to `0 \+ rfold`.
 
 
 ## CMD: [``` */ ```](#cmd--93)
 
-Stack: ``` a -> NUM' ```
+Stack: ``` a -> NUM ```
 
 Product of `a`. Equivalent to `1 \* rfold`.
+
+
+## CMD: [``` &/ ```](#cmd--94)
+
+Stack: ``` a -> _ ```
+
+Minimum of `a`. Equivalent to ``` \&` fold~ ```.
+
+
+## CMD: [``` |/ ```](#cmd--95)
+
+Stack: ``` a -> _ ```
+
+Maximum of `a`. Equivalent to ``` \|` fold~ ```.
 
 
 ## CMD: [``` walk ```](#cmd-walk)
@@ -2813,67 +2829,67 @@ Stack: ``` (a >FUT[x])' -> TRY[x]' ```
 [``` ~_ ```](#cmd-_-6) with result wrapped in a `TRY`.
 
 
-## CMD: [``` ~$ ```](#cmd--94)
+## CMD: [``` ~$ ```](#cmd--96)
 
 Stack: ``` (a >FUT)' -> ```
 
 Cancels `a`.
 
 
-## CMD: [``` ~|> ```](#cmd--95)
+## CMD: [``` ~|> ```](#cmd--97)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
 
 
-## CMD: [``` ~|| ```](#cmd--96)
+## CMD: [``` ~|| ```](#cmd--98)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
 
 
-## CMD: [``` ~||> ```](#cmd--97)
+## CMD: [``` ~||> ```](#cmd--99)
 
 Stack: ``` a[>TASK*] (n >NUM) -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--96) but with at most `n` concurrently running `TASK`s.
+[``` ~|| ```](#cmd--98) but with at most `n` concurrently running `TASK`s.
 
 
-## CMD: [``` ~// ```](#cmd--98)
+## CMD: [``` ~// ```](#cmd--100)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--96) but results are also unordered.
+[``` ~|| ```](#cmd--98) but results are also unordered.
 
 
-## CMD: [``` ~>> ```](#cmd--99)
+## CMD: [``` ~>> ```](#cmd--101)
 
 Stack: ``` a[>TASK*] -> TASK ```
 
 Races a collection of `TASK`s, returning the first to complete.
 
 
-## CMD: [``` ~< ```](#cmd--100)
+## CMD: [``` ~< ```](#cmd--102)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` runs on a separate thread.
 
 
-## CMD: [``` ~: ```](#cmd--101)
+## CMD: [``` ~: ```](#cmd--103)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` is memoized such that subsequent runs of the task return the same value.
 
 
-## CMD: [``` ~:& ```](#cmd--102)
+## CMD: [``` ~:& ```](#cmd--104)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
-[``` ~: ```](#cmd--101) but only if `a` completes successfully.
+[``` ~: ```](#cmd--103) but only if `a` completes successfully.
 
 
 ## CMD: [``` ~$_ ```](#cmd-_-8)
@@ -2883,7 +2899,7 @@ Stack: ``` (a >TASK)' -> TASK' ```
 Ensures that `a` is uncancellable.
 
 
-## CMD: [``` ~% ```](#cmd--103)
+## CMD: [``` ~% ```](#cmd--105)
 
 Stack: ``` (a >TASK)' (n >NUM)' -> TASK' ```
 
