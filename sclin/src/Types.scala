@@ -80,10 +80,12 @@ enum ANY:
     case _     => toString
 
   def cmp(t: ANY): Int = (this, t) match
+    case (UN, _)                  => -1
+    case (_, UN)                  => 1
     case (TF(x), _)               => if x then 1 else -1
     case (_, TF(x))               => -t.cmp(this)
-    case (Itr(x), _) if !x.toBool => UN.cmp(t)
-    case (_, Itr(x)) if !x.toBool => cmp(UN)
+    case (Itr(x), _) if !x.toBool => NUM(0).cmp(t)
+    case (_, Itr(x)) if !x.toBool => cmp(NUM(0))
     case (Itr(x), _) =>
       val x1 = x.toSEQ.x
       val t1 = t.toSEQ.x
