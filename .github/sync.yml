@@ -1,4 +1,4 @@
 molarmanful/scline:
   - source: examples/
-    dest: static/examples/
+    dest: src/examples/
     deleteOrphaned: true
