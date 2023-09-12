@@ -2,3 +2,5 @@ molarmanful/scline:
   - source: examples/
     dest: src/examples/
     deleteOrphaned: true
+    exclude: |
+      mandelbrot.sclin
