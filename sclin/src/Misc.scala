@@ -14,17 +14,22 @@ type FUTW[T]    = CancelableFuture[T]
 
 type NUMF = Real
 
+type CALLS = SEQW[(PATH, ANY)]
+
 case class PATH(f: FILE, l: Int):
 
   override def toString: String = s"${f.getOrElse("?")}:$l"
 
 case class LinEx(t: String, x: String) extends Exception(x):
 
-  def toLinERR(env: ENV): LinERR = LinERR(env.code.p, t, x)
+  def toLinERR(env: ENV): LinERR =
+    LinERR(env, t, x)
 
-case class LinERR(p: PATH, t: String, x: String) extends Exception(x):
+case class LinERR(env: ENV, t: String, x: String) extends Exception(x):
 
-  override def toString: String = s"ERR($t): $x @ ($p)"
+  override def toString: String =
+    def f(p: PATH, c: ANY): String = s"\n    @ $p ${c.toForm}"
+    s"ERR($t): $x${f.tupled(env.curPC)}${env.calls.map(f.tupled).mkString}"
 
   override def equals(x: Any): Boolean = x match
     case x: LinERR => canEqual(x) && t == x.t

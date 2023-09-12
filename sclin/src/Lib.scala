@@ -24,12 +24,12 @@ extension (env: ENV)
         val env1 = env.copy(code = f)
         env.code.x match
           case List() => env1
-          case _      => env.modStack(_ => env1.exec.stack)
+          case _      => env.modStack(_ => env1.addCall(f).exec.stack)
       case _ => env.push(x).toFN.eval
   )
   def evale: ENV = env.arg1((x, env) =>
     x match
-      case f: FN => env.modStack(_ => env.copy(code = f).exec.stack)
+      case f: FN => env.modStack(_ => env.copy(code = f).addCall(f).exec.stack)
       case _     => env.push(x).toFN.evale
   )
   def evalS(x: ARRW[ANY], f: ANY): ARRW[ANY] =
@@ -133,9 +133,8 @@ extension (env: ENV)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toTASK: ENV  = env.mod1(_.toTASK)
   def toTRY: ENV   = env.mod1(_.toTRY)
-  def toERR: ENV =
-    env.mod2((x, y) => ERR(LinERR(env.code.p, y.toString, x.toString)))
-  def toTF: ENV = env.mod1(_.toTF)
+  def toERR: ENV   = env.mod2((x, y) => ERR(LinERR(env, y.toString, x.toString)))
+  def toTF: ENV    = env.mod1(_.toTF)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).sSTR))
   def matchType: ENV = env.mod2(_.matchType(_))

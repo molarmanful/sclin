@@ -13,6 +13,12 @@ import ANY._
   *   queue of data to evaluate
   * @param stack
   *   current data stack
+  * @param curP
+  *   current PATH
+  * @param curC
+  *   currently executing cmd
+  * @param calls
+  *   current call stack
   * @param scope
   *   current scope
   * @param gscope
@@ -30,6 +36,8 @@ case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
     code: FN = FN(PATH(None, 0), List()),
     stack: ARRW[ANY] = Vector(),
+    curPC: (PATH, ANY) = (PATH(None, 0), UN),
+    calls: SEQW[(PATH, ANY)] = LazyList(),
     scope: Map[String, ANY] = Map(),
     gscope: TrieMap[String, ANY] = TrieMap(),
     ids: Map[String, PATH] = Map(),
@@ -148,6 +156,10 @@ case class ENV(
     gscope += (k -> v)
     this
 
+  def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
+
+  def setCur(c: ANY): ENV = copy(curPC = (code.p, c))
+
   def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
 
@@ -221,8 +233,9 @@ case class ENV(
     case c :: cs =>
       if eS then print("\u001b[2J\u001b[;H")
       if eS || eV then trace1
+      val env = setCur(c).modCode(_ => cs)
       try
-        return modCode(_ => cs)
+        return env
           .execA(c)
           .tap(e => if eS || eV then e.trace2)
           .pipe(e =>
@@ -236,9 +249,9 @@ case class ENV(
           .tap(_ => if eS then print("\u001b[2J\u001b[;H"))
           .exec
       catch
-        case e: LinEx => throw e.toLinERR(this)
+        case e: LinEx => throw e.toLinERR(env)
         case e: java.lang.StackOverflowError =>
-          throw LinEx("REC", "stack overflow").toLinERR(this)
+          throw LinEx("REC", "stack overflow").toLinERR(env)
 
 /** Frontend for `ENV`. */
 object ENV:
