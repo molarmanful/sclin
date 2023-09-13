@@ -11,11 +11,13 @@ Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
   "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
 ```
 
+[Try it on scline!](https://scline.fly.dev/##H4sIAAY3AWUCAzM0MPS0S1SIsVYoSSzgUlBQcsusqlJScioFkjoK.WWpRQrGCqY6CqoKigpaCQoppQUKMQX5BQo1ygp5dvkAKdsWfD4AAAA#)
+
 ## Installation
 
 ### Browser Interface
 
-[Try sclin in your browser!](https://replit.com/@molarmanful/try-sclin)
+[Try it on scline!](https://scline.fly.dev) The official online interpreter for sclin.
 
 ### Requirements
 

@@ -274,15 +274,15 @@ extension (env: ENV)
   def rhelper(r: (Real, Real) => Range): ENV =
     env.num2a(r(_, _).iterator.map(Real(_)).toVector)
   def range: ENV =
-    rhelper((x, y) => Range(x.intValue, y.intValue, (y > x).boolInt * 2 - 1))
-  def irange: ENV = rhelper((x, y) =>
-    Range.inclusive(x.intValue, y.intValue, (y > x).boolInt * 2 - 1)
-  )
+    rhelper((x, y) => x.intValue until y.intValue by (y > x).boolInt * 2 - 1)
+  def irange: ENV =
+    rhelper((x, y) => x.intValue to y.intValue by (y > x).boolInt * 2 - 1)
 
   def shuffle: ENV = env.mod1(_.shuffle)
   def getr: ENV    = env.shuffle.push(NUM(0)).get
   def perm: ENV    = env.mod1(_.permutations)
   def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toInt)))
+  def powset: ENV  = env.mod1(_.powset)
   def cProd: ENV = env.mod1(x =>
     x.toSEQ.x
       .map(_.toSEQ.x)
@@ -290,8 +290,6 @@ extension (env: ENV)
       .map(_.toSEQ.matchType(x.get(NUM(0))))
       .toSEQ
   )
-  def powset: ENV =
-    env.dup.len.push(NUM(1)).add.push(NUM(0)).swap.range.comb.flat
   def tpose: ENV = env.mod1(x =>
     def f(a: ANY): LazyList[ANY] = a match
       case MAP(a) => a.values.to(LazyList)

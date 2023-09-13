@@ -285,15 +285,28 @@ enum ANY:
     case FN(_, x) => x.mkString(s)
     case _        => toString
 
+  def combHelper(
+      x: Seq[ANY],
+      f: Seq[Int] => Iterator[Seq[Int]]
+  ): Iterator[Seq[ANY]] = x.zipWithIndex.map(_._2).pipe(f).map(_.map(x))
+
   def permutations: ANY = this match
-    case SEQ(x) =>
-      x.zipWithIndex.map(_._2).permutations.map(_.map(x).toSEQ).toSEQ
-    case _ => toSEQ.permutations.map(_.matchType(this))
+    case SEQ(x) => combHelper(x, _.permutations).map(_.toSEQ).toSEQ
+    case _      => toSEQ.permutations.map(_.matchType(this))
 
   def combinations(n: Int): ANY = this match
+    case SEQ(x) => x.comb(n).map(_.toSEQ).toSEQ
+    case ARR(x) => combHelper(x, _.combinations(n)).map(_.toARR).toSEQ
+    case _      => toARR.combinations(n).map(_.matchType(this))
+
+  def powset: ANY = this match
     case SEQ(x) =>
-      x.zipWithIndex.map(_._2).combinations(n).map(_.map(x).toSEQ).toSEQ
-    case _ => toSEQ.combinations(n).map(_.matchType(this))
+      val x1 = x.zipWithIndex.map(_._2)
+      x1.flatMap(a => x1.comb(a + 1))
+        .pipe(LazyList.empty #:: _)
+        .map(_.map(x).toSEQ)
+        .toSEQ
+    case _ => toSEQ.powset.map(_.matchType(this))
 
   def toSEQ: SEQ = this match
     case x: SEQ => x
@@ -835,6 +848,14 @@ object ANY:
 
     def unionWith(ys: SEQW[T], f: (T, T) => Boolean): SEQW[T] =
       xs #::: ys.uniqWith(f).filter(y => !xs.exists(f(_, y)))
+
+    def comb(n: Int): SEQW[SEQW[T]] =
+      if n < 0 then LazyList()
+      else if n == 0 then LazyList(LazyList.empty)
+      else
+        xs match
+          case LazyList() => LazyList.empty
+          case x #:: xs   => xs.comb(n - 1).map(x #:: _) #::: xs.comb(n)
 
   extension (x: Iterable[ANY])
 
