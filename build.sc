@@ -23,7 +23,7 @@ object sclin extends ScalaModule with PublishModule {
   def scalacOptions = Seq("-deprecation", "-feature")
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
-    ivy"com.lihaoyi::mainargs:0.5.1",
+    ivy"com.lihaoyi::mainargs:0.5.4",
     ivy"com.lihaoyi::fansi:0.4.0",
     ivy"com.lihaoyi::upickle:3.1.2",
     ivy"io.monix::monix:3.4.1",
