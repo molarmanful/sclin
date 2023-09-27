@@ -70,7 +70,7 @@ enum ANY:
         }.mkString}\""
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
-      s"(${x.map(_.toForm).mkString(" ")})$n"
+      s"(…)$n"
     case ERR(x) => s"ERR(${x.getMessage})"
     case TRY(b, x, e) =>
       if b then s"YES(${x.toForm})"
@@ -370,10 +370,9 @@ enum ANY:
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
   def xFN: LazyList[ANY] = this match
-    case FN(_, x) => x
-    case STR(x)   => Parser.parse(x)
-    case ARR(x)   => x.to(LazyList)
-    case _        => toARR.xFN
+    case Listy(x)   => x
+    case Stringy(x) => Parser.parse(x)
+    case _          => toSEQ.xFN
 
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
 
@@ -959,6 +958,20 @@ object ANY:
     def unapply(a: ANY): Option[ANY] = a match
       case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
       case _                                => None
+
+  object Listy:
+
+    def unapply(a: ANY): Option[LazyList[ANY]] = a match
+      case SEQ(x)   => Some(x)
+      case FN(_, x) => Some(x)
+      case _        => None
+
+  object Stringy:
+
+    def unapply(a: ANY): Option[String] = a match
+      case STR(x) => Some(x)
+      case CMD(x) => Some(x)
+      case _      => None
 
   def fromDec(n: SafeLong, b: Int): ARRW[SafeLong] =
     def loop(
