@@ -593,20 +593,18 @@ extension (env: ENV)
           st match
             case st :+ m if b =>
               st match
-                case _ :+ k =>
-                  if n.toBool then Vector(k, fn(m))
-                  else Vector(k, m)
+                case _ :+ k => Vector(k, if n.toBool then fn(m) else m)
                 case _ =>
-                  n match
-                    case Itr(_) => Vector(m, fn(n))
-                    case _      => Vector(m, n)
-            case _ :+ m =>
-              if n.toBool then Vector(fn(m))
-              else Vector(m)
+                  val n1 = n match
+                    case Itr(_) => fn(n)
+                    case _      => n
+                  Vector(m, n1)
+            case _ :+ m => Vector(if n.toBool then fn(m) else m)
             case _ =>
-              n match
-                case Itr(_) => Vector(fn(n))
-                case _      => Vector(n)
+              Vector(n match
+                case Itr(_) => fn(n)
+                case _      => n
+              )
         case _ => Vector()
       def fn(t: ANY): ANY =
         t.flatMap$M(
