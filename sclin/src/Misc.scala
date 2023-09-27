@@ -2,7 +2,8 @@ package sclin
 
 import monix.execution.CancelableFuture
 import scala.collection.immutable.VectorMap
-import spire.math.Real
+import spire.implicits._
+import spire.math._
 import util.chaining._
 
 type FILE = Option[os.Path]
@@ -35,3 +36,9 @@ case class LinERR(env: ENV, t: String, x: String) extends Exception(x):
     case x: LinERR => canEqual(x) && t == x.t
 
   override def hashCode: Int = t.##
+
+object Util:
+
+  def asinh(x: Double): Double = log(x + (x * x + 1).sqrt)
+  def acosh(x: Double): Double = log(x + (x * x - 1).sqrt)
+  def atanh(x: Double): Double = asinh(x).fquot(acosh(x))

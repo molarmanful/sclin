@@ -115,7 +115,11 @@ extension (env: ENV)
   def toARR: ENV   = env.mod1(_.toARR)
   def toMAP: ENV   = env.mod1(_.toMAP)
   def toSTR: ENV   = env.mod1(_.toSTR)
+  def vSTR: ENV    = env.vec1(_.toSTR)
   def toNUM: ENV   = env.mod1(_.toNUM)
+  def vNUM: ENV    = env.vec1(_.toNUM)
+  def toDBL: ENV   = env.mod1(_.toDBL)
+  def vDBL: ENV    = env.vec1(_.toDBL)
   def toFN: ENV    = env.mod1(_.toFN(env))
   def toTASK: ENV  = env.mod1(_.toTASK)
   def toTRY: ENV   = env.mod1(_.toTRY)
@@ -372,16 +376,19 @@ extension (env: ENV)
   )
 
   def scale: ENV = env.push(NUM(10)).swap.pow.mul
-  def trunc: ENV = env.num1(_.toBigInt)
-  def floor: ENV = env.num1(_.floor)
-  def round: ENV = env.num1(_.round)
-  def ceil: ENV  = env.num1(_.ceil)
+  def trunc: ENV = env.num1(_.toBigInt.toDouble, _.toBigInt)
+  def floor: ENV = env.num1(_.floor, _.floor)
+  def round: ENV = env.num1(_.round, _.round)
+  def ceil: ENV  = env.num1(_.ceil, _.ceil)
 
   def fromDec: ENV =
     env.num2a((x, y) => ANY.fromDec(x.toSafeLong, y.toInt).map(Real(_)))
   def toDec: ENV = env.mod2((x, y) =>
     val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
-    y.num1(n => ANY.toDec(x1, n.toInt))
+    y.num1(
+      n => ANY.toDec(x1, n.toInt).toDouble,
+      n => ANY.toDec(x1, n.toInt)
+    )
   )
   def toNumDen: ENV = env.vec1(x =>
     val a = x.toNUM.x.toRational
@@ -395,7 +402,7 @@ extension (env: ENV)
     )
   )
 
-  def neg: ENV   = env.num1(-_)
+  def neg: ENV   = env.num1(-_, -_)
   def neg$ : ENV = env.str1(_.reverse)
   def neg$$ : ENV =
     def loop(t: ANY): ANY = t match
@@ -405,23 +412,25 @@ extension (env: ENV)
       case _      => t.str1(_.reverse)
     env.mod1(loop)
 
-  def add: ENV    = env.num2(_ + _)
+  def add: ENV    = env.num2(_ + _, _ + _)
   def add$ : ENV  = env.str2(_ ++ _)
   def add$$ : ENV = env.mod2(_ add$$ _)
 
-  def sub: ENV    = env.num2(_ - _)
+  def sub: ENV    = env.num2(_ - _, _ - _)
   def sub$ : ENV  = env.str2((x, y) => x.filterNot(y.contains))
   def sub$$ : ENV = env.mod2(_ sub$$ _)
 
-  def mul: ENV    = env.num2(_ * _)
+  def mul: ENV    = env.num2(_ * _, _ * _)
   def mul$ : ENV  = env.strnum(_ * _.intValue)
   def mul$$ : ENV = env.mod2(_ mul$$ _)
 
   def div: ENV = env.num2(
+    _ / _,
     (x, y) => if y == 0 then throw ArithmeticException() else x / y,
     "bad /"
   )
   def divi: ENV = env.num2(
+    _.fquot(_),
     (x, y) => if y == 0 then throw ArithmeticException() else x.fquot(y),
     "bad /~"
   )
@@ -429,6 +438,7 @@ extension (env: ENV)
   def div$$ : ENV = env.mod2((x, y) => y.vec1(x div$$ _))
 
   def mod: ENV = env.num2(
+    _.fmod(_),
     (x, y) => if y == 0 then throw ArithmeticException() else x.fmod(y),
     "bad %"
   )
@@ -439,12 +449,13 @@ extension (env: ENV)
   def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _))
 
   def pow: ENV = env.num2(
+    _.fpow(_),
     (x, y) =>
       if x < 0 && y.reciprocal.fmod(2) == 0 then throw ArithmeticException()
       else x.fpow(y),
     "bad ^"
   )
-  def powi: ENV = env.num2(_ ** _.intValue)
+  def powi: ENV = env.num2(_ ** _.intValue, _ ** _.intValue)
   def pow$ : ENV = env.vec2((x, y) =>
     ANY.cPow(x.toSTR.toSEQ.x, y.toInt).map(_.toARR.toSTR).toSEQ
   )
@@ -452,38 +463,40 @@ extension (env: ENV)
     y.vec1(n => ANY.cPow(x.toSEQ.x, n.toInt).map(_.toARR.matchType(x)).toSEQ)
   )
 
-  def exp: ENV = env.num1(_.exp)
-  def abs: ENV = env.num1(_.abs)
+  def exp: ENV = env.num1(_.exp, _.exp)
+  def abs: ENV = env.num1(_.abs, _.abs)
 
-  def sin: ENV = env.num1(Real.sin)
-  def cos: ENV = env.num1(Real.cos)
+  def sin: ENV = env.num1(math.sin, Real.sin)
+  def cos: ENV = env.num1(math.cos, Real.cos)
   def tan: ENV = env.num1(
+    math.tan,
     x =>
       val d = Real.cos(x)
       if d == 0 then throw ArithmeticException() else Real.sin(x) / d
     ,
     "bad tan"
   )
-  def asin: ENV  = env.num1(Real.asin)
-  def acos: ENV  = env.num1(Real.acos)
-  def atan: ENV  = env.num1(Real.atan)
-  def atan2: ENV = env.num2(Real.atan2)
-  def sinh: ENV  = env.num1(Real.sinh)
-  def cosh: ENV  = env.num1(Real.cosh)
-  def tanh: ENV  = env.num1(Real.tanh)
-  def asinh: ENV = env.num1(Real.asinh)
-  def acosh: ENV = env.num1(Real.acosh)
-  def atanh: ENV = env.num1(Real.atanh)
+  def asin: ENV  = env.num1(math.asin, Real.asin)
+  def acos: ENV  = env.num1(math.acos, Real.acos)
+  def atan: ENV  = env.num1(math.atan, Real.atan)
+  def atan2: ENV = env.num2(math.atan2, Real.atan2)
+  def sinh: ENV  = env.num1(math.sinh, Real.sinh)
+  def cosh: ENV  = env.num1(math.cosh, Real.cosh)
+  def tanh: ENV  = env.num1(math.tanh, Real.tanh)
+  def asinh: ENV = env.num1(Util.asinh, Real.asinh)
+  def acosh: ENV = env.num1(Util.acosh, Real.acosh)
+  def atanh: ENV = env.num1(Util.atanh, Real.atanh)
 
   def ln: ENV =
     env.num1(
+      math.log,
       x => if x <= 0 then throw ArithmeticException() else Real.log(x),
       "bad log"
     )
   def log: ENV   = env.arg2((x, y, env) => env.push(x).ln.push(y).ln.div)
   def log10: ENV = env.push(NUM(10)).log
 
-  def isPrime: ENV = env.num1(x => prime.isPrime(x.toSafeLong).boolInt)
+  def isPrime: ENV = env.vec1(_.toNUM.x.toSafeLong.pipe(prime.isPrime).boolTF)
   def factor: ENV = env.vec1(
     _.toNUM.x.toSafeLong
       .pipe(prime.factor)
@@ -811,6 +824,11 @@ extension (env: ENV)
      */
     case ">M" => toMAP
     /*
+    @s a' -> STR'
+    Atomic #{>S}.
+     */
+    case "S" => vSTR
+    /*
     @s a -> STR
     Converts `a` to `STR`.
      */
@@ -820,6 +838,21 @@ extension (env: ENV)
     Converts `a` to `NUM`.
      */
     case ">N" => toNUM
+    /*
+    @s a' -> NUM'
+    Atomic #{>N}.
+     */
+    case "N" => vNUM
+    /*
+    @s a' -> DBL'
+    Atomic #{>D}.
+     */
+    case "D" => vDBL
+    /*
+    @s a -> DBL
+    Converts `a` to `DBL`.
+     */
+    case ">D" => toDBL
     /*
     @s a -> FN
     Converts `a` to `FN`.

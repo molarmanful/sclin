@@ -115,7 +115,8 @@ enum ANY:
     case ARR(x)       => !x.isEmpty
     case MAP(x)       => !x.isEmpty
     case STR(x)       => !x.isEmpty
-    case Nmy(x)       => !eql(NUM(0))
+    case NUM(x)       => !eql(NUM(0))
+    case DBL(x)       => !eql(DBL(0))
     case CMD(x)       => !x.isEmpty
     case FN(_, x)     => !x.isEmpty
     case _: ERR       => false
@@ -403,6 +404,7 @@ enum ANY:
     case _: MAP   => toMAP
     case _: STR   => toSTR
     case _: NUM   => toNUM
+    case _: DBL   => toDBL
     case _: TF    => toTF
     case _: CMD   => toString.pipe(CMD(_))
     case _: TASK  => toTASK
@@ -730,16 +732,18 @@ enum ANY:
     case Itr(_) => foldLeft(a)((x, y) => y.vef1(x)(f))
     case x      => f(a, x)
 
-  def num1(f: NUMF => NUMF): ANY = vec1(x => NUM(f(x.toNUM.x)))
-  def num1(f: NUMF => NUMF, e: String): ANY =
-    try num1(f)
+  def num1(f: Double => Double, g: NUMF => NUMF): ANY =
+    vec1(_.fNum1(f(_).toDBL, g(_).toNUM))
+  def num1(f: Double => Double, g: NUMF => NUMF, e: String): ANY =
+    try num1(f, g)
     catch case _: ArithmeticException => throw LinEx("MATH", e)
 
   def num2(
       t: ANY,
       f: (Double, Double) => Double,
       g: (NUMF, NUMF) => NUMF
-  ): ANY = vec2(t, (x, y) => x.fNum2(y, f(_, _).toDBL, g(_, _).toNUM))
+  ): ANY =
+    vec2(t, _.fNum2(_, f(_, _).toDBL, g(_, _).toNUM))
   def num2(
       t: ANY,
       f: (Double, Double) => Double,
@@ -938,7 +942,7 @@ object ANY:
         STR("$") -> NUM(m.end)
       ).toMAP
 
-  extension (n: Double) def toDBL = DBL(n)
+  extension (x: Double) def toDBL = DBL(x)
 
   extension (n: Real) def toNUM = NUM(n)
 

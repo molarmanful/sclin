@@ -199,10 +199,17 @@ case class ENV(
   def vec2(f: (ANY, ANY) => ANY): ENV      = mod2(_.vec2(_, f))
   def vec3(f: (ANY, ANY, ANY) => ANY): ENV = mod3(_.vec3(_, _, f))
 
-  def num1(f: NUMF => NUMF): ENV                    = mod1(_.num1(f))
-  def num1(f: NUMF => NUMF, e: String): ENV         = mod1(_.num1(f, e))
-  def num2(f: (NUMF, NUMF) => NUMF): ENV            = mod2(_.num2(_, f))
-  def num2(f: (NUMF, NUMF) => NUMF, e: String): ENV = mod2(_.num2(_, f, e))
+  def num1(f: Double => Double, g: NUMF => NUMF): ENV = mod1(_.num1(f, g))
+  def num1(f: Double => Double, g: NUMF => NUMF, e: String): ENV =
+    mod1(_.num1(f, g, e))
+  def num2(f: (Double, Double) => Double, g: (NUMF, NUMF) => NUMF): ENV =
+    mod2(_.num2(_, f, g))
+  def num2(
+      f: (Double, Double) => Double,
+      g: (NUMF, NUMF) => NUMF,
+      e: String
+  ): ENV =
+    mod2(_.num2(_, f, g, e))
   def num2q(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2q(_, f))
   def num2a(f: (NUMF, NUMF) => Iterable[NUMF]): ENV = mod2(_.num2a(_, f))
 
