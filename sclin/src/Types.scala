@@ -24,6 +24,7 @@ enum ANY:
   case MAP(x: MAPW[ANY, ANY])
   case STR(x: String)
   case NUM(x: NUMF)
+  case DBL(x: Double)
   case TF(x: Boolean)
   case CMD(x: String)
   case FN(p: PATH, x: SEQW[ANY])
@@ -41,6 +42,7 @@ enum ANY:
         .mkString("\n")
     case STR(x)   => x
     case NUM(x)   => x.toString
+    case DBL(x)   => x.toString
     case FN(_, x) => x.mkString(" ")
     case CMD(x)   => x
     case ERR(x)   => x.toString
@@ -94,6 +96,8 @@ enum ANY:
         .find(_ != 0)
         .getOrElse(x1.sizeCompare(t1))
     case (_, Itr(_))      => -t.cmp(this)
+    case (DBL(x), Nmy(y)) => x.compare(y.toDouble)
+    case (Nmy(x), DBL(y)) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
       x.compare(t.toSTR.x.map(_.toInt).applyOrElse(0, _ => 0))
@@ -102,7 +106,7 @@ enum ANY:
     case _                => toSTR.cmp(t.toSTR)
 
   def eql(t: ANY): Boolean = (this, t) match
-    case (_: NUM, _: NUM) => cmp(t) == 0
+    case (Nmy(_), Nmy(_)) => cmp(t) == 0
     case _                => this == t
 
   def toBool: Boolean = this match
@@ -111,7 +115,7 @@ enum ANY:
     case ARR(x)       => !x.isEmpty
     case MAP(x)       => !x.isEmpty
     case STR(x)       => !x.isEmpty
-    case _: NUM       => !eql(NUM(0))
+    case Nmy(x)       => !eql(NUM(0))
     case CMD(x)       => !x.isEmpty
     case FN(_, x)     => !x.isEmpty
     case _: ERR       => false
@@ -344,6 +348,10 @@ enum ANY:
       case e: java.lang.NumberFormatException =>
         throw LinEx("CAST", "bad NUM cast " + toForm)
       case e => throw e
+
+  def toDBL: DBL = DBL(toDouble)
+
+  def toDouble: Double = toNUM.x.toDouble
 
   def toThrow: Throwable = this match
     case ERR(x) => x
@@ -727,10 +735,18 @@ enum ANY:
     try num1(f)
     catch case _: ArithmeticException => throw LinEx("MATH", e)
 
-  def num2(t: ANY, f: (NUMF, NUMF) => NUMF): ANY =
-    vec2(t, (x, y) => NUM(f(x.toNUM.x, y.toNUM.x)))
-  def num2(t: ANY, f: (NUMF, NUMF) => NUMF, e: String): ANY =
-    try num2(t, f)
+  def num2(
+      t: ANY,
+      f: (Double, Double) => Double,
+      g: (NUMF, NUMF) => NUMF
+  ): ANY = vec2(t, (x, y) => x.fNum2(y, f(_, _).toDBL, g(_, _).toNUM))
+  def num2(
+      t: ANY,
+      f: (Double, Double) => Double,
+      g: (NUMF, NUMF) => NUMF,
+      e: String
+  ): ANY =
+    try num2(t, f, g)
     catch case _: ArithmeticException => throw LinEx("MATH", e)
 
   def num2q(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
@@ -746,22 +762,32 @@ enum ANY:
   )
 
   def str2(t: ANY, f: (String, String) => String): ANY =
-    vec2(t, (x, y) => STR(f(x.toString, y.toString)))
+    vec2(t, (x, y) => f(x.toString, y.toString).sSTR)
 
   def str2q(t: ANY, f: (String, String) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toString).map(STR(_)).toSEQ)
+    vec2(t, (x, y) => f(x.toString, y.toString).map(_.sSTR).toSEQ)
 
   def str2a(t: ANY, f: (String, String) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toString).map(STR(_)).toARR)
+    vec2(t, (x, y) => f(x.toString, y.toString).map(_.sSTR).toARR)
 
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
     vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
 
   def strnumq(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toSEQ)
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toSEQ)
 
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(STR(_)).toARR)
+    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toARR)
+
+  def fNum1(f: Double => ANY, g: NUMF => ANY) = this match
+    case DBL(x) => f(x.toDouble)
+    case _      => g(toNUM.x)
+
+  def fNum2(t: ANY, f: (Double, Double) => ANY, g: (NUMF, NUMF) => ANY) =
+    (this, t) match
+      case (DBL(x), Nmy(y)) => f(x, y.toDouble)
+      case (Nmy(x), DBL(y)) => f(x.toDouble, y)
+      case (x, y)           => g(x.toNUM.x, y.toNUM.x)
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
 
@@ -912,6 +938,10 @@ object ANY:
         STR("$") -> NUM(m.end)
       ).toMAP
 
+  extension (n: Double) def toDBL = DBL(n)
+
+  extension (n: Real) def toNUM = NUM(n)
+
   /** Pattern for `SEQ`-like. */
   object Itr:
 
@@ -943,8 +973,8 @@ object ANY:
   object Nmy:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: NUM => Some(a)
-      case _      => None
+      case _: NUM | _: DBL => Some(a)
+      case _               => None
 
   object Sty:
 
