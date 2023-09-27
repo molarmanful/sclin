@@ -2430,7 +2430,7 @@ extension (env: ENV)
     [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dups f>o ) walk
     ```
     ```sclin
-    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len ( dup +` ) &# ) walk
+    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len 0> ( dup +` ) &# ) walk
     ```
      */
     case "walk" => walk

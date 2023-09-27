@@ -6,8 +6,12 @@
 [``` >Q ```](#cmd-q)
 [``` >A ```](#cmd-a)
 [``` >M ```](#cmd-m)
-[``` >S ```](#cmd-s)
+[``` S ```](#cmd-s)
+[``` >S ```](#cmd-s-1)
 [``` >N ```](#cmd-n)
+[``` N ```](#cmd-n-1)
+[``` D ```](#cmd-d)
+[``` >D ```](#cmd-d-1)
 [``` >F ```](#cmd-f)
 [``` >E ```](#cmd-e)
 [``` >~ ```](#cmd-)
@@ -34,7 +38,7 @@
 [``` $LINE ```](#cmd-line)
 [``` $FILE ```](#cmd-file)
 [``` $W ```](#cmd-w)
-[``` $N ```](#cmd-n-1)
+[``` $N ```](#cmd-n-2)
 [``` $P ```](#cmd-p)
 [``` $L* ```](#cmd-l)
 [``` $ABC ```](#cmd-abc)
@@ -42,7 +46,7 @@
 [``` g@ ```](#cmd-g)
 [``` g; ```](#cmd-g-1)
 [``` g;; ```](#cmd-g-2)
-[``` n\ ```](#cmd-n-2)
+[``` n\ ```](#cmd-n-3)
 [``` @$ ```](#cmd--9)
 [``` @$$ ```](#cmd--10)
 [``` -> ```](#cmd--)
@@ -231,12 +235,12 @@
 [``` <>: ```](#cmd--81)
 [``` c<> ```](#cmd-c)
 [``` w<> ```](#cmd-w-1)
-[``` n<> ```](#cmd-n-3)
-[``` s<> ```](#cmd-s-1)
+[``` n<> ```](#cmd-n-4)
+[``` s<> ```](#cmd-s-2)
 [``` >< ```](#cmd--82)
 [``` c>< ```](#cmd-c-1)
 [``` w>< ```](#cmd-w-2)
-[``` n>< ```](#cmd-n-4)
+[``` n>< ```](#cmd-n-5)
 [``` A>a ```](#cmd-aa)
 [``` a>A ```](#cmd-aa-1)
 [``` >Aa ```](#cmd-aa-2)
@@ -336,7 +340,14 @@ Stack: ``` a -> ARR ```
 Converts `a` to `MAP`.
 
 
-## CMD: [``` >S ```](#cmd-s)
+## CMD: [``` S ```](#cmd-s)
+
+Stack: ``` a' -> STR' ```
+
+Atomic [``` >S ```](#cmd-s-1).
+
+
+## CMD: [``` >S ```](#cmd-s-1)
 
 Stack: ``` a -> STR ```
 
@@ -348,6 +359,27 @@ Converts `a` to `STR`.
 Stack: ``` a -> NUM ```
 
 Converts `a` to `NUM`.
+
+
+## CMD: [``` N ```](#cmd-n-1)
+
+Stack: ``` a' -> NUM' ```
+
+Atomic [``` >N ```](#cmd-n).
+
+
+## CMD: [``` D ```](#cmd-d)
+
+Stack: ``` a' -> DBL' ```
+
+Atomic [``` >D ```](#cmd-d-1).
+
+
+## CMD: [``` >D ```](#cmd-d-1)
+
+Stack: ``` a -> DBL ```
+
+Converts `a` to `DBL`.
 
 
 ## CMD: [``` >F ```](#cmd-f)
@@ -550,7 +582,7 @@ Stack: ``` -> SEQ[NUM*] ```
 Infinite `SEQ` of 0 to ∞.
 
 
-## CMD: [``` $N ```](#cmd-n-1)
+## CMD: [``` $N ```](#cmd-n-2)
 
 Stack: ``` -> SEQ[NUM*] ```
 
@@ -606,7 +638,7 @@ Stack: ``` -> STR | UN ```
 Previous line.
 
 
-## CMD: [``` n\ ```](#cmd-n-2)
+## CMD: [``` n\ ```](#cmd-n-3)
 
 Stack: ``` -> STR ```
 
@@ -2007,7 +2039,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [3 9 5 7 4 2 1 8 0 6]
+-> [3 6 0 8 2 9 4 5 1 7]
 ```
 
 
@@ -2198,14 +2230,14 @@ Stack: ``` (a >STR)' -> ARR' ```
 [``` <> ```](#cmd--80)s with space.
 
 
-## CMD: [``` n<> ```](#cmd-n-3)
+## CMD: [``` n<> ```](#cmd-n-4)
 
 Stack: ``` (a >STR)' -> ARR' ```
 
 [``` <> ```](#cmd--80)s with newline.
 
 
-## CMD: [``` s<> ```](#cmd-s-1)
+## CMD: [``` s<> ```](#cmd-s-2)
 
 Stack: ``` (a >STR)' -> ARR' ```
 
@@ -2233,7 +2265,7 @@ Stack: ``` a -> STR' ```
 [``` >< ```](#cmd--82)s with space.
 
 
-## CMD: [``` n>< ```](#cmd-n-4)
+## CMD: [``` n>< ```](#cmd-n-5)
 
 Stack: ``` a -> STR' ```
 
@@ -2555,7 +2587,7 @@ A multi-purpose function for creating, modifying, and traversing nested structur
 [7]
 ```
 ```
-[[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len ( dup +` ) &# ) walk
+[[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len 0> ( dup +` ) &# ) walk
 -> [[1 2 1 2] 3 4 {"a"=>5 "b"=>[6 7 6 7]} [1 2 1 2] 3 4 {"a"=>5 "b"=>[6 7 6 7]}]
 ```
 
@@ -2705,7 +2737,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [4 3 5 2 1]
+-> [1 4 5 3 2]
 ```
 
 
