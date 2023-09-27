@@ -398,11 +398,11 @@ extension (env: ENV)
   def neg: ENV   = env.num1(-_)
   def neg$ : ENV = env.str1(_.reverse)
   def neg$$ : ENV =
-    def loop(x: ANY): ANY = x match
-      case SEQ(x) => x.reverse.toSEQ
+    def loop(t: ANY): ANY = t match
+      case Lsy(x) => x.reverse.toSEQ.matchType(t)
       case ARR(x) => x.reverse.toARR
-      case _: MAP => loop(x.toSEQ).toMAP
-      case _      => x.str1(_.reverse)
+      case _: MAP => loop(t.toSEQ).toMAP
+      case _      => t.str1(_.reverse)
     env.mod1(loop)
 
   def add: ENV    = env.num2(_ + _)
