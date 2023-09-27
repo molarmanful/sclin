@@ -17,7 +17,11 @@ enum PT:
   * @param t
   *   type of `x`
   */
-case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
+case class Parser(
+    xs: LazyList[ANY] = LazyList(),
+    x: String = "",
+    t: PT = PT.UN
+):
 
   def clean: Parser = Parser(t match
     case PT.STR => xs :+ STR(x)
@@ -76,8 +80,8 @@ case class Parser(xs: List[ANY] = List.empty, x: String = "", t: PT = PT.UN):
 /** Frontend for `Parser`. */
 object Parser:
 
-  def pline(s: String): List[ANY] =
+  def pline(s: String): LazyList[ANY] =
     s.foldLeft(Parser())((st, c) => st.choice(c)).clean.xs
 
-  def parse(s: String): List[ANY] =
+  def parse(s: String): LazyList[ANY] =
     s.split("\n").headOption.getOrElse("").pipe(pline)

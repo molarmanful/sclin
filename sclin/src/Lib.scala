@@ -15,6 +15,7 @@ import spire.implicits._
 import spire.math._
 import upickle.default._
 import ANY._
+import Lambda._
 
 extension (env: ENV)
 
@@ -23,8 +24,8 @@ extension (env: ENV)
       case f: FN =>
         val env1 = env.copy(code = f)
         env.code.x match
-          case List() => env1
-          case _      => env.modStack(_ => env1.addCall(f).exec.stack)
+          case LazyList() => env1
+          case _          => env.modStack(_ => env1.addCall(f).exec.stack)
       case _ => env.push(x).toFN.eval
   )
   def evale: ENV = env.arg1((x, env) =>
@@ -43,26 +44,11 @@ extension (env: ENV)
     env.arg1((x, env) => x.vec1(env.push(_).evale.getStack(0)).pipe(env.push))
 
   def startFN: ENV =
-    def loop(
-        code: List[ANY],
-        d: Int = 1,
-        res: List[ANY] = List()
-    ): (List[ANY], List[ANY]) =
-      if d > 0 then
-        code match
-          case c :: cs =>
-            val d1 = c match
-              case CMD(x) if x.contains('(') => d + 1
-              case CMD(x) if x.contains(')') => d - 1
-              case _                         => d
-            loop(cs, d1, res :+ c)
-          case _ => (code, res)
-      else (code, res)
-    val (code, res) = loop(env.code.x)
-    val (cs, c) = res match
+    val l = Lambda(env.code.x).loop
+    val (cs, c) = l.ys match
       case cs :+ c => (cs, c.toString)
-      case _       => (res, ")")
-    env.modCode(_ => code).push(FN(env.code.p, cs)).cmd(c)
+      case _       => (l.ys, ")")
+    env.modCode(_ => l.xs).push(FN(env.code.p, cs)).cmd(c)
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
@@ -141,7 +127,7 @@ extension (env: ENV)
   def lineMAP: ENV = env.vec1(
     _.toSTR.x
       .split("\n")
-      .map(s => env.evalA2(Vector.empty, STR(s)))
+      .map(s => env.evalA2(Vector(), STR(s)))
       .to(VectorMap)
       .toMAP
   )
@@ -328,7 +314,7 @@ extension (env: ENV)
       if x.toSEQ.x.drop(y1).isEmpty then f(x, y1, z) else x
     )
   )
-  def pad$H1(s: ANY, n: Int): ANY = ARR(Vector.empty).add$$(s).mul$$(NUM(n))
+  def pad$H1(s: ANY, n: Int): ANY = ARR(Vector()).add$$(s).mul$$(NUM(n))
   def pad$ : ENV                  = pad$H((x, y, z) => x.add$$(pad$H1(z, y)))
   def padl$ : ENV                 = pad$H((x, y, z) => pad$H1(z, y).add$$(x))
   def padc$ : ENV = pad$H((x, y, z) =>
@@ -608,7 +594,7 @@ extension (env: ENV)
               n match
                 case Itr(_) => Vector(fn(n))
                 case _      => Vector(n)
-        case _ => Vector.empty
+        case _ => Vector()
       def fn(t: ANY): ANY =
         t.flatMap$M(
           (k, v) => env.evalS(Vector(k, v), f).pipe(loop(true)),
@@ -735,7 +721,7 @@ extension (env: ENV)
   )
 
   def dot: ENV = env.code.x match
-    case c :: cs =>
+    case c #:: cs =>
       env
         .modCode(_ => cs)
         .pipe(env =>
@@ -754,7 +740,7 @@ extension (env: ENV)
     case s"`$k" if k != "" =>
       def loop(
           n: Int = env.code.p.l + 1,
-          res: ARRW[String] = Vector.empty
+          res: ARRW[String] = Vector()
       ): (ARRW[String], Int) =
         env.lines.get(PATH(env.code.p.f, n)) match
           case Some(STR(s), f) if !s.trim.startsWith(k) => loop(n + 1, res :+ s)
@@ -1321,7 +1307,7 @@ extension (env: ENV)
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
      */
-    case "end" => env.copy(code = List.empty.pFN(env.code.p))
+    case "end" => env.copy(code = List().pFN(env.code.p))
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'

@@ -34,7 +34,7 @@ import ANY._
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
-    code: FN = FN(PATH(None, 0), List()),
+    code: FN = FN(PATH(None, 0), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
     calls: SEQW[(PATH, ANY)] = LazyList(),
@@ -43,19 +43,19 @@ case class ENV(
     ids: Map[String, PATH] = Map(),
     gids: TrieMap[String, PATH] = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
-    flags: Map[String, Boolean] = Map.empty,
+    flags: Map[String, Boolean] = Map(),
     eS: Boolean = false,
     eV: Boolean = false,
     eI: Boolean = false,
     eNC: Boolean = false,
-    cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs.Empty
+    cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
 ):
 
   def trace1: ENV =
     println(cflag(fansi.Color.DarkGray)(s"———(${code.p})"))
     println(code.x match
-      case List() => cflag(fansi.Color.Green)("(EMPTY)")
-      case c :: cs =>
+      case LazyList() => cflag(fansi.Color.Green)("(EMPTY)")
+      case c #:: cs =>
         fansi.Str.join(
           Seq(
             cflag(fansi.Bold.On ++ fansi.Color.Yellow)(c.toForm),
@@ -77,10 +77,10 @@ case class ENV(
 
   def trace: ENV = trace1.trace2
 
-  def modCode(f: List[ANY] => List[ANY]): ENV =
+  def modCode(f: LazyList[ANY] => LazyList[ANY]): ENV =
     copy(code = FN(code.p, f(code.x)))
 
-  def loadCode(x: List[ANY]): ENV = modCode(x ++ _)
+  def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
 
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
@@ -129,7 +129,7 @@ case class ENV(
     fnLine(i)
     copy(code = getLineF(i) match
       case x: FN => x
-      case _     => FN(code.p, List())
+      case _     => FN(code.p, LazyList())
     )
 
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
@@ -229,8 +229,8 @@ case class ENV(
     case _            => push(c)
 
   @tailrec final def exec: ENV = code.x match
-    case List() => this
-    case c :: cs =>
+    case LazyList() => this
+    case c #:: cs =>
       if eS then print("\u001b[2J\u001b[;H")
       if eS || eV then trace1
       val env = setCur(c).modCode(_ => cs)
@@ -259,14 +259,14 @@ object ENV:
   def run(
       l: String,
       f: FILE = None,
-      flags: Map[String, Boolean] = Map.empty.withDefaultValue(false),
-      cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs.Empty
+      flags: Map[String, Boolean] = Map().withDefaultValue(false),
+      cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
   ): ENV =
     ENV(
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
         (PATH(f, i), (STR(x), UN))
       }),
-      FN(PATH(f, 0), List()),
+      FN(PATH(f, 0), LazyList()),
       eS = flags("s"),
       eV = flags("v"),
       eI = flags("i"),

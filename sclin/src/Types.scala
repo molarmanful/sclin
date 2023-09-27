@@ -26,7 +26,7 @@ enum ANY:
   case NUM(x: NUMF)
   case TF(x: Boolean)
   case CMD(x: String)
-  case FN(p: PATH, x: List[ANY])
+  case FN(p: PATH, x: SEQW[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
@@ -139,12 +139,13 @@ enum ANY:
     case _      => toString
 
   def length: Int = this match
+    case UN       => 0
     case SEQ(x)   => x.length
     case ARR(x)   => x.length
     case MAP(x)   => x.size
     case STR(x)   => x.length
     case FN(_, x) => x.length
-    case _        => 0
+    case _        => -1
 
   def get(i: ANY): ANY =
     val oi = i.optI
@@ -198,6 +199,8 @@ enum ANY:
       case _      => this
 
   def add$$(t: ANY): ANY = (this, t) match
+    case (UN, y)              => y
+    case (x, UN)              => x
     case (It(x), SEQ(y))      => SEQ(x.toSEQ.x #::: y)
     case (ARR(x), ARR(y))     => ARR(x ++ y)
     case (MAP(x), MAP(y))     => MAP(x ++ y)
@@ -303,7 +306,7 @@ enum ANY:
     case SEQ(x) =>
       val x1 = x.zipWithIndex.map(_._2)
       x1.flatMap(a => x1.comb(a + 1))
-        .pipe(LazyList.empty #:: _)
+        .pipe(LazyList() #:: _)
         .map(_.map(x).toSEQ)
         .toSEQ
     case _ => toSEQ.powset.map(_.matchType(this))
@@ -319,7 +322,7 @@ enum ANY:
     case MAP(x)   => x.toVector.map { case (i, a) => Vector(i, a).toARR }.toARR
     case STR(x)   => x.toVector.map(c => STR(c.toString)).toARR
     case FN(_, x) => x.toARR
-    case UN       => Vector.empty.toARR
+    case UN       => Vector().toARR
     case _        => Vector(this).toARR
 
   def toMAP: MAP = this match
@@ -366,10 +369,10 @@ enum ANY:
 
   def optI: Option[Int] = optNUM.map(_.x.intValue)
 
-  def xFN: List[ANY] = this match
+  def xFN: LazyList[ANY] = this match
     case FN(_, x) => x
     case STR(x)   => Parser.parse(x)
-    case ARR(x)   => x.toList
+    case ARR(x)   => x.to(LazyList)
     case _        => toARR.xFN
 
   def toFN(env: ENV): FN = FN(env.code.p, xFN)
@@ -700,7 +703,7 @@ enum ANY:
   def unionWith(t: ANY, f: (ANY, ANY) => Boolean): ANY = (this, t) match
     case (SEQ(x), _)   => x.unionWith(t.toSEQ.x, f).toSEQ
     case (_, _: SEQ)   => toSEQ.unionWith(t, f)
-    case (FN(p, x), _) => x.unionWith(t.toARR.x, f).pFN(p)
+    case (FN(p, x), _) => x.unionWith(t.toSEQ.x, f).pFN(p)
     case _             => toARR.x.unionWith(t.toARR.x, f).toARR
 
   def intersectWith(t: ANY, f: (ANY, ANY) => Boolean): ANY = (this, t) match
@@ -800,7 +803,7 @@ object ANY:
     def packWith(f: (T, T) => Boolean): Iterable[Iterable[T]] =
       def loop(
           xs: Iterable[T],
-          res: Iterable[Iterable[T]] = Iterable.empty
+          res: Iterable[Iterable[T]] = Iterable()
       ): Iterable[Iterable[T]] =
         if xs.isEmpty then res
         else
@@ -810,7 +813,7 @@ object ANY:
       loop(xs)
 
     def uniqWith(f: (T, T) => Boolean): Iterable[T] =
-      xs.foldLeft(Iterable.empty)((acc, x) =>
+      xs.foldLeft(Iterable[T]())((acc, x) =>
         if acc.exists(f(x, _)) then acc else acc ++ Iterable(x)
       )
 
@@ -822,7 +825,7 @@ object ANY:
       xs ++ ys.uniqWith(f).filter(y => !xs.exists(f(_, y)))
 
     def intersectWith(ys: Iterable[T], f: (T, T) => Boolean): Iterable[T] =
-      if xs.isEmpty || ys.isEmpty then Iterable.empty
+      if xs.isEmpty || ys.isEmpty then Iterable()
       else xs.filter(x => ys.exists(f(x, _)))
 
     def differWith(ys: Iterable[T], f: (T, T) => Boolean): Iterable[T] =
@@ -833,17 +836,17 @@ object ANY:
   extension [T](xs: SEQW[T])
 
     def packWith(f: (T, T) => Boolean): SEQW[SEQW[T]] = xs match
-      case LazyList() => LazyList.empty
+      case LazyList() => LazyList()
       case x #:: xs =>
         val (ys, zs) = xs.span(f(x, _))
         (x #:: ys) #:: zs.packWith(f)
 
     def uniqWith(f: (T, T) => Boolean): SEQW[T] = xs match
-      case LazyList() => LazyList.empty
+      case LazyList() => LazyList()
       case x #:: xs   => x #:: xs.filter(!f(x, _)).uniqWith(f)
 
     def delBy(f: T => Boolean): SEQW[T] = xs match
-      case LazyList() => LazyList.empty
+      case LazyList() => LazyList()
       case x #:: xs   => if f(x) then xs else x #:: xs.delBy(f)
 
     def unionWith(ys: SEQW[T], f: (T, T) => Boolean): SEQW[T] =
@@ -851,22 +854,22 @@ object ANY:
 
     def comb(n: Int): SEQW[SEQW[T]] =
       if n < 0 then LazyList()
-      else if n == 0 then LazyList(LazyList.empty)
+      else if n == 0 then LazyList(LazyList())
       else
         xs match
-          case LazyList() => LazyList.empty
+          case LazyList() => LazyList()
           case x #:: xs   => xs.comb(n - 1).map(x #:: _) #::: xs.comb(n)
 
   extension (x: Iterable[ANY])
 
     def toSEQ: SEQ       = SEQ(x.to(LazyList))
     def toARR: ARR       = ARR(x.toVector)
-    def pFN(p: PATH): FN = FN(p, x.toList)
+    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
 
   extension (x: Iterator[ANY])
 
     def toSEQ: SEQ       = SEQ(x.to(LazyList))
-    def pFN(p: PATH): FN = FN(p, x.toList)
+    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
 
   extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 
@@ -961,9 +964,9 @@ object ANY:
     def loop(
         n: SafeLong,
         b: Int = b,
-        res: ARRW[SafeLong] = Vector.empty
+        res: ARRW[SafeLong] = Vector()
     ): ARRW[SafeLong] =
-      if b == 0 then Vector.empty
+      if b == 0 then Vector()
       else if b == 1 then Vector.fill(n.toInt)(1)
       else if b < 0 then loop(n, -b).reverse
       else if n == 0 then
@@ -984,7 +987,7 @@ object ANY:
       }
 
   def cProd[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] = ls match
-    case LazyList()       => LazyList.empty
+    case LazyList()       => LazyList()
     case x #:: LazyList() => x.map(LazyList(_))
     case x #:: xs =>
       val y = cProd(xs)
@@ -996,5 +999,5 @@ object ANY:
 
   def transpose[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] =
     ls.filter(_.nonEmpty) match
-      case LazyList() => LazyList.empty
+      case LazyList() => LazyList()
       case xs         => xs.map(_.head) #:: transpose(xs.map(_.tail))

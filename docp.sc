@@ -3,7 +3,7 @@ import scala.util.chaining._
 case class DocCmd(
     name: String = "",
     stack: String = "",
-    body: Vector[String] = Vector.empty
+    body: Vector[String] = Vector()
 ) {
 
   def md(cs: Map[String, String]): String = {
@@ -28,9 +28,9 @@ ${body.map(
 }
 
 case class DocParser(
-    xs: Vector[DocCmd] = Vector.empty,
+    xs: Vector[DocCmd] = Vector(),
     x: DocCmd = DocCmd(),
-    cs: Map[String, String] = Map.empty,
+    cs: Map[String, String] = Map(),
     com: Int = 0
 ) {
 

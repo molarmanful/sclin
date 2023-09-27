@@ -28,7 +28,7 @@ object Main:
   ) = doceval match
     case Some(s) => ENV.docRun(s)
     case _ =>
-      def cflag(x: fansi.Attrs) = if nocolor.value then fansi.Attrs.Empty else x
+      def cflag(x: fansi.Attrs) = if nocolor.value then fansi.Attrs() else x
       def err(e: String)        = println(cflag(fansi.Color.Red)(e))
       val flags = Map(
         "s"  -> step.value,
