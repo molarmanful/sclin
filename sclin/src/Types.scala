@@ -206,14 +206,15 @@ enum ANY:
   def add$$(t: ANY): ANY = (this, t) match
     case (UN, y)          => y
     case (x, UN)          => x
-    case (ARR(x), ARR(y)) => ARR(x ++ y)
-    case (MAP(x), MAP(y)) => MAP(x ++ y)
+    case (Lsy(x), Lsy(y)) => SEQ(x #::: y).matchType(this)
     case (Lsy(x), Itr(y)) => SEQ(x #::: y.toSEQ.x).matchType(this)
     case (Itr(x), Lsy(y)) => SEQ(x.toSEQ.x #::: y).matchType(t)
-    case (Lsy(x), y)      => SEQ(x :+ y)
-    case (x, Lsy(y))      => SEQ(x #:: y).matchType(this)
+    case (Lsy(x), y)      => SEQ(x :+ y).matchType(this)
+    case (x, Lsy(y))      => SEQ(x #:: y).matchType(t)
+    case (ARR(x), ARR(y)) => ARR(x ++ y)
     case (ARR(x), y)      => ARR(x :+ y)
     case (x, ARR(y))      => ARR(x +: y)
+    case (MAP(x), MAP(y)) => MAP(x ++ y)
     case (Sty(x), y)      => STR(x + y.toString).matchType(this)
     case (x, Sty(y))      => STR(x.toString + y).matchType(this)
     case (x, y)           => Vector(x).toARR.add$$(y)
@@ -399,6 +400,7 @@ enum ANY:
     case x       => CancelableFuture.pure(x).pipe(FUT(_))
 
   def matchType(a: ANY): ANY = a match
+    case FN(p, _) => pFN(p)
     case _: SEQ   => toSEQ
     case _: ARR   => toARR
     case _: MAP   => toMAP
@@ -411,7 +413,6 @@ enum ANY:
     case _: FUT   => toFUT
     case _: TRY   => toTRY
     case _: ERR   => toERR
-    case FN(p, _) => pFN(p)
     case UN       => UN
 
   def map(f: ANY => ANY): ANY = this match
