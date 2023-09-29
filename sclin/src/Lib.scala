@@ -208,12 +208,12 @@ extension (env: ENV)
 
   def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
   def get$$ : ENV = env.mod2(_.get(_))
+  def gets: ENV   = env.mod2(_.gets(_))
 
-  def set: ENV = env.mod2((x, y) =>
-    val z0 = y.get(NUM(0))
-    val z1 = y.get(NUM(1))
-    x.set(z0, z1)
-  )
+  def set: ENV  = env.mod3((x, y, i) => x.set(i, y))
+  def sets: ENV = env.mod3((x, y, i) => x.sets(i.toSEQ.x, y))
+  def setmod: ENV =
+    env.mod3((x, f, i) => x.set(i, env.evalA1(Vector(x.get(i)), f)))
 
   def idel: ENV = env.mod2(_.remove(_))
 
@@ -552,6 +552,8 @@ extension (env: ENV)
 
   def SIG_1y2f1(f: ANY)(a: ANY, b: (ANY, ANY)): ANY =
     env.evalA1(Vector(b._1, a, b._2), f)
+  def SIG_2y1f1(f: ANY)(a: (ANY, ANY), b: ANY): ANY =
+    env.evalA1(Vector(a._1, a._2, b), f)
   def SIG_2x2fb(f: ANY)(a: (ANY, ANY), b: (ANY, ANY)): Boolean =
     env
       .evalA1(Vector(Vector(a._1, a._2).toARR, Vector(b._1, b._2).toARR), f)
@@ -579,12 +581,24 @@ extension (env: ENV)
 
   def fold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.foldLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
+  def foldR: ENV =
+    env.mod3((x, y, z) =>
+      z.vec1(f => x.foldRightM(y)(SIG_2y1f1(f), SIG_2f1(f)))
+    )
   def rfold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldLeft(y)(SIG_2f1(f))))
+  def rfoldR: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.rfoldRight(y)(SIG_2f1(f))))
   def reduce: ENV =
     env.mod2((x, y) => y.vec1(f => x.reduceLeftM(SIG_1y2f1(f), SIG_2f1(f))))
+  def reduceR: ENV =
+    env.mod2((x, y) => y.vec1(f => x.reduceRightM(SIG_1y2f1(f), SIG_2f1(f))))
   def scan: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.scanLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
+  def scanR: ENV =
+    env.mod3((x, y, z) =>
+      z.vec1(f => x.scanRightM(y)(SIG_2y1f1(f), SIG_2f1(f)))
+    )
 
   def walk: ENV = env.mod2((x, y) =>
     y.vec1(f =>
@@ -1799,11 +1813,17 @@ extension (env: ENV)
     Value at index `i` in `a`.
      */
     case ":`" => get$$
+    case ":/" => gets
     /*
-    @s a >ARR[i b] -> x
+    @s a b i -> x
     Sets value at index `i` in `a` to `b`.
      */
     case ":=" => set
+    /*
+    @s a f i -> x
+    Modifies value at index `i` using `f`.
+     */
+    case ":%" => setmod
     /*
     @s a i -> x
     Removes index `i` from `a`.
@@ -2371,6 +2391,11 @@ extension (env: ENV)
     case "fold" => fold
     /*
     @s a b f' -> _'
+    #{fold} from the right.
+     */
+    case "foldr" => foldR
+    /*
+    @s a b f' -> _'
     Atomic/recursive #{fold}.
     ```sclin
     [[1 2] 3 4 [5 [6 7]]] 0 \+ rfold
@@ -2380,6 +2405,11 @@ extension (env: ENV)
     ```
      */
     case "rfold" => rfold
+    /*
+    @s a b f' -> _'
+    #{rfold} from the right.
+     */
+    case "rfoldr" => rfoldR
     /*
     @s a f' -> _'
     #{fold} without initial accumulator, instead using the first element of `a`.
@@ -2393,6 +2423,11 @@ extension (env: ENV)
      */
     case "fold~" => reduce
     /*
+    @s a f' -> _'
+    #{fold~} from the right.
+     */
+    case "foldr~" => reduceR
+    /*
     @s a b f' -> _'
     #{fold} with intermediate values.
     ```sclin
@@ -2400,6 +2435,11 @@ extension (env: ENV)
     ```
      */
     case "scan" => scan
+    /*
+    @s a b f' -> _'
+    #{scan} from the right.
+     */
+    case "scanR" => scanR
     /*
     @s a -> NUM
     Sum of `a`. Equivalent to `0 \+ rfold`.

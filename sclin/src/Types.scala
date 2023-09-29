@@ -6,6 +6,7 @@ import monix.execution.Scheduler.Implicits.global
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.quoted._
 import scala.util.matching.Regex.Match
 import scala.util.Failure
 import scala.util.Random
@@ -169,6 +170,8 @@ enum ANY:
       case TRY(b, x, e) => if b then x else throw e
       case _            => UN
 
+  def gets(is: ANY): ANY = is.foldLeft(this)(_.get(_))
+
   def set(i: ANY, t: ANY): ANY =
     val oi = i.optI
     this match
@@ -186,6 +189,18 @@ enum ANY:
       case MAP(x) => x.+(i -> t).toMAP
       case _: CMD => toSTR.set(i, t)
       case _      => this
+
+  def sets(is: SEQW[ANY], t: ANY): ANY = is match
+    case LazyList()  => this
+    case LazyList(i) => set(i, t)
+    case i #:: is    => get(i).sets(is, t)
+
+  def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
+
+  def setmods(is: SEQW[ANY], f: ANY => ANY): ANY = is match
+    case LazyList()  => f(this)
+    case LazyList(i) => setmod(i, f)
+    case i #:: is    => get(i).setmods(is, f)
 
   def remove(i: ANY): ANY =
     val oi = i.optI
@@ -500,7 +515,7 @@ enum ANY:
     case _      => toARR.foldRight(a)(f)
   def foldRightM[T](a: T)(f: ((ANY, ANY), T) => T, g: (ANY, T) => T): T =
     this match
-      case MAP(x) => x.foldRight(a)((b, c) => f(b, c))
+      case MAP(x) => x.foldRight(a)(f)
       case _      => foldRight(a)(g)
 
   def rfoldLeft[T](a: T)(f: (T, ANY) => T): T =
@@ -512,15 +527,25 @@ enum ANY:
         )
       case x => f(a, x)
 
-  def reduceLeft(f: (ANY, ANY) => ANY): ANY = try
+  def rfoldRight[T](a: T)(f: (T, ANY) => T): T =
     this match
-      case Lsy(x) => x.reduceLeft(f).matchType(this)
-      case ARR(x) => x.reduceLeft(f)
-      case _      => toARR.reduceLeft(f)
-  catch
-    case e: java.lang.UnsupportedOperationException =>
-      throw LinEx("ITR", s"unable to reduce empty $getType")
-    case e => throw e
+      case Itr(_) =>
+        foldRightM(a)(
+          { case ((_, v), s) => v.rfoldRight(s)(f) },
+          (v, s) => v.rfoldRight(s)(f)
+        )
+      case x => f(a, x)
+
+  def reduceLeft(f: (ANY, ANY) => ANY): ANY =
+    try
+      this match
+        case Lsy(x) => x.reduceLeft(f).matchType(this)
+        case ARR(x) => x.reduceLeft(f)
+        case _      => toARR.reduceLeft(f)
+    catch
+      case e: java.lang.UnsupportedOperationException =>
+        throw LinEx("ITR", s"unable to reduce empty $getType")
+      case e => throw e
   def reduceLeftM(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
@@ -530,6 +555,25 @@ enum ANY:
         }
       case _ => reduceLeft(g)
 
+  def reduceRight(f: (ANY, ANY) => ANY): ANY =
+    try
+      this match
+        case Lsy(x) => x.reduceRight(f).matchType(this)
+        case ARR(x) => x.reduceRight(f)
+        case _      => toARR.reduceRight(f)
+    catch
+      case e: java.lang.UnsupportedOperationException =>
+        throw LinEx("ITR", s"unable to reduce empty $getType")
+      case e => throw e
+  def reduceRightM(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
+    this match
+      case _: MAP =>
+        toARR.reduceRight {
+          case (a, ARR(k +: v +: _)) => f(a, (k, v))
+          case _                     => ???
+        }
+      case _ => reduceRight(g)
+
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case Lsy(x) => x.scanLeft(a)(f).toSEQ.matchType(this)
     case ARR(x) => x.scanLeft(a)(f).toARR
@@ -537,8 +581,18 @@ enum ANY:
   def scanLeftM(
       a: ANY
   )(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY = this match
-    case MAP(x) => x.scanLeft(a)((b, c) => f(b, c)).toARR
+    case MAP(x) => x.scanLeft(a)(f).toARR
     case _      => scanLeft(a)(g)
+
+  def scanRight(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
+    case Lsy(x) => x.scanRight(a)(f).toSEQ.matchType(this)
+    case ARR(x) => x.scanRight(a)(f).toARR
+    case _      => toARR.scanRight(a)(f)
+  def scanRightM(
+      a: ANY
+  )(f: ((ANY, ANY), ANY) => ANY, g: (ANY, ANY) => ANY): ANY = this match
+    case MAP(x) => x.scanRight(a)(f).toARR
+    case _      => scanRight(a)(g)
 
   def filter(f: ANY => Boolean): ANY = this match
     case Lsy(x) => x.filter(f).toSEQ.matchType(this)
