@@ -193,14 +193,13 @@ enum ANY:
   def sets(is: SEQW[ANY], t: ANY): ANY = is match
     case LazyList()  => this
     case LazyList(i) => set(i, t)
-    case i #:: is    => get(i).sets(is, t)
+    case i #:: is    => setmod(i, _.sets(is, t))
 
   def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
 
   def setmods(is: SEQW[ANY], f: ANY => ANY): ANY = is match
-    case LazyList()  => f(this)
-    case LazyList(i) => setmod(i, f)
-    case i #:: is    => get(i).setmods(is, f)
+    case LazyList() => f(this)
+    case i #:: is   => setmod(i, if is.isEmpty then f else _.setmods(is, f))
 
   def remove(i: ANY): ANY =
     val oi = i.optI
@@ -484,6 +483,8 @@ enum ANY:
       case _           => toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
+  def flatTable(t: ANY, f: (ANY, ANY) => ANY): ANY =
+    flatMap(x => t.map(y => f(x, y)))
 
   def rmap(f: ANY => ANY): ANY = this match
     case Itr(_) => mapM((k, v) => (k, v.rmap(f)), _.rmap(f))

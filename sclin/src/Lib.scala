@@ -1076,6 +1076,10 @@ extension (env: ENV)
     Value at index `i` in `a`.
      */
     case ":`" => get$$
+    /*
+    @s a b (i >SEQ) -> x
+    #{:`} with `i` folded over `a`.
+     */
     case ":/" => gets
     /*
     @s a b i -> x
@@ -1083,10 +1087,20 @@ extension (env: ENV)
      */
     case ":=" => set
     /*
+    @s a b (i >SEQ) -> x
+    #{:=} with `i` folded over `a`.
+     */
+    case ":/=" => sets
+    /*
     @s a f i -> x
     Modifies value at index `i` using `f`.
      */
     case ":%" => setmod
+    /*
+    @s a b (i >SEQ) -> x
+    #{:%/} with `i` folded over `a`.
+     */
+    case ":/%" => setmods
     /*
     @s a i -> x
     Removes index `i` from `a`.
@@ -1584,6 +1598,14 @@ extension (env: ENV)
      */
     case "tap" => tapMap
     /*
+    @s a f' -> _'
+    #{map} and #{flat}.
+    ```sclin
+    1224P/ \*` mapf
+    ```
+     */
+    case "mapf" => flatMap
+    /*
     @s a b (f: x y -> _)' -> _'
     #{Q}s `f` over each element-wise pair of `a` and `b`.
     Iterables of differing length truncate to the shorter length when zipped.
@@ -1622,13 +1644,10 @@ extension (env: ENV)
      */
     case "tbl" => tbl
     /*
-    @s a f' -> _'
-    #{map} and #{flat}.
-    ```sclin
-    1224P/ \*` mapf
-    ```
+    @s a b (f: x y -> _)' -> _'
+    #{tbl} and #{flat}.
      */
-    case "mapf" => flatMap
+    case "tblf" => tblf
     /*
     @s a f' -> _'
     Atomic/recursive #{map}.
@@ -2200,7 +2219,9 @@ extension (env: ENV)
   def set: ENV  = env.mod3((x, y, i) => x.set(i, y))
   def sets: ENV = env.mod3((x, y, i) => x.sets(i.toSEQ.x, y))
   def setmod: ENV =
-    env.mod3((x, f, i) => x.set(i, env.evalA1(Vector(x.get(i)), f)))
+    env.mod3((x, f, i) => x.setmod(i, a => env.evalA1(Vector(a), f)))
+  def setmods: ENV =
+    env.mod3((x, f, i) => x.setmods(i.toSEQ.x, a => env.evalA1(Vector(a), f)))
 
   def idel: ENV = env.mod2(_.remove(_))
 
@@ -2564,7 +2585,8 @@ extension (env: ENV)
       case _                     => ???
     }
   )
-  def tbl: ENV = env.mod3((x, y, z) => z.vec1(f => x.table(y, SIG_2f1(f))))
+  def tbl: ENV  = env.mod3((x, y, z) => z.vec1(f => x.table(y, SIG_2f1(f))))
+  def tblf: ENV = env.mod3((x, y, z) => z.vec1(f => x.flatTable(y, SIG_2f1(f))))
 
   def fold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.foldLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
