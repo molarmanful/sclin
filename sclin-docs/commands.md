@@ -181,15 +181,16 @@
 [``` :r ```](#cmd-r)
 [``` :` ```](#cmd--71)
 [``` := ```](#cmd--72)
+[``` :% ```](#cmd--73)
 [``` :- ```](#cmd---3)
-[``` :? ```](#cmd--73)
-[``` :?` ```](#cmd--74)
+[``` :? ```](#cmd--74)
+[``` :?` ```](#cmd--75)
 [``` len ```](#cmd-len)
-[``` , ```](#cmd--75)
-[``` ,, ```](#cmd--76)
-[``` ,' ```](#cmd--77)
-[``` ,,' ```](#cmd--78)
-[``` ,` ```](#cmd--79)
+[``` , ```](#cmd--76)
+[``` ,, ```](#cmd--77)
+[``` ,' ```](#cmd--78)
+[``` ,,' ```](#cmd--79)
+[``` ,` ```](#cmd--80)
 [``` ,_ ```](#cmd-_-4)
 [``` ,,_ ```](#cmd-_-5)
 [``` tk ```](#cmd-tk)
@@ -231,28 +232,28 @@
 [``` padc` ```](#cmd-padc-1)
 [``` S>c ```](#cmd-sc)
 [``` c>S ```](#cmd-cs)
-[``` <> ```](#cmd--80)
-[``` <>: ```](#cmd--81)
+[``` <> ```](#cmd--81)
+[``` <>: ```](#cmd--82)
 [``` c<> ```](#cmd-c)
 [``` w<> ```](#cmd-w-1)
 [``` n<> ```](#cmd-n-4)
 [``` s<> ```](#cmd-s-2)
-[``` >< ```](#cmd--82)
+[``` >< ```](#cmd--83)
 [``` c>< ```](#cmd-c-1)
 [``` w>< ```](#cmd-w-2)
 [``` n>< ```](#cmd-n-5)
 [``` A>a ```](#cmd-aa)
 [``` a>A ```](#cmd-aa-1)
 [``` >Aa ```](#cmd-aa-2)
-[``` /? ```](#cmd--83)
-[``` /?& ```](#cmd--84)
-[``` /?` ```](#cmd--85)
-[``` /?' ```](#cmd--86)
-[``` /?* ```](#cmd--87)
-[``` /?^ ```](#cmd--88)
-[``` /?$ ```](#cmd--89)
-[``` /# ```](#cmd--90)
-[``` /#^ ```](#cmd--91)
+[``` /? ```](#cmd--84)
+[``` /?& ```](#cmd--85)
+[``` /?` ```](#cmd--86)
+[``` /?' ```](#cmd--87)
+[``` /?* ```](#cmd--88)
+[``` /?^ ```](#cmd--89)
+[``` /?$ ```](#cmd--90)
+[``` /# ```](#cmd--91)
+[``` /#^ ```](#cmd--92)
 [``` map ```](#cmd-map)
 [``` tap ```](#cmd-tap)
 [``` zip ```](#cmd-zip)
@@ -261,13 +262,17 @@
 [``` mapf ```](#cmd-mapf)
 [``` rmap ```](#cmd-rmap)
 [``` fold ```](#cmd-fold)
+[``` foldr ```](#cmd-foldr)
 [``` rfold ```](#cmd-rfold)
+[``` rfoldr ```](#cmd-rfoldr)
 [``` fold~ ```](#cmd-fold-1)
+[``` foldr~ ```](#cmd-foldr-1)
 [``` scan ```](#cmd-scan)
-[``` +/ ```](#cmd--92)
-[``` */ ```](#cmd--93)
-[``` &/ ```](#cmd--94)
-[``` |/ ```](#cmd--95)
+[``` scanR ```](#cmd-scanr)
+[``` +/ ```](#cmd--93)
+[``` */ ```](#cmd--94)
+[``` &/ ```](#cmd--95)
+[``` |/ ```](#cmd--96)
 [``` walk ```](#cmd-walk)
 [``` fltr ```](#cmd-fltr)
 [``` any ```](#cmd-any)
@@ -290,17 +295,17 @@
 [``` diff ```](#cmd-diff)
 [``` ~_ ```](#cmd-_-6)
 [``` ~_! ```](#cmd-_-7)
-[``` ~$ ```](#cmd--96)
-[``` ~|> ```](#cmd--97)
-[``` ~|| ```](#cmd--98)
-[``` ~||> ```](#cmd--99)
-[``` ~// ```](#cmd--100)
-[``` ~>> ```](#cmd--101)
-[``` ~< ```](#cmd--102)
-[``` ~: ```](#cmd--103)
-[``` ~:& ```](#cmd--104)
+[``` ~$ ```](#cmd--97)
+[``` ~|> ```](#cmd--98)
+[``` ~|| ```](#cmd--99)
+[``` ~||> ```](#cmd--100)
+[``` ~// ```](#cmd--101)
+[``` ~>> ```](#cmd--102)
+[``` ~< ```](#cmd--103)
+[``` ~: ```](#cmd--104)
+[``` ~:& ```](#cmd--105)
 [``` ~$_ ```](#cmd-_-8)
-[``` ~% ```](#cmd--105)
+[``` ~% ```](#cmd--106)
 [``` sleep ```](#cmd-sleep)
 
 
@@ -1710,9 +1715,16 @@ Value at index `i` in `a`.
 
 ## CMD: [``` := ```](#cmd--72)
 
-Stack: ``` a >ARR[i b] -> x ```
+Stack: ``` a b i -> x ```
 
 Sets value at index `i` in `a` to `b`.
+
+
+## CMD: [``` :% ```](#cmd--73)
+
+Stack: ``` a f i -> x ```
+
+Modifies value at index `i` using `f`.
 
 
 ## CMD: [``` :- ```](#cmd---3)
@@ -1722,14 +1734,14 @@ Stack: ``` a i -> x ```
 Removes index `i` from `a`.
 
 
-## CMD: [``` :? ```](#cmd--73)
+## CMD: [``` :? ```](#cmd--74)
 
 Stack: ``` a b' -> TF' ```
 
 Whether `a` has atomic `b`.
 
 
-## CMD: [``` :?` ```](#cmd--74)
+## CMD: [``` :?` ```](#cmd--75)
 
 Stack: ``` a b -> TF ```
 
@@ -1744,35 +1756,35 @@ Stack: ``` a -> NUM ```
 Length of `a`.
 
 
-## CMD: [``` , ```](#cmd--75)
+## CMD: [``` , ```](#cmd--76)
 
 Stack: ``` a b -> ARR[a b] ```
 
 Pairs `a` and `b` in an `ARR`.
 
 
-## CMD: [``` ,, ```](#cmd--76)
+## CMD: [``` ,, ```](#cmd--77)
 
 Stack: ``` a -> ARR[a] ```
 
 Wraps `a` in an `ARR`.
 
 
-## CMD: [``` ,' ```](#cmd--77)
+## CMD: [``` ,' ```](#cmd--78)
 
 Stack: ``` a' b' -> ARR[a b]' ```
 
-Vectorized [``` , ```](#cmd--75).
+Vectorized [``` , ```](#cmd--76).
 
 
-## CMD: [``` ,,' ```](#cmd--78)
+## CMD: [``` ,,' ```](#cmd--79)
 
 Stack: ``` a' -> ARR[a]' ```
 
-Vectorized [``` ,, ```](#cmd--76).
+Vectorized [``` ,, ```](#cmd--77).
 
 
-## CMD: [``` ,` ```](#cmd--79)
+## CMD: [``` ,` ```](#cmd--80)
 
 Stack: ``` a* -> a ```
 
@@ -2039,7 +2051,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [1 8 0 7 6 3 4 5 9 2]
+-> [7 5 3 9 8 6 1 0 4 2]
 ```
 
 
@@ -2202,14 +2214,14 @@ Converts iterable of codepoints to `STR`.
 ```
 
 
-## CMD: [``` <> ```](#cmd--80)
+## CMD: [``` <> ```](#cmd--81)
 
 Stack: ``` (a >STR)' (b >STR)' -> ARR' ```
 
 Splits `a` with `b`.
 
 
-## CMD: [``` <>: ```](#cmd--81)
+## CMD: [``` <>: ```](#cmd--82)
 
 Stack: ``` a (i >NUM) -> ARR[_ _] ```
 
@@ -2220,31 +2232,31 @@ Stack: ``` a (i >NUM) -> ARR[_ _] ```
 
 Stack: ``` (a >STR)' -> ARR' ```
 
-[``` <> ```](#cmd--80)s with empty string.
+[``` <> ```](#cmd--81)s with empty string.
 
 
 ## CMD: [``` w<> ```](#cmd-w-1)
 
 Stack: ``` (a >STR)' -> ARR' ```
 
-[``` <> ```](#cmd--80)s with space.
+[``` <> ```](#cmd--81)s with space.
 
 
 ## CMD: [``` n<> ```](#cmd-n-4)
 
 Stack: ``` (a >STR)' -> ARR' ```
 
-[``` <> ```](#cmd--80)s with newline.
+[``` <> ```](#cmd--81)s with newline.
 
 
 ## CMD: [``` s<> ```](#cmd-s-2)
 
 Stack: ``` (a >STR)' -> ARR' ```
 
-[``` <> ```](#cmd--80)s on whitespace characters.
+[``` <> ```](#cmd--81)s on whitespace characters.
 
 
-## CMD: [``` >< ```](#cmd--82)
+## CMD: [``` >< ```](#cmd--83)
 
 Stack: ``` a (b >STR)' -> STR' ```
 
@@ -2255,21 +2267,21 @@ Joins `a` with `b`.
 
 Stack: ``` a -> STR' ```
 
-[``` >< ```](#cmd--82)s with empty string.
+[``` >< ```](#cmd--83)s with empty string.
 
 
 ## CMD: [``` w>< ```](#cmd-w-2)
 
 Stack: ``` a -> STR' ```
 
-[``` >< ```](#cmd--82)s with space.
+[``` >< ```](#cmd--83)s with space.
 
 
 ## CMD: [``` n>< ```](#cmd-n-5)
 
 Stack: ``` a -> STR' ```
 
-[``` >< ```](#cmd--82)s with newline.
+[``` >< ```](#cmd--83)s with newline.
 
 
 ## CMD: [``` A>a ```](#cmd-aa)
@@ -2293,7 +2305,7 @@ Stack: ``` (a >STR)' -> STR' ```
 Converts `STR` to `Capitalized`.
 
 
-## CMD: [``` /? ```](#cmd--83)
+## CMD: [``` /? ```](#cmd--84)
 
 Stack: ``` (a >STR)' (r >STR)' -> SEQ[MAP]' ```
 
@@ -2307,56 +2319,56 @@ Each match returned is a `MAP` with the following keys:
 - ``` $ ```: `NUM` index of the match's end.
 
 
-## CMD: [``` /?& ```](#cmd--84)
+## CMD: [``` /?& ```](#cmd--85)
 
 Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
 
-[``` /? ```](#cmd--83) with only `&` keys.
+[``` /? ```](#cmd--84) with only `&` keys.
 
 
-## CMD: [``` /?` ```](#cmd--85)
-
-Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
-
-[``` /? ```](#cmd--83) with only `'` keys.
-
-
-## CMD: [``` /?' ```](#cmd--86)
+## CMD: [``` /?` ```](#cmd--86)
 
 Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
 
-[``` /? ```](#cmd--83) with only ``` ` ``` keys.
+[``` /? ```](#cmd--84) with only `'` keys.
 
 
-## CMD: [``` /?* ```](#cmd--87)
+## CMD: [``` /?' ```](#cmd--87)
+
+Stack: ``` (a >STR)' (r >STR)' -> SEQ[STR]' ```
+
+[``` /? ```](#cmd--84) with only ``` ` ``` keys.
+
+
+## CMD: [``` /?* ```](#cmd--88)
 
 Stack: ``` (a >STR)' (r >STR)' -> SEQ[ARR[MAP]]' ```
 
-[``` /? ```](#cmd--83) with only `*` keys.
+[``` /? ```](#cmd--84) with only `*` keys.
 
 
-## CMD: [``` /?^ ```](#cmd--88)
-
-Stack: ``` (a >STR)' (b >STR)' -> SEQ[NUM]' ```
-
-[``` /? ```](#cmd--83) with only `^` keys.
-
-
-## CMD: [``` /?$ ```](#cmd--89)
+## CMD: [``` /?^ ```](#cmd--89)
 
 Stack: ``` (a >STR)' (b >STR)' -> SEQ[NUM]' ```
 
-[``` /? ```](#cmd--83) with only `$` keys.
+[``` /? ```](#cmd--84) with only `^` keys.
 
 
-## CMD: [``` /# ```](#cmd--90)
+## CMD: [``` /?$ ```](#cmd--90)
+
+Stack: ``` (a >STR)' (b >STR)' -> SEQ[NUM]' ```
+
+[``` /? ```](#cmd--84) with only `$` keys.
+
+
+## CMD: [``` /# ```](#cmd--91)
 
 Stack: ``` (a >STR)' (r >STR)' (f: MAP -> >STR)' -> STR' ```
 
 Replace matches of regex `r` on `a` by applying each match `MAP` to `f`.
 
 
-## CMD: [``` /#^ ```](#cmd--91)
+## CMD: [``` /#^ ```](#cmd--92)
 
 Stack: ``` (a >STR)' (r >STR)' (s >STR)' -> STR' ```
 
@@ -2496,6 +2508,13 @@ where `x` is the accumulator and `y` is the value.
 ```
 
 
+## CMD: [``` foldr ```](#cmd-foldr)
+
+Stack: ``` a b f' -> _' ```
+
+[``` fold ```](#cmd-fold) from the right.
+
+
 ## CMD: [``` rfold ```](#cmd-rfold)
 
 Stack: ``` a b f' -> _' ```
@@ -2509,6 +2528,13 @@ Atomic/recursive [``` fold ```](#cmd-fold).
 [[1 2] 3 4 [5 [6 7]]] [] \+` rfold
 -> [1 2 3 4 5 6 7]
 ```
+
+
+## CMD: [``` rfoldr ```](#cmd-rfoldr)
+
+Stack: ``` a b f' -> _' ```
+
+[``` rfold ```](#cmd-rfold) from the right.
 
 
 ## CMD: [``` fold~ ```](#cmd-fold-1)
@@ -2527,6 +2553,13 @@ If `a` is empty, then an error is thrown.
 ```
 
 
+## CMD: [``` foldr~ ```](#cmd-foldr-1)
+
+Stack: ``` a f' -> _' ```
+
+[``` fold~ ```](#cmd-fold-1) from the right.
+
+
 ## CMD: [``` scan ```](#cmd-scan)
 
 Stack: ``` a b f' -> _' ```
@@ -2538,28 +2571,35 @@ Stack: ``` a b f' -> _' ```
 ```
 
 
-## CMD: [``` +/ ```](#cmd--92)
+## CMD: [``` scanR ```](#cmd-scanr)
+
+Stack: ``` a b f' -> _' ```
+
+[``` scan ```](#cmd-scan) from the right.
+
+
+## CMD: [``` +/ ```](#cmd--93)
 
 Stack: ``` a -> NUM ```
 
 Sum of `a`. Equivalent to `0 \+ rfold`.
 
 
-## CMD: [``` */ ```](#cmd--93)
+## CMD: [``` */ ```](#cmd--94)
 
 Stack: ``` a -> NUM ```
 
 Product of `a`. Equivalent to `1 \* rfold`.
 
 
-## CMD: [``` &/ ```](#cmd--94)
+## CMD: [``` &/ ```](#cmd--95)
 
 Stack: ``` a -> _ ```
 
 Minimum of `a`. Equivalent to ``` \&` fold~ ```.
 
 
-## CMD: [``` |/ ```](#cmd--95)
+## CMD: [``` |/ ```](#cmd--96)
 
 Stack: ``` a -> _ ```
 
@@ -2737,7 +2777,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [2 1 4 5 3]
+-> [3 2 1 4 5]
 ```
 
 
@@ -2861,67 +2901,67 @@ Stack: ``` (a >FUT[x])' -> TRY[x]' ```
 [``` ~_ ```](#cmd-_-6) with result wrapped in a `TRY`.
 
 
-## CMD: [``` ~$ ```](#cmd--96)
+## CMD: [``` ~$ ```](#cmd--97)
 
 Stack: ``` (a >FUT)' -> ```
 
 Cancels `a`.
 
 
-## CMD: [``` ~|> ```](#cmd--97)
+## CMD: [``` ~|> ```](#cmd--98)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
 
 
-## CMD: [``` ~|| ```](#cmd--98)
+## CMD: [``` ~|| ```](#cmd--99)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
 Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
 
 
-## CMD: [``` ~||> ```](#cmd--99)
+## CMD: [``` ~||> ```](#cmd--100)
 
 Stack: ``` a[>TASK*] (n >NUM) -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--98) but with at most `n` concurrently running `TASK`s.
+[``` ~|| ```](#cmd--99) but with at most `n` concurrently running `TASK`s.
 
 
-## CMD: [``` ~// ```](#cmd--100)
+## CMD: [``` ~// ```](#cmd--101)
 
 Stack: ``` a[>TASK*] -> TASK[_[_*]] ```
 
-[``` ~|| ```](#cmd--98) but results are also unordered.
+[``` ~|| ```](#cmd--99) but results are also unordered.
 
 
-## CMD: [``` ~>> ```](#cmd--101)
+## CMD: [``` ~>> ```](#cmd--102)
 
 Stack: ``` a[>TASK*] -> TASK ```
 
 Races a collection of `TASK`s, returning the first to complete.
 
 
-## CMD: [``` ~< ```](#cmd--102)
+## CMD: [``` ~< ```](#cmd--103)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` runs on a separate thread.
 
 
-## CMD: [``` ~: ```](#cmd--103)
+## CMD: [``` ~: ```](#cmd--104)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
 Ensures that `a` is memoized such that subsequent runs of the task return the same value.
 
 
-## CMD: [``` ~:& ```](#cmd--104)
+## CMD: [``` ~:& ```](#cmd--105)
 
 Stack: ``` (a >TASK)' -> TASK' ```
 
-[``` ~: ```](#cmd--103) but only if `a` completes successfully.
+[``` ~: ```](#cmd--104) but only if `a` completes successfully.
 
 
 ## CMD: [``` ~$_ ```](#cmd-_-8)
@@ -2931,7 +2971,7 @@ Stack: ``` (a >TASK)' -> TASK' ```
 Ensures that `a` is uncancellable.
 
 
-## CMD: [``` ~% ```](#cmd--105)
+## CMD: [``` ~% ```](#cmd--106)
 
 Stack: ``` (a >TASK)' (n >NUM)' -> TASK' ```
 
