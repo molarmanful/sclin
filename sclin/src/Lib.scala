@@ -2660,9 +2660,8 @@ extension (env: ENV)
     )
   )
 
-  def findi: ENV = env.mod2((x, y) =>
-    y.vec1(f => x.findIndex(a => env.evalA1(Vector(a), f).toBool).pipe(NUM(_)))
-  )
+  def findi: ENV =
+    env.mod2((x, y) => y.vec1(f => x.findIndex(SIG_1fb(f)).pipe(NUM(_))))
 
   def del: ENV =
     env.mod2((x, y) => y.vec1(f => x.delByM(SIG_2fb(f), SIG_1fb(f))))

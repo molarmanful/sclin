@@ -1,8 +1,15 @@
+( esc lim show )#.
 15 30 ( a b )=.
-$a4* O-a $a /2- D ( =$im. ) map
-  $b4* O-a $b /2- D ( =$re (.)~ ) map ~|| ~_ n>o
-    " .,:;|!([$O0*%#@-" ; :
-      ; 16tk ( 2^ ,_ + 4<= ) tk* len
-        $re $im , \; itr
-          dup 2^ ,_ - $re +.
-          swap ,_ * 2* $im + ,
+  $a4* O-a $a /2- D ( =$i. ) map
+    ; ~|| ~_ n>o
+      $b4* O-a $b /2- D ( $i (.)~ ) map
+        esc lim show
+
+#esc ( re im )=.
+  $re $im , \; itr
+    2.^ Q ,_ - $re +.
+    swap ,_ * 2* $im + ,
+
+#lim 16tk ( 2^ ,_ + 4<= ) tk* len
+
+#show " .,:;|!([$O0*%#@-"swap :
