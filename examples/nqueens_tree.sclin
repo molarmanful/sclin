@@ -1,10 +1,12 @@
-( init branch free show )#.
+( init )#.
 8init
 
 #init =$n.
+  ( branch )#.
   $n O>a 2^` >A [] 0branch
 
 #branch ( a b m )=.
+  ( free show )#.
   $m $n = ( $b (.) $n *` show end ) &#.
   $a ( 0: $m = ) part.
   ,_ \ \; +` tap

@@ -1,5 +1,8 @@
-( esc lim show )#.
-15 30 ( a b )=.
+( init )#.
+15 30init
+
+#init ( a b )=.
+  ( esc lim show )#.
   $a4* O-a $a /2- D ( =$i. ) map
     ; ~|| ~_ n>o
       $b4* O-a $b /2- D ( $i (.)~ ) map

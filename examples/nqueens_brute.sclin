@@ -1,7 +1,8 @@
-( init queens show )#.
+( init )#.
 8init
 
 #init =$n.
+  ( queens show )#.
   $n queens.
   (.) $n *` show
 
