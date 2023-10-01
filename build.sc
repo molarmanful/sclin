@@ -43,7 +43,7 @@ object sclin extends ScalaModule with PublishModule {
 
   object test extends ScalaTests with TestModule.Munit {
 
-    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M8")
+    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M10")
 
   }
 
