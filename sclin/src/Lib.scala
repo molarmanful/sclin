@@ -1098,7 +1098,7 @@ extension (env: ENV)
     case ":%" => setmod
     /*
     @s a b (i >SEQ) -> x
-    #{:%/} with `i` folded over `a`.
+    #{:%} with `i` folded over `a`.
      */
     case ":/%" => setmods
     /*
