@@ -12,5 +12,5 @@
       dup ,_ + $n + swap ,_ - ,
 
 #show =$x.
-  \; tap ""n>o
+  ( \; tap ""n>o ) tap >A
     $x \Q rot := n>o
