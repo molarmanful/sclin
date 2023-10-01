@@ -1,2 +1,2 @@
 0 1.
-over n>o tuck + @
+dup n>o tuck + @
