@@ -12,4 +12,5 @@
 
 #show =$x.
   ( \; tap ""n>o ) tap
-    $x 1 rot := ".Q" swap : w>< n>o
+    $x 1 rot :=.
+    ".Q" swap : w>< n>o
