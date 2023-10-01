@@ -5,7 +5,7 @@
   $n O>a 2^` >A [] 0branch
 
 #branch ( a b m )=.
-  $m $n = ( $b 0 $n *` show end ) &#.
+  $m $n = ( $b (.) $n *` show end ) &#.
   $a ( 0: $m = ) part.
   ,_ \ \; +` tap
     swap 1.: Q $b +`.
@@ -17,5 +17,4 @@
 
 #show =$x.
   \; tap ""n>o
-    $x 1 rot :=.
-    ".Q" swap : w>< n>o
+    $x \Q rot := n>o

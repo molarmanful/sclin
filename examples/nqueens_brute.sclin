@@ -3,7 +3,7 @@
 
 #init =$n.
   $n queens.
-  0 $n *` show
+  (.) $n *` show
 
 #queens =$n.
   $n O>a perm \; fltr
@@ -11,6 +11,5 @@
       dup ,_ + $n + swap ,_ - ,
 
 #show =$x.
-  ( \; tap ""n>o ) tap
-    $x 1 rot :=.
-    ".Q" swap : w>< n>o
+  \; tap ""n>o
+    $x \Q rot := n>o
