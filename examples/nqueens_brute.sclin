@@ -1,0 +1,15 @@
+( init queens show )#.
+8init
+
+#init =$n.
+  $n queens.
+  0 $n *` show
+
+#queens =$n.
+  $n O>a perm \; fltr
+    >kv \; mapf () uniq len $n 2* =
+      dup ,_ + $n + swap ,_ - ,
+
+#show =$x.
+  ( \; tap ""n>o ) tap
+    $x 1 rot := ".Q" swap : w>< n>o
