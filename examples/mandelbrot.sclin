@@ -7,9 +7,9 @@
 
 #esc ( re im )=.
   $re $im , \; itr
-    2.^ Q ,_ - $re +.
+    2.^~ Q ,_ - $re +.
     swap ,_ * 2* $im + ,
 
-#lim 16tk ( 2^ ,_ + 4<= ) tk* len
+#lim 16tk ( 2^~ ,_ + 4<= ) tk* len
 
 #show " .,:;|!([$O0*%#@-"swap :
