@@ -25,7 +25,7 @@ object sclin extends ScalaModule with PublishModule {
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.5.1",
     ivy"com.lihaoyi::fansi:0.4.0",
-    ivy"com.lihaoyi::upickle:3.1.2",
+    ivy"com.lihaoyi::upickle:3.1.3",
     ivy"io.monix::monix:3.4.1",
     ivy"com.lihaoyi::os-lib:0.9.1"
   )
