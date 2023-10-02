@@ -229,7 +229,7 @@ enum ANY:
     case (x, y)           => Vector(x).toARR.add$$(y)
 
   def cons(t: ANY): ANY = t match
-    case Lsy(x) => (this #:: x).toSEQ.matchType(this)
+    case Lsy(x) => (this #:: x).toSEQ.matchType(t)
     case ARR(x) => (this +: x).toARR
     case MAP(x) => (VectorMap(get(NUM(0)) -> get(NUM(1))) ++ x).toMAP
     case STR(x) => (toString + x).sSTR

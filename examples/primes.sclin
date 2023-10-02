@@ -2,4 +2,4 @@
 =$n dup ; @
   ( 2^~ $n <= ) tk*.
   ( $n swap % ) all.
-  ( $n +` $n n>o ) &# $n2+
+  ( $n +> $n n>o ) &# $n2+
