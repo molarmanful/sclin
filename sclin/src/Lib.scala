@@ -51,12 +51,12 @@ extension (env: ENV)
     case s"$$$k" if k != "" && env.gids.contains(k) =>
       env.push(NUM(env.gids(k).l)).getLn
 
-    case x if env.scope.contains(x)  => env.push(env.scope(x)).eval
-    case x if env.ids.contains(x)    => env.push(NUM(env.ids(x).l)).evalLine
-    case x if env.gscope.contains(x) => env.push(env.gscope(x)).eval
-    case x if env.gids.contains(x)   => env.push(NUM(env.gids(x).l)).evalLine
-
-    case _ => cmd1(x)
+    case x =>
+      if env.scope.contains(x) then env.push(env.scope(x)).eval
+      else if env.ids.contains(x) then env.push(NUM(env.ids(x).l)).evalLine
+      else if env.gscope.contains(x) then env.push(env.gscope(x)).eval
+      else if env.gids.contains(x) then env.push(NUM(env.gids(x).l)).evalLine
+      else cmd1(x)
 
   def cmd1(x: String): ENV = (x: @switch) match
 

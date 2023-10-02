@@ -158,7 +158,7 @@ case class ENV(
 
   def getLoc(k: String): ANY =
     if scope.contains(k) then scope(k)
-    else if ids.contains(k) then ids(k)
+    else if ids.contains(k) then ids(k).l.pipe(getLineS)
     else getGlob(k)
 
   def getGlob(k: String): ANY = ???
