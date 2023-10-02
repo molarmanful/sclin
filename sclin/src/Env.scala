@@ -2,6 +2,7 @@ package sclin
 
 import scala.annotation._
 import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.HashMap
 import scala.util.chaining._
 import ANY._
 
@@ -34,16 +35,15 @@ import ANY._
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
-    code: FN = FN(PATH(None, 0), LazyList()),
+    code: FN = FN(PATH(None, 0), HashMap(), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
     calls: SEQW[(PATH, ANY)] = LazyList(),
-    scope: Map[String, ANY] = Map(),
+    scope: SCOPE = HashMap(),
     gscope: TrieMap[String, ANY] = TrieMap(),
-    ids: Map[String, PATH] = Map(),
+    ids: HashMap[String, PATH] = HashMap(),
     gids: TrieMap[String, PATH] = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
-    flags: Map[String, Boolean] = Map(),
     eS: Boolean = false,
     eV: Boolean = false,
     eI: Boolean = false,
@@ -78,7 +78,7 @@ case class ENV(
   def trace: ENV = trace1.trace2
 
   def modCode(f: LazyList[ANY] => LazyList[ANY]): ENV =
-    copy(code = FN(code.p, f(code.x)))
+    copy(code = FN(code.p, code.s, f(code.x)))
 
   def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
 
@@ -129,7 +129,7 @@ case class ENV(
     fnLine(i)
     copy(code = getLineF(i) match
       case x: FN => x
-      case _     => FN(code.p, LazyList())
+      case _     => FN(code.p, scope, LazyList())
     )
 
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
@@ -273,7 +273,7 @@ object ENV:
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
         (PATH(f, i), (STR(x), UN))
       }),
-      FN(PATH(f, 0), LazyList()),
+      FN(PATH(f, 0), HashMap(), LazyList()),
       eS = flags("s"),
       eV = flags("v"),
       eI = flags("i"),

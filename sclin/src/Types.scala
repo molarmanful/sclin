@@ -3,6 +3,7 @@ package sclin
 import monix.eval.Task
 import monix.execution.CancelableFuture
 import monix.execution.Scheduler.Implicits.global
+import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -28,7 +29,7 @@ enum ANY:
   case DBL(x: Double)
   case TF(x: Boolean)
   case CMD(x: String)
-  case FN(p: PATH, x: SEQW[ANY])
+  case FN(p: PATH, s: SCOPE, x: SEQW[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
@@ -41,14 +42,14 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x)   => x
-    case NUM(x)   => x.toString
-    case DBL(x)   => x.toString
-    case FN(_, x) => x.mkString(" ")
-    case CMD(x)   => x
-    case ERR(x)   => x.toString
-    case _: TF    => toNUM.toString
-    case _: TASK  => "(…)~"
+    case STR(x)      => x
+    case NUM(x)      => x.toString
+    case DBL(x)      => x.toString
+    case FN(_, _, x) => x.mkString(" ")
+    case CMD(x)      => x
+    case ERR(x)      => x.toString
+    case _: TF       => toNUM.toString
+    case _: TASK     => "(…)~"
     case FUT(x) =>
       s"(${x.value match
           case Some(t) => t.toTRY.toForm
@@ -71,7 +72,7 @@ enum ANY:
           case '"'  => "\\\""
           case c    => c
         }.mkString}\""
-    case FN(PATH(_, l), x) =>
+    case FN(PATH(_, l), _, x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(…)$n"
     case ERR(x) => s"ERR(${x.getMessage})"
@@ -119,7 +120,7 @@ enum ANY:
     case NUM(x)       => !eql(NUM(0))
     case DBL(x)       => !eql(DBL(0))
     case CMD(x)       => !x.isEmpty
-    case FN(_, x)     => !x.isEmpty
+    case FN(_, _, x)  => !x.isEmpty
     case _: ERR       => false
     case TRY(b, _, _) => b
     case FUT(x)       => x.isCompleted && x.value.get.isSuccess
@@ -145,13 +146,13 @@ enum ANY:
     case _      => toString
 
   def length: Int = this match
-    case UN       => 0
-    case SEQ(x)   => x.length
-    case ARR(x)   => x.length
-    case MAP(x)   => x.size
-    case STR(x)   => x.length
-    case FN(_, x) => x.length
-    case _        => -1
+    case UN          => 0
+    case SEQ(x)      => x.length
+    case ARR(x)      => x.length
+    case MAP(x)      => x.size
+    case STR(x)      => x.length
+    case FN(_, _, x) => x.length
+    case _           => -1
 
   def get(i: ANY): ANY =
     val oi = i.optI
@@ -250,7 +251,7 @@ enum ANY:
     case (It(x), MAP(y))  => x.sub$$(y.keys.toARR)
     case (It(x), It(y))   => x.sub$$(y.toSEQ)
     case (Itr(x), y)      => x.sub$$(Vector(y).toARR)
-    case (FN(p, _), y)    => toSEQ.sub$$(y).pFN(p)
+    case (FN(p, s, _), y) => toSEQ.sub$$(y).pFN(p, s)
     case (x, y)           => Vector(x).toARR.sub$$(y)
 
   def mul$$(t: ANY): ANY = (this, t) match
@@ -403,11 +404,11 @@ enum ANY:
     case Sty(x) => Parser.parse(x)
     case _      => toSEQ.xFN
 
-  def toFN(env: ENV): FN = FN(env.code.p, xFN)
+  def toFN(env: ENV): FN = FN(env.code.p, env.scope, xFN)
 
-  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), xFN)
+  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), env.scope, xFN)
 
-  def pFN(p: PATH): FN = FN(p, xFN)
+  def pFN(p: PATH, s: SCOPE): FN = FN(p, s, xFN)
 
   def toTASK: TASK = this match
     case x: TASK => x
@@ -423,20 +424,20 @@ enum ANY:
     case x       => CancelableFuture.pure(x).pipe(FUT(_))
 
   def matchType(a: ANY): ANY = a match
-    case FN(p, _) => pFN(p)
-    case _: SEQ   => toSEQ
-    case _: ARR   => toARR
-    case _: MAP   => toMAP
-    case _: STR   => toSTR
-    case _: NUM   => toNUM
-    case _: DBL   => toDBL
-    case _: TF    => toTF
-    case _: CMD   => toString.pipe(CMD(_))
-    case _: TASK  => toTASK
-    case _: FUT   => toFUT
-    case _: TRY   => toTRY
-    case _: ERR   => toERR
-    case UN       => UN
+    case FN(p, s, _) => pFN(p, s)
+    case _: SEQ      => toSEQ
+    case _: ARR      => toARR
+    case _: MAP      => toMAP
+    case _: STR      => toSTR
+    case _: NUM      => toNUM
+    case _: DBL      => toDBL
+    case _: TF       => toTF
+    case _: CMD      => toString.pipe(CMD(_))
+    case _: TASK     => toTASK
+    case _: FUT      => toFUT
+    case _: TRY      => toTRY
+    case _: ERR      => toERR
+    case UN          => UN
 
   def map(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.map(f).toSEQ.matchType(this)
@@ -479,10 +480,10 @@ enum ANY:
     case x      => x
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (SEQ(x), _)   => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
-    case (_, _: SEQ)   => toSEQ.zip(t, f)
-    case (FN(p, x), _) => x.lazyZip(t.toARR.x).map(f).pFN(p)
-    case _             => toARR.x.lazyZip(t.toARR.x).map(f).toARR
+    case (SEQ(x), _)      => x.zip(t.toSEQ.x).map(f.tupled).toSEQ
+    case (_, _: SEQ)      => toSEQ.zip(t, f)
+    case (FN(p, s, x), _) => x.lazyZip(t.toARR.x).map(f).pFN(p, s)
+    case _                => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -930,14 +931,14 @@ object ANY:
 
   extension (x: Iterable[ANY])
 
-    def toSEQ: SEQ       = SEQ(x.to(LazyList))
-    def toARR: ARR       = ARR(x.toVector)
-    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
+    def toSEQ: SEQ                 = SEQ(x.to(LazyList))
+    def toARR: ARR                 = ARR(x.toVector)
+    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Iterator[ANY])
 
-    def toSEQ: SEQ       = SEQ(x.to(LazyList))
-    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
+    def toSEQ: SEQ                 = SEQ(x.to(LazyList))
+    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 
@@ -1035,9 +1036,9 @@ object ANY:
   object Lsy:
 
     def unapply(a: ANY): Option[LazyList[ANY]] = a match
-      case SEQ(x)   => Some(x)
-      case FN(_, x) => Some(x)
-      case _        => None
+      case SEQ(x)      => Some(x)
+      case FN(_, _, x) => Some(x)
+      case _           => None
 
   object Nmy:
 

@@ -615,7 +615,7 @@ extension (env: ENV)
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
      */
-    case "end" => env.copy(code = List().pFN(env.code.p))
+    case "end" => env.copy(code = FN(env.code.p, env.scope, LazyList()))
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -2037,8 +2037,8 @@ extension (env: ENV)
 
   def eval: ENV = env.arg1((x, env) =>
     x match
-      case f: FN =>
-        val env1 = env.copy(code = f)
+      case f @ FN(_, s, _) =>
+        val env1 = env.copy(code = f, scope = env.scope ++ s)
         env.code.x match
           case LazyList() => env1
           case _          => env.modStack(_ => env1.addCall(f).exec.stack)
@@ -2046,8 +2046,11 @@ extension (env: ENV)
   )
   def evale: ENV = env.arg1((x, env) =>
     x match
-      case f: FN => env.modStack(_ => env.copy(code = f).addCall(f).exec.stack)
-      case _     => env.push(x).toFN.evale
+      case f @ FN(_, s, _) =>
+        env.modStack(_ =>
+          env.copy(code = f, scope = env.scope ++ s).addCall(f).exec.stack
+        )
+      case _ => env.push(x).toFN.evale
   )
   def evalS(x: ARRW[ANY], f: ANY): ARRW[ANY] =
     env.modStack(_ => x :+ f).evale.stack
@@ -2064,7 +2067,7 @@ extension (env: ENV)
     val (cs, c) = l.ys match
       case cs :+ c => (cs, c.toString)
       case _       => (l.ys, ")")
-    env.modCode(_ => l.xs).push(FN(env.code.p, cs)).cmd(c)
+    env.modCode(_ => l.xs).push(FN(env.code.p, env.scope, cs)).cmd(c)
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
