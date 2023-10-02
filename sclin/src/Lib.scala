@@ -723,6 +723,16 @@ extension (env: ENV)
      */
     case "+`" => add$$
     /*
+    @s a b -> _
+    Prepends `a` to `b`.
+     */
+    case "<+" => cons
+    /*
+    @s a b -> _
+    Appends `b` to `a`.
+     */
+    case "+>" => snoc
+    /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a - b`
      */
@@ -2423,6 +2433,8 @@ extension (env: ENV)
   def add: ENV    = env.num2(_ + _, _ + _)
   def add$ : ENV  = env.str2(_ ++ _)
   def add$$ : ENV = env.mod2(_ add$$ _)
+  def cons: ENV   = env.mod2(_ cons _)
+  def snoc: ENV   = env.mod2(_ snoc _)
 
   def sub: ENV    = env.num2(_ - _, _ - _)
   def sub$ : ENV  = env.str2((x, y) => x.filterNot(y.contains))

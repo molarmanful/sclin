@@ -220,18 +220,27 @@ enum ANY:
   def add$$(t: ANY): ANY = (this, t) match
     case (UN, y)          => y
     case (x, UN)          => x
-    case (Lsy(x), Lsy(y)) => SEQ(x #::: y).matchType(this)
+    case (ARR(x), ARR(y)) => ARR(x ++ y)
+    case (MAP(x), MAP(y)) => MAP(x ++ y)
     case (Lsy(x), Itr(y)) => SEQ(x #::: y.toSEQ.x).matchType(this)
     case (Itr(x), Lsy(y)) => SEQ(x.toSEQ.x #::: y).matchType(t)
-    case (Lsy(x), y)      => SEQ(x :+ y).matchType(this)
-    case (x, Lsy(y))      => SEQ(x #:: y).matchType(t)
-    case (ARR(x), ARR(y)) => ARR(x ++ y)
-    case (ARR(x), y)      => ARR(x :+ y)
-    case (x, ARR(y))      => ARR(x +: y)
-    case (MAP(x), MAP(y)) => MAP(x ++ y)
-    case (Sty(x), y)      => STR(x + y.toString).matchType(this)
-    case (x, Sty(y))      => STR(x.toString + y).matchType(this)
+    case (x, Its(y))      => x.cons(y)
+    case (Its(x), y)      => x.snoc(y)
     case (x, y)           => Vector(x).toARR.add$$(y)
+
+  def cons(t: ANY): ANY = t match
+    case Lsy(x) => (this #:: x).toSEQ.matchType(this)
+    case ARR(x) => (this +: x).toARR
+    case MAP(x) => (VectorMap(get(NUM(0)) -> get(NUM(1))) ++ x).toMAP
+    case STR(x) => (toString + x).sSTR
+    case _      => toARR.cons(t)
+
+  def snoc(t: ANY): ANY = this match
+    case Lsy(x) => (x :+ t).toSEQ.matchType(this)
+    case ARR(x) => (x :+ t).toARR
+    case MAP(x) => (x + (t.get(NUM(0)) -> t.get(NUM(1)))).toMAP
+    case STR(x) => (toString + x).sSTR
+    case _      => toARR.snoc(t)
 
   def sub$$(t: ANY): ANY = (this, t) match
     case (SEQ(x), y: SEQ) => x.filterNot(y.has).toSEQ
