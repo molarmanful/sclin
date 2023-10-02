@@ -38,6 +38,8 @@ extension (env: ENV)
 
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
+    // case s"%$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
+    // case s"%$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" && env.gscope.contains(k) =>
       env.push(env.gscope(k))
     case s"$$$$$k" if k != "" && env.gids.contains(k) =>
@@ -732,6 +734,9 @@ extension (env: ENV)
     Appends `b` to `a`.
      */
     case "+>" => snoc
+    // TODO: docs
+    case "+<" => uncons
+    case ">+" => unsnoc
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a - b`
@@ -2438,6 +2443,8 @@ extension (env: ENV)
   def add$$ : ENV = env.mod2(_ add$$ _)
   def cons: ENV   = env.mod2(_ cons _)
   def snoc: ENV   = env.mod2(_ snoc _)
+  def uncons: ENV = env.mods1(x => Vector(x.get(NUM(0)), x.drop(1)))
+  def unsnoc: ENV = env.mods1(x => Vector(x.get(NUM(-1)), x.drop(-1)))
 
   def sub: ENV    = env.num2(_ - _, _ - _)
   def sub$ : ENV  = env.str2((x, y) => x.filterNot(y.contains))

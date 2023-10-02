@@ -1,0 +1,30 @@
+( Env eval code )#.
+Env =$env.
+$env code eval
+
+#Env `>>M
+  "p" 0
+  "i" 0
+  "s" []
+  "m" {}
+>>M
+
+#eval ( env code )=.
+  ( Fns )#.
+  $code +< =$code.
+  Fns swap : #
+
+#Fns `>>M
+  ">" ( 1.+ "p":% )
+  "<" ( 1.- "p":% )
+  "+" ( dup =$env 1.+ ["m" $env"p": ] :/% )
+  "-" ( dup =$env 1.- ["m" $env"p": ] :/% )
+  "." ( "p".: Q "m": S>c >o )
+  "," ( dup =$env i> 0: c>S ["m" $env"p": ] :/= )
+  "[" ( dup =$env ( $env"i": ).' "s":% )
+  "]" ( dup =$env ( $env swap "i":= ).' "s":% )
+>>M
+
+#code ``
+as.df+
+`

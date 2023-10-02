@@ -136,7 +136,7 @@ case class ENV(
     s.x.trim.startsWith("#" + c)
   } match
     case Some(p, _) => p
-    case _          => throw LinEx("ID", "unknown id")
+    case _          => throw LinEx("ID", s"unknown id \"$c\"")
 
   def optId(c: String): Option[PATH] =
     try Some(getId(c))
@@ -155,6 +155,13 @@ case class ENV(
   def addGlob(k: String, v: ANY): ENV =
     gscope += (k -> v)
     this
+
+  def getLoc(k: String): ANY =
+    if scope.contains(k) then scope(k)
+    else if ids.contains(k) then ids(k)
+    else getGlob(k)
+
+  def getGlob(k: String): ANY = ???
 
   def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
 
