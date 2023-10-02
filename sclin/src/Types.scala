@@ -233,7 +233,7 @@ enum ANY:
     case ARR(x) => (this +: x).toARR
     case MAP(x) => (VectorMap(get(NUM(0)) -> get(NUM(1))) ++ x).toMAP
     case STR(x) => (toString + x).sSTR
-    case _      => toARR.cons(t)
+    case _      => cons(t.toARR)
 
   def snoc(t: ANY): ANY = this match
     case Lsy(x) => (x :+ t).toSEQ.matchType(this)
