@@ -40,18 +40,16 @@ extension (env: ENV)
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     // case s"%$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     // case s"%$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
-    case s"$$$$$k" if k != "" && env.gscope.contains(k) =>
-      env.push(env.gscope(k))
-    case s"$$$$$k" if k != "" && env.gids.contains(k) =>
-      env.push(NUM(env.gids(k).l)).getLn
-    case s"$$$k" if k != "" && env.scope.contains(k) => env.push(env.scope(k))
-    case s"$$$k" if k != "" && env.ids.contains(k) =>
-      env.push(NUM(env.ids(k).l)).getLn
-    case s"$$$k" if k != "" && env.gscope.contains(k) => env.push(env.gscope(k))
-    case s"$$$k" if k != "" && env.gids.contains(k) =>
-      env.push(NUM(env.gids(k).l)).getLn
+    case s"$$$$$k" if k != "" =>
+      env.getGlob(k) match
+        case None    => cmd1(x)
+        case Some(v) => env.push(v)
+    case s"$$$k" if k != "" =>
+      env.getLoc(k) match
+        case None    => cmd(s"$$$$$k")
+        case Some(v) => env.push(v)
 
-    case x =>
+    case _ =>
       if env.scope.contains(x) then env.push(env.scope(x)).eval
       else if env.ids.contains(x) then env.push(NUM(env.ids(x).l)).evalLine
       else if env.gscope.contains(x) then env.push(env.gscope(x)).eval
@@ -2072,7 +2070,7 @@ extension (env: ENV)
     val (cs, c) = l.ys match
       case cs :+ c => (cs, c.toString)
       case _       => (l.ys, ")")
-    env.modCode(_ => l.xs).push(FN(env.code.p, env.scope, cs)).cmd(c)
+    env.modCode(_ => l.xs).push(FN(env.code.p, env.scopes, cs)).cmd(c)
 
   def evalLine: ENV = env.arg1((x, env) =>
     val i    = x.toInt
@@ -2178,7 +2176,7 @@ extension (env: ENV)
     env.arg(
       x1.length,
       (cs, env) =>
-        x1.lazyZip(cs).foldRight(env) { case ((k, v), env) =>
+        x1.lazyZip(cs).foldLeft(env) { case (env, (k, v)) =>
           env.addLoc(k.toString, v)
         }
     )

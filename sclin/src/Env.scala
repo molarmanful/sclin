@@ -82,6 +82,8 @@ case class ENV(
 
   def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
 
+  def scopes: SCOPE = (gscope ++ scope).to(HashMap)
+
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
 
@@ -129,7 +131,7 @@ case class ENV(
     fnLine(i)
     copy(code = getLineF(i) match
       case x: FN => x
-      case _     => FN(code.p, scope, LazyList())
+      case _     => FN(code.p, scopes, LazyList())
     )
 
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
@@ -156,12 +158,15 @@ case class ENV(
     gscope += (k -> v)
     this
 
-  def getLoc(k: String): ANY =
-    if scope.contains(k) then scope(k)
-    else if ids.contains(k) then ids(k).l.pipe(getLineS)
-    else getGlob(k)
+  def getLoc(k: String): Option[ANY] =
+    if scopes.contains(k) then Some(scopes(k))
+    else if ids.contains(k) then Some(ids(k).l.pipe(getLineS))
+    else None
 
-  def getGlob(k: String): ANY = ???
+  def getGlob(k: String): Option[ANY] =
+    if gscope.contains(k) then Some(gscope(k))
+    else if gids.contains(k) then Some(gids(k).l.pipe(getLineS))
+    else None
 
   def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
 

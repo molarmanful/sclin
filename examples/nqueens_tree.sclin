@@ -14,8 +14,8 @@
     \free dip $m1+ branch
 
 #free.
-  ( ddup. ) <+ fltr
-    != &/ rot_ - abs ,_ != &
+  \; <+ fltr
+    ddup != &/ rot_ - abs ,_ != &
 
 #show =$x.
   \; tap ""n>o
