@@ -28,8 +28,9 @@ jobs:
         run: ./mill sclin.cmdoc
       - name: run examples
         run: node docr.js sclin-docs/commands.md
-      - name: commit + push
-        uses: actions-js/push@master
+      - name: push to wiki
+        uses: SwiftDocOrg/github-wiki-publish-action@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          force: true
+          path: sclin-docs
+        env:
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
