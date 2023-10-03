@@ -1,6 +1,7 @@
 package sclin
 
 import monix.execution.CancelableFuture
+import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import spire.implicits._
@@ -16,8 +17,11 @@ type FUTW[T]    = CancelableFuture[T]
 
 type NUMF = Real
 
-type CALLS = SEQW[(PATH, ANY)]
-type SCOPE = HashMap[String, ANY]
+type CALLS  = SEQW[(PATH, ANY)]
+type SCOPE  = HashMap[String, ANY]
+type GSCOPE = TrieMap[String, ANY]
+type IDS    = HashMap[String, PATH]
+type GIDS   = TrieMap[String, PATH]
 
 case class PATH(f: FILE, l: Int):
 
