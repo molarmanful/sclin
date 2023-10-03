@@ -38,6 +38,7 @@ extension (env: ENV)
 
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
+    // TODO:
     // case s"%$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     // case s"%$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" =>
@@ -46,7 +47,7 @@ extension (env: ENV)
         case Some(v) => env.push(v)
     case s"$$$k" if k != "" =>
       env.getLoc(k) match
-        case None    => cmd(s"$$$$$k")
+        case None    => cmd1(x)
         case Some(v) => env.push(v)
 
     case _ =>
@@ -288,7 +289,8 @@ extension (env: ENV)
     @s -> ARR[STR*]
     `ARR` of lines of currently-executing file.
      */
-    case "$L*" => getLns
+    case "$L*"  => getLns
+    case "$ENV" => getSc
     /*
     @s -> STR
     `UPPERCASE` alphabet.
@@ -2043,7 +2045,7 @@ extension (env: ENV)
     x match
       case f @ FN(_, (s, i), _) =>
         val env1 =
-          env.copy(code = f, scope = env.scope ++ s, ids = env.ids ++ i)
+          env.copy(code = f).addScope(s, i)
         env.code.x match
           case LazyList() => env1
           case _          => env.modStack(_ => env1.addCall(f).exec.stack)
@@ -2054,7 +2056,8 @@ extension (env: ENV)
       case f @ FN(_, (s, i), _) =>
         env.modStack(_ =>
           env
-            .copy(code = f, scope = env.scope ++ s, ids = env.ids ++ i)
+            .copy(code = f)
+            .addScope(s, i)
             .addCall(f)
             .exec
             .stack
@@ -2187,6 +2190,9 @@ extension (env: ENV)
         }
     )
   )
+
+  def getSc =
+    env.push(MAP(env.scope.map { case (k, v) => (k.sSTR, v) }.to(VectorMap)))
 
   def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))

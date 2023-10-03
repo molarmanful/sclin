@@ -118,14 +118,8 @@ case class ENV(
     case _ => UN
 
   def fnLine(i: Int): ENV = getLine(i) match
-    case Some(x, y) =>
-      setLineF(
-        i,
-        y match
-          case UN => x.lFN(i, this)
-          case _  => y
-      )
-    case _ => this
+    case Some(x, y) => setLineF(i, x.lFN(i, this))
+    case _          => this
 
   def loadLine(i: Int): ENV =
     fnLine(i)
@@ -161,12 +155,14 @@ case class ENV(
   def getLoc(k: String): Option[ANY] =
     if scope.contains(k) then scope.get(k)
     else if ids.contains(k) then ids.get(k).map(_.l.pipe(getLineS))
-    else None
+    else getGlob(k)
 
   def getGlob(k: String): Option[ANY] =
     if gscope.contains(k) then gscope.get(k)
     else if gids.contains(k) then gids.get(k).map(_.l.pipe(getLineS))
     else None
+
+  def addScope(s: SCOPE, i: IDS): ENV = copy(scope = s, ids = i)
 
   def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
 
