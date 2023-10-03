@@ -27,10 +27,10 @@ jobs:
       - name: generate docs
         run: ./mill sclin.cmdoc
       - name: run examples
-        run: node docr.js sclin-docs/commands.md
+        run: node docr.js sclin-docs-gen/commands.md
       - name: push to wiki
         uses: SwiftDocOrg/github-wiki-publish-action@v1
         with:
-          path: sclin-docs
+          path: sclin-docs-gen
         env:
           GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
