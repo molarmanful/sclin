@@ -38,9 +38,6 @@ extension (env: ENV)
 
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
-    // TODO:
-    // case s"%$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
-    // case s"%$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" =>
       env.getGlob(k) match
         case None    => cmd1(x)
@@ -340,12 +337,35 @@ extension (env: ENV)
     ```
      */
     case "@$$" => globId
-    // TODO: docs
-    case "@:"  => locIdS
+    /*
+    @s (a >FN)' -> STR | UN
+    #{@$} and get as `STR`.
+     */
+    case "@:" => locIdS
+    /*
+    @s (a >FN)' -> STR | UN
+    #{@$$} and get as `STR`.
+     */
     case "@::" => globIdS
-    case "@;"  => locIdF
+    /*
+    @s (a >FN)' -> FN | UN
+    #{@$} and get as `FN`.
+     */
+    case "@;" => locIdF
+    /*
+    @s (a >FN)' -> FN | UN
+    #{@$$} and get as `FN`.
+     */
     case "@;;" => globIdF
-    case "@#"  => locIdF.eval
+    /*
+    @s x* (a >FN)' -> _*
+    #{@;} and #{#}.
+     */
+    case "@#" => locIdF.eval
+    /*
+    @s x* (a >FN)' -> _*
+    #{@;;} and #{#}.
+     */
     case "@##" => globIdF.eval
     /*
     @s _* (a >FN) -> _*
@@ -741,8 +761,15 @@ extension (env: ENV)
     Appends `b` to `a`.
      */
     case "+>" => snoc
-    // TODO: docs
+    /*
+    @s a -> _ _[_*]
+    Uncons; push first item and rest of `a`.
+     */
     case "+<" => uncons
+    /*
+    @s a -> _[_*] _
+    Unsnoc; push last item and rest of `a`.
+     */
     case ">+" => unsnoc
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
