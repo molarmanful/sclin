@@ -1,4 +1,5 @@
 import scala.util.chaining._
+import scala.util.matching.Regex
 
 case class DocCmd(
     name: String = "",
@@ -7,7 +8,7 @@ case class DocCmd(
 ) {
 
   def md(cs: Map[String, String]): String = {
-    val r = raw"#\{(.+?)\}".r
+    val r = raw"#\{\s*(.+?)\s*\}".r
     s"""
 ## CMD: [``` $name ```](#${cs(name)})
 
@@ -18,7 +19,7 @@ ${body.map(
           _,
           m => {
             val a = m.group(1)
-            s"[``` $a ```](#${cs(a)})"
+            Regex.quoteReplacement(s"[``` $a ```](#${cs(a)})")
           }
         )
       ).mkString("\n")}
