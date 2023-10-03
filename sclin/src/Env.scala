@@ -159,13 +159,13 @@ case class ENV(
     this
 
   def getLoc(k: String): Option[ANY] =
-    if scope.contains(k) then Some(scope(k))
-    else if ids.contains(k) then Some(ids(k).l.pipe(getLineS))
+    if scope.contains(k) then scope.get(k)
+    else if ids.contains(k) then ids.get(k).map(_.l.pipe(getLineS))
     else None
 
   def getGlob(k: String): Option[ANY] =
-    if gscope.contains(k) then Some(gscope(k))
-    else if gids.contains(k) then Some(gids(k).l.pipe(getLineS))
+    if gscope.contains(k) then gscope.get(k)
+    else if gids.contains(k) then gids.get(k).map(_.l.pipe(getLineS))
     else None
 
   def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
