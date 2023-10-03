@@ -2,9 +2,8 @@
 8init
 
 #init =$n.
-  ( queens show )#.
-  $n queens.
-  (.) $n *` show
+  $n "queens"@#.
+  (.) $n *` "show"@#
 
 #queens =$n.
   $n O>a perm \; fltr

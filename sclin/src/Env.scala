@@ -125,10 +125,9 @@ case class ENV(
 
   def loadLine(i: Int): ENV =
     fnLine(i)
-    copy(code = getLineF(i) match
-      case x: FN => x
-      case _     => FN(code.p, LazyList())
-    )
+    getLineF(i) match
+      case x: FN => copy(code = x)
+      case _     => this
 
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
     s.x.trim.startsWith("#" + c)
@@ -144,7 +143,7 @@ case class ENV(
     copy(ids = ids + (c -> getId(c)), scope = scope - c)
 
   def addGlobId(c: String): ENV =
-    gids   += (c -> getId(c))
+    gids   += c -> getId(c)
     gscope -= c
     this
 

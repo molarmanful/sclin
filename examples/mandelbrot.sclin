@@ -1,5 +1,4 @@
-( init )#.
-15 30init
+15 30"init"@#
 
 #init ( a b )=.
   ( esc lim show )#.

@@ -1,9 +1,7 @@
-( init )#.
-8init
+8"init"@#
 
 #init =$n.
-  ( branch )#.
-  $n O>a 2^` >A [] 0branch
+  $n O>a 2^` >A [] 0"branch"@#
 
 #branch ( a b m )=.
   ( free show )#.

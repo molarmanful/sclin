@@ -340,6 +340,13 @@ extension (env: ENV)
     ```
      */
     case "@$$" => globId
+    // TODO: docs
+    case "@:"  => locIdS
+    case "@::" => globIdS
+    case "@;"  => locIdF
+    case "@;;" => globIdF
+    case "@#"  => locIdF.eval
+    case "@##" => globIdF.eval
     /*
     @s _* (a >FN) -> _*
     Stores stack items into local variables defined by `a`.
@@ -617,7 +624,7 @@ extension (env: ENV)
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
      */
-    case "end" => env.copy(code = FN(env.code.p, LazyList()))
+    case "end" => env.modCode(_ => LazyList())
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -2170,6 +2177,30 @@ extension (env: ENV)
       cs.xFN.foldLeft(env)((env, c) => env.addGlobId(c.toString))
     )
   )
+  def locIdS: ENV = env.arg1((x, env) =>
+    val x1   = x.toString
+    val env1 = env.addLocId(x1)
+    env1.push(env1.getLineF(env1.ids(x1).l))
+  )
+  def globIdS: ENV = env.arg1((x, env) =>
+    val x1   = x.toString
+    val env1 = env.addGlobId(x1)
+    env1.push(env1.getLineF(env1.gids(x1).l))
+  )
+  def locIdF: ENV = env.arg1((x, env) =>
+    val x1   = x.toString
+    val env1 = env.addLocId(x1)
+    val l    = env1.ids(x1).l
+    env.fnLine(l)
+    env1.push(env1.getLineF(l))
+  )
+  def globIdF: ENV = env.arg1((x, env) =>
+    val x1   = x.toString
+    val env1 = env.addGlobId(x1)
+    val l    = env1.gids(x1).l
+    env.fnLine(l)
+    env1.push(env1.getLineF(l))
+  )
 
   def lambda: ENV = env.arg1((x, env) =>
     val x1 = x.xFN
@@ -2445,7 +2476,7 @@ extension (env: ENV)
   def cons: ENV   = env.mod2(_ cons _)
   def snoc: ENV   = env.mod2(_ snoc _)
   def uncons: ENV = env.mods1(x => Vector(x.get(NUM(0)), x.drop(1)))
-  def unsnoc: ENV = env.mods1(x => Vector(x.get(NUM(-1)), x.drop(-1)))
+  def unsnoc: ENV = env.mods1(x => Vector(x.drop(-1), x.get(NUM(-1))))
 
   def sub: ENV    = env.num2(_ - _, _ - _)
   def sub$ : ENV  = env.str2((x, y) => x.filterNot(y.contains))

@@ -276,7 +276,7 @@ enum ANY:
     case x      => Vector(x).toARR.mod$$(t)
 
   def take(n: Int): ANY =
-    if n < 0 then drop(length + n)
+    if n < 0 && length != 0 then drop(length + n)
     else
       this match
         case Lsy(x) => x.take(n).toSEQ.matchType(this)
@@ -286,7 +286,7 @@ enum ANY:
         case _      => toARR.take(n)
 
   def drop(n: Int): ANY =
-    if n < 0 then take(length + n)
+    if n < 0 && length != 0 then take(length + n)
     else
       this match
         case Lsy(x) => x.drop(n).toSEQ.matchType(this)
