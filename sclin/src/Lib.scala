@@ -615,7 +615,8 @@ extension (env: ENV)
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
      */
-    case "end" => env.copy(code = FN(env.code.p, env.scope, LazyList()))
+    case "end" =>
+      env.copy(code = FN(env.code.p, (env.scope, env.ids), LazyList()))
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
@@ -2040,8 +2041,9 @@ extension (env: ENV)
 
   def eval: ENV = env.arg1((x, env) =>
     x match
-      case f @ FN(_, s, _) =>
-        val env1 = env.copy(code = f, scope = env.scope ++ s)
+      case f @ FN(_, (s, i), _) =>
+        val env1 =
+          env.copy(code = f, scope = env.scope ++ s, ids = env.ids ++ i)
         env.code.x match
           case LazyList() => env1
           case _          => env.modStack(_ => env1.addCall(f).exec.stack)
@@ -2049,9 +2051,13 @@ extension (env: ENV)
   )
   def evale: ENV = env.arg1((x, env) =>
     x match
-      case f @ FN(_, s, _) =>
+      case f @ FN(_, (s, i), _) =>
         env.modStack(_ =>
-          env.copy(code = f, scope = env.scope ++ s).addCall(f).exec.stack
+          env
+            .copy(code = f, scope = env.scope ++ s, ids = env.ids ++ i)
+            .addCall(f)
+            .exec
+            .stack
         )
       case _ => env.push(x).toFN.evale
   )

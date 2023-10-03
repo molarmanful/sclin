@@ -29,7 +29,7 @@ enum ANY:
   case DBL(x: Double)
   case TF(x: Boolean)
   case CMD(x: String)
-  case FN(p: PATH, s: SCOPE, x: SEQW[ANY])
+  case FN(p: PATH, s: (SCOPE, IDS), x: SEQW[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
@@ -404,11 +404,11 @@ enum ANY:
     case Sty(x) => Parser.parse(x)
     case _      => toSEQ.xFN
 
-  def toFN(env: ENV): FN = FN(env.code.p, env.scope, xFN)
+  def toFN(env: ENV): FN = FN(env.code.p, env.scopes, xFN)
 
-  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), env.scope, xFN)
+  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), env.scopes, xFN)
 
-  def pFN(p: PATH, s: SCOPE): FN = FN(p, s, xFN)
+  def pFN(p: PATH, s: (SCOPE, IDS)): FN = FN(p, s, xFN)
 
   def toTASK: TASK = this match
     case x: TASK => x
@@ -931,14 +931,14 @@ object ANY:
 
   extension (x: Iterable[ANY])
 
-    def toSEQ: SEQ                 = SEQ(x.to(LazyList))
-    def toARR: ARR                 = ARR(x.toVector)
-    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
+    def toSEQ: SEQ                        = SEQ(x.to(LazyList))
+    def toARR: ARR                        = ARR(x.toVector)
+    def pFN(p: PATH, s: (SCOPE, IDS)): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Iterator[ANY])
 
-    def toSEQ: SEQ                 = SEQ(x.to(LazyList))
-    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
+    def toSEQ: SEQ                        = SEQ(x.to(LazyList))
+    def pFN(p: PATH, s: (SCOPE, IDS)): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 

@@ -35,7 +35,7 @@ import ANY._
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
-    code: FN = FN(PATH(None, 0), HashMap(), LazyList()),
+    code: FN = FN(PATH(None, 0), (HashMap(), HashMap()), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
     calls: SEQW[(PATH, ANY)] = LazyList(),
@@ -82,7 +82,7 @@ case class ENV(
 
   def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
 
-  def scopes: SCOPE = (gscope ++ scope).to(HashMap)
+  def scopes: (SCOPE, IDS) = (scope, ids)
 
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
@@ -159,7 +159,7 @@ case class ENV(
     this
 
   def getLoc(k: String): Option[ANY] =
-    if scopes.contains(k) then Some(scopes(k))
+    if scope.contains(k) then Some(scope(k))
     else if ids.contains(k) then Some(ids(k).l.pipe(getLineS))
     else None
 
@@ -285,7 +285,7 @@ object ENV:
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
         (PATH(f, i), (STR(x), UN))
       }),
-      FN(PATH(f, 0), HashMap(), LazyList()),
+      FN(PATH(f, 0), (HashMap(), HashMap()), LazyList()),
       eS = flags("s"),
       eV = flags("v"),
       eI = flags("i"),
