@@ -329,7 +329,7 @@ extension (env: ENV)
      */
     case "@$" => locId
     /*
-    @s (a >FN)' ->
+    @s (a >FN) ->
     Loads ID `a` into global scope.
     ```sclin
     \a @$$ ( "inner" =$a $a ) # a
@@ -338,32 +338,32 @@ extension (env: ENV)
      */
     case "@$$" => globId
     /*
-    @s (a >FN)' -> STR | UN
+    @s (a >FN) -> STR | UN
     #{@$} and get as `STR`.
      */
     case "@:" => locIdS
     /*
-    @s (a >FN)' -> STR | UN
+    @s (a >FN) -> STR | UN
     #{@$$} and get as `STR`.
      */
     case "@::" => globIdS
     /*
-    @s (a >FN)' -> FN | UN
+    @s (a >FN) -> FN | UN
     #{@$} and get as `FN`.
      */
     case "@;" => locIdF
     /*
-    @s (a >FN)' -> FN | UN
+    @s (a >FN) -> FN | UN
     #{@$$} and get as `FN`.
      */
     case "@;;" => globIdF
     /*
-    @s x* (a >FN)' -> _*
-    #{@;} and #{#}.
+    @s x* (a >FN) -> _*
+    #{@;} and #{#}
      */
     case "@#" => locIdF.eval
     /*
-    @s x* (a >FN)' -> _*
+    @s x* (a >FN) -> _*
     #{@;;} and #{#}.
      */
     case "@##" => globIdF.eval

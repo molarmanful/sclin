@@ -69,7 +69,7 @@ ${xs.map { case DocCmd(name, _, _) => s"[``` $name ```](#${cs1(name)})" }
         .mkString("\n")}
 
 
-${xs.map(_.md(cs1)).mkString("\n")}
+${xs.map(_.md(cs1).tap(println)).mkString("\n")}
 """
   }
 
