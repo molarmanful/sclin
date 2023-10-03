@@ -27,7 +27,7 @@ jobs:
       - name: generate docs
         run: ./mill sclin.cmdoc
       - name: run examples
-        run: node docr.js sclin-docs-gen/commands.md
+        run: node docr.js sclin-docs-gen/Commands.md
       - name: push to wiki
         uses: SwiftDocOrg/github-wiki-publish-action@v1
         with:

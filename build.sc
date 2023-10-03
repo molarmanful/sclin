@@ -39,7 +39,7 @@ object sclin extends ScalaModule with PublishModule {
       .pipe(docp.DocParser.parse)
       .pipe(_.md)
       .tap(_ => os.makeDir.all(os.pwd / "sclin-docs-gen"))
-      .pipe(os.write.over(os.pwd / "sclin-docs-gen" / "commands.md", _))
+      .pipe(os.write.over(os.pwd / "sclin-docs-gen" / "Commands.md", _))
   }
 
   object test extends ScalaTests with TestModule.Munit {
