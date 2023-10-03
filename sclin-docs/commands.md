@@ -692,7 +692,7 @@ Loads ID `a` into global scope.
 
 Stack: ``` (a >FN) -> STR | UN ```
 
-[``` @$$ ```](#cmd--10) and get as `STR`.
+[``` @$ ```](#cmd--9) and get as `STR`.
 
 
 ## CMD: [``` @:: ```](#cmd--12)
@@ -2156,7 +2156,7 @@ Stack: ``` a -> _ ```
 Shuffles `a`.
 ```
 10O>a shuf
--> [6 8 4 9 2 1 0 3 5 7]
+-> [3 6 1 8 7 4 5 0 9 2]
 ```
 
 
@@ -2889,7 +2889,7 @@ See [``` map ```](#cmd-map) for the signature of `f`.
 ```
 ```
 [1 2 3 4 5] \$rng sort
--> [2 4 1 3 5]
+-> [4 5 1 2 3]
 ```
 
 
