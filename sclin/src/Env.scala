@@ -35,7 +35,7 @@ import ANY._
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
-    code: FN = FN(PATH(None, 0), (HashMap(), HashMap()), LazyList()),
+    code: FN = FN(PATH(None, 0), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
     calls: SEQW[(PATH, ANY)] = LazyList(),
@@ -78,11 +78,9 @@ case class ENV(
   def trace: ENV = trace1.trace2
 
   def modCode(f: LazyList[ANY] => LazyList[ANY]): ENV =
-    copy(code = FN(code.p, code.s, f(code.x)))
+    copy(code = FN(code.p, f(code.x)))
 
   def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
-
-  def scopes: (SCOPE, IDS) = (scope, ids)
 
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
@@ -113,19 +111,23 @@ case class ENV(
   def getLineF(i: Int): ANY = getLine(i) match
     case Some(x, y) =>
       y match
-        case _: FN => y
-        case _     => x
+        case UN => x
+        case _  => y
     case _ => UN
 
   def fnLine(i: Int): ENV = getLine(i) match
-    case Some(x, y) => setLineF(i, x.lFN(i, this))
-    case _          => this
+    case Some(x, y) =>
+      val y1 = y match
+        case _: FN => y
+        case _     => x.lFN(i, this)
+      setLineF(i, y1)
+    case _ => this
 
   def loadLine(i: Int): ENV =
     fnLine(i)
     copy(code = getLineF(i) match
       case x: FN => x
-      case _     => FN(code.p, scopes, LazyList())
+      case _     => FN(code.p, LazyList())
     )
 
   def getId(c: String): PATH = lines.find { case (_, (s, _)) =>
@@ -161,8 +163,6 @@ case class ENV(
     if gscope.contains(k) then gscope.get(k)
     else if gids.contains(k) then gids.get(k).map(_.l.pipe(getLineS))
     else None
-
-  def addScope(s: SCOPE, i: IDS): ENV = copy(scope = s, ids = i)
 
   def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
 
@@ -281,7 +281,7 @@ object ENV:
       TrieMap.from(l.linesIterator.zipWithIndex.map { case (x, i) =>
         (PATH(f, i), (STR(x), UN))
       }),
-      FN(PATH(f, 0), (HashMap(), HashMap()), LazyList()),
+      FN(PATH(f, 0), LazyList()),
       eS = flags("s"),
       eV = flags("v"),
       eI = flags("i"),

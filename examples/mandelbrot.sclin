@@ -3,10 +3,10 @@
 
 #init ( a b )=.
   ( esc lim show )#.
-  $a4* O-a $a /2- D ( =$i. ) map
-    ; ~|| ~_ n>o
-      $b4* O-a $b /2- D ( $i (.)~ ) map
-        esc lim show
+  $a4* O-a $a /2- D \; map
+    =$i ; ~|| ~_ n>o
+      $b4* O-a $b /2- D \;.~Q map
+        $i esc lim show
 
 #esc ( re im )=.
   $re $im , \; itr
