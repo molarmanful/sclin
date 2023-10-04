@@ -24,6 +24,8 @@ jobs:
           java-version: 20
       - name: build
         run: ./mill sclin.assembly
+      - name: test
+        run: ./mill sclin.test
       - name: generate docs
         run: ./mill sclin.cmdoc
       - name: run examples
