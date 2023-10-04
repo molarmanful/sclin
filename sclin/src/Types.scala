@@ -104,7 +104,7 @@ enum ANY:
     case (NUM(x), _) =>
       x.compare(t.toSTR.x.map(_.toInt).applyOrElse(0, _ => 0))
     case (_, _: NUM)      => -t.cmp(this)
-    case (STR(x), STR(y)) => x.compare(y).sign
+    case (Sty(x), Sty(y)) => x.compare(y).sign
     case _                => toSTR.cmp(t.toSTR)
 
   def eql(t: ANY): Boolean = (this, t) match
@@ -162,11 +162,10 @@ enum ANY:
         this match
           case SEQ(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
-          case STR(x) =>
-            if i2 < x.length then x(i2).toString.sSTR else UN
+          case Sty(x) =>
+            if i2 < x.length then x(i2).toString.mSTR(this) else UN
           case _ => toARR.get(NUM(i2))
       case MAP(x)       => x.applyOrElse(i, _ => UN)
-      case _: CMD       => toSTR.get(i)
       case TRY(b, x, e) => if b then x else throw e
       case _            => UN
 
@@ -187,7 +186,6 @@ enum ANY:
           case _: java.lang.IndexOutOfBoundsException => this
           case e                                      => throw e
       case MAP(x) => x.+(i -> t).toMAP
-      case _: CMD => toSTR.set(i, t)
       case _      => this
 
   def sets(is: SEQW[ANY], t: ANY): ANY = is match
@@ -214,7 +212,6 @@ enum ANY:
             case _      => toARR.remove(NUM(i2)).matchType(this)
         else this
       case MAP(x) => (x - i).toMAP
-      case _: CMD => toSTR.remove(i)
       case _      => this
 
   def add$$(t: ANY): ANY = (this, t) match
@@ -232,14 +229,14 @@ enum ANY:
     case Lsy(x) => (this #:: x).mSEQ(t)
     case ARR(x) => (this +: x).toARR
     case MAP(x) => (VectorMap(get(NUM(0)) -> get(NUM(1))) ++ x).toMAP
-    case STR(x) => (toString + x).sSTR
+    case Sty(x) => (toString + x).mSTR(t)
     case _      => cons(t.toARR)
 
   def snoc(t: ANY): ANY = this match
     case Lsy(x) => (x :+ t).mSEQ(this)
     case ARR(x) => (x :+ t).toARR
     case MAP(x) => (x + (t.get(NUM(0)) -> t.get(NUM(1)))).toMAP
-    case STR(x) => (toString + x).sSTR
+    case Sty(x) => (toString + x).mSTR(this)
     case _      => toARR.snoc(t)
 
   def sub$$(t: ANY): ANY = (this, t) match
@@ -256,21 +253,21 @@ enum ANY:
     case (Itr(x), Itr(y)) => x.zip(y, _ mul$$ _).flat
     case (Lsy(_), y)      => LazyList.fill(y.toInt)(this).toSEQ.flat.matchType(this)
     case (x: ARR, y)      => Vector.fill(y.toInt)(x).toARR.flat
-    case (Sty(_), y)      => toARR.mul$$(y).toString.sSTR.matchType(this)
+    case (Sty(_), y)      => toARR.mul$$(y).toString.mSTR(this)
     case (x, y)           => Vector(x).toARR.mul$$(y)
 
   def div$$(t: ANY): ANY = this match
     case Lsy(x) => x.grouped(t.toInt).map(_.toSEQ).mSEQ(this)
     case ARR(x) => x.grouped(t.toInt).map(_.toARR).toSEQ
     case MAP(x) => x.grouped(t.toInt).map(_.toMAP).toSEQ
-    case Sty(_) => toARR.div$$(t).map(_.toString.sSTR.matchType(this)).toSEQ
+    case Sty(_) => toARR.div$$(t).map(_.toString.mSTR(this)).toSEQ
     case x      => Vector(x).toARR.div$$(t)
 
   def mod$$(t: ANY): ANY = this match
     case Lsy(x) => x.sliding(t.toInt).map(_.toSEQ).mSEQ(this)
     case ARR(x) => x.sliding(t.toInt).map(_.toARR).toSEQ
     case MAP(x) => x.sliding(t.toInt).map(_.toMAP).toSEQ
-    case Sty(_) => toARR.mod$$(t).map(_.toString.sSTR.matchType(this)).toSEQ
+    case Sty(_) => toARR.mod$$(t).map(_.toString.mSTR(this)).toSEQ
     case x      => Vector(x).toARR.mod$$(t)
 
   def take(n: Int): ANY =
@@ -280,7 +277,7 @@ enum ANY:
         case Lsy(x) => x.take(n).mSEQ(this)
         case ARR(x) => ARR(x.take(n))
         case MAP(x) => MAP(x.take(n))
-        case Sty(x) => x.take(n).sSTR.matchType(this)
+        case Sty(x) => x.take(n).mSTR(this)
         case _      => toARR.take(n)
 
   def drop(n: Int): ANY =
@@ -290,7 +287,7 @@ enum ANY:
         case Lsy(x) => x.drop(n).mSEQ(this)
         case ARR(x) => ARR(x.drop(n))
         case MAP(x) => MAP(x.drop(n))
-        case Sty(x) => x.drop(n).sSTR.matchType(this)
+        case Sty(x) => x.drop(n).mSTR(this)
         case _      => toARR.drop(n)
 
   def has(t: ANY): Boolean = this match
@@ -304,7 +301,7 @@ enum ANY:
     case Lsy(x) => Random.shuffle(x).mSEQ(this)
     case ARR(x) => Random.shuffle(x).toARR
     case MAP(x) => Random.shuffle(x).toMAP
-    case Sty(x) => Random.shuffle(x).toString.sSTR.matchType(this)
+    case Sty(x) => Random.shuffle(x).toString.mSTR(this)
     case _      => toARR.shuffle
 
   def join(s: String): String = this match
@@ -342,15 +339,19 @@ enum ANY:
     case _      => toARR.toSEQ
 
   def mSEQ(t: ANY): ANY = t match
-    case Lsy(_) => toSEQ.matchType(t)
+    case Lsy(_) => matchType(t)
     case _      => toSEQ
+
+  def mSTR(t: ANY): ANY = t match
+    case Sty(_) => matchType(t)
+    case _      => toSTR
 
   def toARR: ARR = this match
     case UN     => Vector().toARR
     case x: ARR => x
     case Lsy(x) => x.toARR
     case MAP(x) => x.toVector.map { case (i, a) => Vector(i, a).toARR }.toARR
-    case Sty(x) => x.toVector.map(c => STR(c.toString).matchType(this)).toARR
+    case Sty(x) => x.toVector.map(c => c.toString.mSTR(this)).toARR
     case _      => Vector(this).toARR
 
   def toMAP: MAP = this match
@@ -370,7 +371,7 @@ enum ANY:
         case UN     => NUM(0)
         case x: NUM => x
         case TF(x)  => x.boolNUM
-        case STR(x) => x.toNUM
+        case Sty(x) => x.toNUM
         case _      => toSTR.x.toNUM
     catch
       case e: java.lang.NumberFormatException =>
@@ -956,8 +957,9 @@ object ANY:
 
   extension (s: String)
 
-    def toNUM: NUM = NUM(Real(s))
-    def sSTR: STR  = STR(s)
+    def toNUM: NUM        = NUM(Real(s))
+    def sSTR: STR         = STR(s)
+    def mSTR(t: ANY): ANY = STR(s).matchType(t)
     def strun: ANY = s match
       case null => UN
       case _    => STR(s)
@@ -1036,7 +1038,7 @@ object ANY:
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: STR | _: FN => Some(a)
+      case Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
       case _                                => None
 
   object Lsy:
