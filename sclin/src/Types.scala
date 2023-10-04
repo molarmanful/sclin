@@ -220,8 +220,8 @@ enum ANY:
     case (MAP(x), MAP(y)) => MAP(x ++ y)
     case (Lsy(x), Itr(y)) => SEQ(x #::: y.toSEQ.x).matchType(this)
     case (Itr(x), Lsy(y)) => SEQ(x.toSEQ.x #::: y).matchType(t)
-    case (_, Its(_))      => cons(t)
     case (Its(_), _)      => snoc(t)
+    case (_, Its(_))      => cons(t)
     case (x, y)           => Vector(x).toARR.add$$(y)
 
   def cons(t: ANY): ANY = t match
