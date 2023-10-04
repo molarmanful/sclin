@@ -42,11 +42,10 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case STR(x)   => x
+    case Sty(x)   => x
     case NUM(x)   => x.toString
     case DBL(x)   => x.toString
     case FN(_, x) => x.mkString(" ")
-    case CMD(x)   => x
     case ERR(x)   => x.toString
     case _: TF    => toNUM.toString
     case _: TASK  => "(…)~"
@@ -936,16 +935,20 @@ object ANY:
 
   extension (x: Iterable[ANY])
 
-    def toSEQ: SEQ        = SEQ(x.to(LazyList))
-    def mSEQ(t: ANY): ANY = toSEQ.matchType(t)
-    def toARR: ARR        = ARR(x.toVector)
-    def pFN(p: PATH): FN  = FN(p, x.to(LazyList))
+    def toSEQ: SEQ = SEQ(x.to(LazyList))
+    def mSEQ(t: ANY): ANY = t match
+      case Lsy(_) => toSEQ.matchType(t)
+      case _      => toSEQ
+    def toARR: ARR       = ARR(x.toVector)
+    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
 
   extension (x: Iterator[ANY])
 
-    def toSEQ: SEQ        = SEQ(x.to(LazyList))
-    def mSEQ(t: ANY): ANY = toSEQ.matchType(t)
-    def pFN(p: PATH): FN  = FN(p, x.to(LazyList))
+    def toSEQ: SEQ = SEQ(x.to(LazyList))
+    def mSEQ(t: ANY): ANY = t match
+      case Lsy(_) => toSEQ.matchType(t)
+      case _      => toSEQ
+    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
 
   extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 
@@ -957,9 +960,11 @@ object ANY:
 
   extension (s: String)
 
-    def toNUM: NUM        = NUM(Real(s))
-    def sSTR: STR         = STR(s)
-    def mSTR(t: ANY): ANY = STR(s).matchType(t)
+    def toNUM: NUM = NUM(Real(s))
+    def sSTR: STR  = STR(s)
+    def mSTR(t: ANY): ANY = t match
+      case Sty(_) => sSTR.matchType(t)
+      case _      => sSTR
     def strun: ANY = s match
       case null => UN
       case _    => STR(s)
