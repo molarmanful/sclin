@@ -1,0 +1,2 @@
+[1].
+dup n>o \= pack ( \len 0.: , Q ) mapf @
