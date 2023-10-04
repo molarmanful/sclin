@@ -751,17 +751,17 @@ extension (env: ENV)
      */
     case "+`" => add$$
     /*
-    @s a b -> _
+    @s a (b _[_*]) -> _[a, b*]
     Prepends `a` to `b`.
      */
     case "<+" => cons
     /*
-    @s a b -> _
+    @s (a _[_*]) b -> _[a*, b]
     Appends `b` to `a`.
      */
     case "+>" => snoc
     /*
-    @s a -> _ _[_*]
+    @s _[a, b*] -> a _[b*]
     Uncons; push first item and rest of `a`.
      */
     case "+<" => uncons
