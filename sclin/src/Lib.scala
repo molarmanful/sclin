@@ -286,8 +286,7 @@ extension (env: ENV)
     @s -> ARR[STR*]
     `ARR` of lines of currently-executing file.
      */
-    case "$L*"  => getLns
-    case "$ENV" => getSc
+    case "$L*" => getLns
     /*
     @s -> STR
     `UPPERCASE` alphabet.
@@ -2308,7 +2307,7 @@ extension (env: ENV)
   def len: ENV = env.mod1(_.length.pipe(NUM(_)))
 
   def rep: ENV  = env.mod1(LazyList.continually(_).toSEQ)
-  def cyc: ENV  = env.mod1(LazyList.continually(_).toSEQ.flat)
+  def cyc: ENV  = env.mod1(x => LazyList.continually(x).mSEQ(x).flat)
   def ones: ENV = env.vec1(_.toInt.pipe(Vector.fill(_)(NUM(1)).toARR))
   def one$ : ENV =
     env.mod1(_.foldRight(NUM(1))((x, y) => Vector.fill(x.toInt)(y).toARR))
@@ -2362,7 +2361,7 @@ extension (env: ENV)
     x.toSEQ.x
       .map(_.toSEQ.x)
       .pipe(ANY.cProd)
-      .map(_.toSEQ.matchType(x.get(NUM(0))))
+      .map(_.mSEQ(x.get(NUM(0))))
       .toSEQ
   )
   def tpose: ENV = env.mod1(x =>
@@ -2370,7 +2369,7 @@ extension (env: ENV)
       case MAP(a) => a.values.to(LazyList)
       case _      => a.toSEQ.x
     def g(a: LazyList[ANY], b: ANY): ANY = b match
-      case _: SEQ => a.toSEQ
+      case Lsy(_) => a.mSEQ(b)
       case _: MAP => a.toARR
       case Its(_) => a.toARR.matchType(b)
       case _      => a.toARR
@@ -2491,7 +2490,7 @@ extension (env: ENV)
   def neg$ : ENV = env.str1(_.reverse)
   def neg$$ : ENV =
     def loop(t: ANY): ANY = t match
-      case Lsy(x) => x.reverse.toSEQ.matchType(t)
+      case Lsy(x) => x.reverse.mSEQ(t)
       case ARR(x) => x.reverse.toARR
       case _: MAP => loop(t.toSEQ).toMAP
       case _      => t.str1(_.reverse)
@@ -2818,7 +2817,7 @@ extension (env: ENV)
         x.toSEQ.x
           .map(_.toTASK.x)
           .pipe(f)
-          .map(_.toSEQ.matchType(x))
+          .map(_.mSEQ(x))
           .pipe(TASK(_))
       case x => x.toTASK
   def seqTASK: ENV = env.mod1(itrTASKW(_, Task.sequence))
