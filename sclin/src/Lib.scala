@@ -183,7 +183,7 @@ extension (env: ENV)
     Converts `a` from JSON to `ANY`.
     ```sclin
     g; js>
-    {"a": 1, "b": 2, "c": [3, 4]}
+    ["a": 1, "b": 2, "c": [3, 4]]:
     ```
      */
     case "js>" => fromJSON
@@ -191,7 +191,7 @@ extension (env: ENV)
     @s a -> STR
     Converts `a` from `ANY` to JSON.
     ```sclin
-    {"a" 1, "b" 2, "c" [3 4] , } >js
+    ["a" 1, "b" 2, "c" [3 4] , ]: >js
     ```
      */
     case ">js" => toJSON
@@ -1300,7 +1300,7 @@ extension (env: ENV)
     ["a" "b" "c" "d"] >kv >A
     ```
     ```sclin
-    {"x""a", "y""b", "z""c", } >kv >A
+    ["x""a", "y""b", "z""c", ]: >kv >A
     ```
      */
     case ">kv" => enumL
@@ -1316,7 +1316,7 @@ extension (env: ENV)
     @s a -> SEQ | ARR
     Keys in `a`.
     ```sclin
-    {"x" "a", "y" "b", "z" "c", } >k >A
+    ["x" "a", "y" "b", "z" "c", ]: >k >A
     ```
      */
     case ">k" => keys
@@ -1324,7 +1324,7 @@ extension (env: ENV)
     @s a -> SEQ | ARR
     Values in `a`.
     ```sclin
-    {"x""a", "y""b", "z""c", } >v >A
+    ["x""a", "y""b", "z""c", ]: >v >A
     ```
      */
     case ">v" => vals
