@@ -708,7 +708,7 @@ extension (env: ENV)
      */
     case ">n/d" => toNumDen
     /*
-    @s (a >NUM)' -> ARR[NUM NUM]'
+    @s (a >NUM)' -> TF'
     Whether `a` is an exact value (i.e. represented in full precision).
     ```sclin
     2 3/ prec?
@@ -2479,9 +2479,9 @@ extension (env: ENV)
   )
   def isInt: ENV = env.vec1(_.toNUM.x.isWhole.boolTF)
   def isExact: ENV = env.vec1(x =>
-    NUM(x.toNUM.x match
-      case Real.Exact(_) => 1
-      case _             => 0
+    TF(x.toNUM.x match
+      case Real.Exact(_) => true
+      case _             => false
     )
   )
 
@@ -2839,7 +2839,7 @@ extension (env: ENV)
         .pipe(env =>
           c match
             case STR(x) => env.push(STR(StringContext.processEscapes(x)))
-            case CMD(x) => env.wrapFN.push(CMD(x)).add$$
+            case CMD(x) => env.wrapFN.push(CMD(x)).snoc
             case _      => env.push(c)
         )
     case _ => evalLNext

@@ -1,6 +1,5 @@
 package sclin
 
-import scala.collection.immutable.VectorMap
 import scala.util.chaining._
 import ANY._
 
@@ -16,3 +15,8 @@ class ARRBrackSuite extends TU:
   "empty" |? "[]" ==> UN.toARR
   "nested" |? "[[][[]]]" ==> dARR(dARR(), dARR(dARR()))
   "open end" |? "[[][[" =*> (env => (env.arr, List(Nil, Vector(dARR()), Nil)))
+
+class DotSuite extends TU:
+
+  "dot STR" |? ".\"asdf\\njkl\"" ==> STR("asdf\njkl")
+  "dot CMD" |? "1.+" ==> dFN(0, NUM(1), CMD("+"))
