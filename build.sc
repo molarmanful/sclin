@@ -1,14 +1,17 @@
 import $file.docp
+import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
+import mill.contrib.scoverage.ScoverageModule
 import scala.util.chaining._
 import scalalib._
 import scalalib.publish._
 
-object sclin extends ScalaModule with PublishModule {
+object sclin extends ScoverageModule with PublishModule {
 
   def scalaVersion                       = "3.3.1"
+  def scoverageVersion                   = "2.0.11"
   override def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
     description = "Scala implementation of lin",
@@ -42,7 +45,7 @@ object sclin extends ScalaModule with PublishModule {
       .pipe(os.write.over(os.pwd / "sclin-docs-gen" / "Commands.md", _))
   }
 
-  object test extends ScalaTests with TestModule.Munit {
+  object test extends ScoverageTests with TestModule.Munit {
 
     def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M10")
 

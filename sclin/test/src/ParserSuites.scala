@@ -2,50 +2,50 @@ package sclin
 
 import ANY._
 
-class NumSuite extends munit.FunSuite:
+class PNumSuite extends TU:
 
-  test("integers")(assertEquals(Parser.parse("1234"), LazyList(NUM(1234))))
-  test("decimals")(assertEquals(Parser.parse("10.5"), LazyList(NUM(10.5))))
-  test("no leading zero")(
-    assertEquals(Parser.parse(".5"), LazyList(NUM(.5)))
-  )
+  "integers" =? assert(Parser.parse("1234") == LazyList(NUM(1234)))
+  "decimals" =? assert(Parser.parse("10.5") == LazyList(NUM(10.5)))
+  "no leading zero" =? assert(Parser.parse(".5") == LazyList(NUM(.5)))
 
-class StrSuite extends munit.FunSuite:
+class PStrSuite extends TU:
 
-  test("basic")(
-    assertEquals(Parser.parse("\"asdf\""), LazyList(STR("asdf")))
+  "basic" =? assert(Parser.parse("\"asdf\"") == LazyList(STR("asdf")))
+  "open end" =? assert(Parser.parse("\"asdf") == LazyList(STR("asdf")))
+  "escape" =? assert(Parser.parse("\"as\\df\"") == LazyList(STR("as\\df")))
+  "escape quote" =? assert(
+    Parser.parse("\"as\\\"df\"") == LazyList(STR("as\"df"))
   )
-  test("open end")(
-    assertEquals(Parser.parse("\"asdf"), LazyList(STR("asdf")))
-  )
-  test("escape")(
-    assertEquals(Parser.parse("\"as\\df\""), LazyList(STR("as\\df")))
-  )
-  test("escape quote")(
-    assertEquals(Parser.parse("\"as\\\"df\""), LazyList(STR("as\"df")))
+  "open ended escape" =? assert(
+    Parser.parse("\"asdf\\") == LazyList(STR("asdf\\"))
   )
 
-class CmdSuite extends munit.FunSuite:
+class PCmdSuite extends TU:
 
-  test("basic")(
-    assertEquals(Parser.parse("a$df"), LazyList(CMD("a$df")))
+  "basic" =? assert(Parser.parse("a$df") == LazyList(CMD("a$df")))
+  "brackets" =? assert(
+    Parser.parse("[{()}]") == "[{()}]".split("").to(LazyList).map(CMD(_))
   )
-  test("brackets")(
-    assertEquals(
-      Parser.parse("[{()}]"),
-      "[{()}]".split("").to(LazyList).map(CMD(_))
+
+class PDotSuite extends TU:
+
+  "basic" =? assert(Parser.parse(".") == LazyList(CMD(".")))
+  "post-num independence" =? assert(
+    Parser.parse("1.") == LazyList(NUM(1), CMD("."))
+  )
+  "independence" =? assert(
+    Parser.parse("1 .as.df") == LazyList(
+      NUM(1),
+      CMD("."),
+      CMD("as"),
+      CMD("."),
+      CMD("df")
     )
   )
 
-class DotSuite extends munit.FunSuite:
+class ParseSuite extends TU:
 
-  test("basic")(assertEquals(Parser.parse("."), LazyList(CMD("."))))
-  test("post-num independence")(
-    assertEquals(Parser.parse("1."), LazyList(NUM(1), CMD(".")))
-  )
-  test("independence")(
-    assertEquals(
-      Parser.parse("1 .as.df"),
-      LazyList(NUM(1), CMD("."), CMD("as"), CMD("."), CMD("df"))
-    )
+  "empty" =? assert(Parser.parse("") == LazyList())
+  "first line only" =? assert(
+    Parser.parse("1\nignore this") == LazyList(NUM(1))
   )
