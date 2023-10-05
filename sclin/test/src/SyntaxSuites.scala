@@ -6,9 +6,7 @@ import ANY._
 
 class LambdaSuite extends TU:
 
-  "empty" |? assertR("()", dFN(0))
-  "nested" |? assertR(
-    "(()(()))",
-    dFN(0, "()(())".map(_.toString.pipe(CMD(_)))*)
-  )
-  "singleton" |? assertR("\\asdf", dFN(0, CMD("asdf")))
+  "empty" |? "()" ==> dFN(0)
+  "singleton" |? "\\asdf" ==> dFN(0, CMD("asdf"))
+  "nested" |? "(()(()))" ==> dFN(0, "()(())".map(_.toString.pipe(CMD(_)))*)
+  "open end" |? "(()((" =*> Vector(dFN(0, CMD("("), CMD(")"), CMD("(")), dFN(0))
