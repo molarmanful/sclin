@@ -10,3 +10,9 @@ class LambdaSuite extends TU:
   "singleton" |? "\\asdf" ==> dFN(0, CMD("asdf"))
   "nested" |? "(()(()))" ==> dFN(0, "()(())".map(_.toString.pipe(CMD(_)))*)
   "open end" |? "(()((" =*> Vector(dFN(0, CMD("("), CMD(")"), CMD("(")), dFN(0))
+
+class ArrBrackSuite extends TU:
+
+  "empty" |? "[]" ==> UN.toARR
+  "nested" |? "[[][[]]]" ==> dARR(dARR(), dARR(dARR()))
+  "open end" |? "[[][[" =*> Vector()

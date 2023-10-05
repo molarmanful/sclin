@@ -6,6 +6,7 @@ trait TU extends munit.FunSuite:
 
   def dP(l: Int): PATH     = PATH(None, l)
   def dFN(l: Int, x: ANY*) = FN(dP(l), LazyList(x*))
+  def dARR(x: ANY*)        = ARR(Vector(x*))
 
   extension (s: String)
 

@@ -787,7 +787,7 @@ extension (env: ENV)
     [1 2 3 4] 2-`
     ```
     ```sclin
-    {0 1, 2 3, } 2-`
+    [0 1, 2 3, ]: 2-`
     ```
      */
     case "-`" => sub$$
@@ -1632,7 +1632,7 @@ extension (env: ENV)
     [1 2 3 4] 1.+ map
     ```
     ```sclin
-    {0 1, 2 3, 4 5, } ( over + ) map
+    [0 1, 2 3, 4 5, ]: ( over + ) map
     ```
      */
     case "map" => map
@@ -1663,7 +1663,7 @@ extension (env: ENV)
     [1 2 3 4] [2 3] \+ zip
     ```
     ```sclin
-    [1 2 3 4] {1 "a", 3 "b", "x" "c", } \, zip
+    [1 2 3 4] [1 "a", 3 "b", "x" "c", ]: \, zip
     ```
      */
     case "zip" => zip
@@ -1678,7 +1678,7 @@ extension (env: ENV)
     [1 2 3 4] [2 3] UN UN \+ zip~
     ```
     ```sclin
-    [1 2 3 4] {1 "a", 3 "b", "x" "c", } UN UN \, zip~
+    [1 2 3 4] [1 "a", 3 "b", "x" "c", ]: UN UN \, zip~
     ```
      */
     case "zip~" => zip$
@@ -1794,10 +1794,10 @@ extension (env: ENV)
     @s a f' -> _'
     A multi-purpose function for creating, modifying, and traversing nested structures.
     ```sclin
-    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dups f>o ) walk
+    [[1 2] 3 4 [ "a" 5, "b" [6 7] , ]: ] ( dups f>o ) walk
     ```
     ```sclin
-    [[1 2] 3 4 { "a" 5, "b" [6 7] , }] ( dup len 0> ( dup +` ) &# ) walk
+    [[1 2] 3 4 [ "a" 5, "b" [6 7] , ]: ] ( dup len 0> ( dup +` ) &# ) walk
     ```
      */
     case "walk" => walk
