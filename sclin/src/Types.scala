@@ -160,7 +160,7 @@ enum ANY:
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         this match
-          case SEQ(x) => x.applyOrElse(i2, _ => UN)
+          case Lsy(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case Sty(x) =>
             if i2 < x.length then x(i2).toString.mSTR(this) else UN
