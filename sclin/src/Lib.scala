@@ -183,7 +183,7 @@ extension (env: ENV)
     Converts `a` from JSON to `ANY`.
     ```sclin
     g; js>
-    ["a": 1, "b": 2, "c": [3, 4]]:
+    {"a": 1, "b": 2, "c": [3, 4]}
     ```
      */
     case "js>" => fromJSON
