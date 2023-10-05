@@ -10,6 +10,9 @@ trait TU extends munit.FunSuite:
 
   extension (s: String)
 
-    def |?(x: => Boolean): Unit    = test(s)(assert(x))
-    def ==>(x: ANY): Boolean       = ENV.run(s).getStack(0) == x
-    def =*>(x: ARRW[ANY]): Boolean = ENV.run(s).stack == x
+    def |?(x: => (Any, Any)): Unit = x match
+      case (a, b) => test(s)(assertEquals(a, b))
+    def |??(x: => Boolean): Unit  = test(s)(assert(x))
+    def ==>(x: ANY)               = (ENV.run(s).getStack(0), x)
+    def =+>(x: ARRW[ANY])         = (ENV.run(s).stack, x)
+    def =*>(f: ENV => (Any, Any)) = f(ENV.run(s))
