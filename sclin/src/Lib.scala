@@ -67,8 +67,7 @@ extension (env: ENV)
     case ")="  => lambda
     case "["   => startARR
     case "]"   => endARR
-    case "{"   => startARR
-    case "}"   => endMAP
+    case "]:"  => endMAP
     case "."   => dot
 
     /*
@@ -226,7 +225,7 @@ extension (env: ENV)
     @s -> MAP
     Empty `MAP`.
      */
-    case "{}" => env.push(UN.toMAP)
+    case "[]:" => env.push(UN.toMAP)
     /*
     @s -> TASK
     Empty `TASK`.
