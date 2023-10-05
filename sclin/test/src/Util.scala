@@ -10,4 +10,4 @@ trait TU extends munit.FunSuite:
   def dP(l: Int): PATH     = PATH(None, l)
   def dFN(l: Int, x: ANY*) = FN(dP(l), LazyList(x*))
 
-  extension (s: String) def =?(x: => Any): Unit = test(s)(x)
+  extension (s: String) def |?(x: => Any): Unit = test(s)(x)
