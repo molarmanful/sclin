@@ -1054,9 +1054,19 @@ extension (env: ENV)
     case "=" => eql
     /*
     @s a b -> TF
-    Whether `a` equals `b`.
+    Whether `a` loosely equals `b`.
      */
     case "=`" => eql$$
+    /*
+    @s a' b' -> TF'
+    Atomic #{==`}.
+     */
+    case "==" => eqls
+    /*
+    @s a b -> TF
+    Whether `a` strictly equals `b`.
+     */
+    case "==`" => eql$$
     /*
     @s a' b' -> TF'
     Atomic #{!=`}.
@@ -1064,9 +1074,19 @@ extension (env: ENV)
     case "!=" => neq
     /*
     @s a b -> TF
-    Whether `a` does not equals `b`.
+    Whether `a` does not loosely equal `b`.
      */
     case "!=`" => neq$$
+    /*
+    @s a' b' -> TF'
+    Atomic #{!=`}.
+     */
+    case "!==" => neqs
+    /*
+    @s a b -> TF
+    Whether `a` does not loosely equal `b`.
+     */
+    case "!==`" => neqs$$
     /*
     @s a' b' -> TF'
     Atomic #{<`}.
@@ -2622,10 +2642,14 @@ extension (env: ENV)
   def gteq$$ : ENV = env.arg2((x, y, env) =>
     env.pushs(Vector(x, y)).gt$$.pushs(Vector(x, y)).eql$$.or
   )
-  def eql: ENV    = env.vec2(_.eql(_).boolTF)
-  def eql$$ : ENV = env.mod2(_.eql(_).boolTF)
-  def neq: ENV    = eql.not
-  def neq$$ : ENV = eql$$.not
+  def eql: ENV     = env.vec2(_.eql(_).boolTF)
+  def eql$$ : ENV  = env.mod2(_.eql(_).boolTF)
+  def eqls: ENV    = env.vec2(_.eqls(_).boolTF)
+  def eqls$$ : ENV = env.mod2(_.eqls(_).boolTF)
+  def neq: ENV     = eql.not
+  def neq$$ : ENV  = eql$$.not
+  def neqs: ENV    = eqls.not
+  def neqs$$ : ENV = eqls$$.not
 
   def SIG_1f1(f: ANY)(a: ANY): ANY     = env.evalA1(Vector(a), f)
   def SIG_1f_(f: ANY)(a: ANY): ANY     = SIG_1f1(f)(a).pipe(_ => a)

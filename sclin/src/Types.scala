@@ -83,8 +83,10 @@ enum ANY:
     case _     => toString
 
   def cmp(t: ANY): Int = (this, t) match
+    case (UN, UN)                 => 0
     case (UN, _)                  => -1
     case (_, UN)                  => 1
+    case (TF(x), TF(y)) if x == y => 0
     case (TF(x), _)               => if x then 1 else -1
     case (_, TF(x))               => -t.cmp(this)
     case (Itr(x), _) if !x.toBool => NUM(0).cmp(t)
@@ -106,9 +108,8 @@ enum ANY:
     case (Sty(x), Sty(y)) => x.compare(y).sign
     case _                => toSTR.cmp(t.toSTR)
 
-  def eql(t: ANY): Boolean = (this, t) match
-    case (Nmy(_), Nmy(_)) => cmp(t) == 0
-    case _                => this == t
+  def eql(t: ANY): Boolean  = cmp(t) == 0
+  def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
 
   def toBool: Boolean = this match
     case TF(x)        => x
