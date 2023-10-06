@@ -68,6 +68,8 @@ extension (env: ENV)
     case "["   => startARR
     case "]"   => endARR
     case "]:"  => endMAP
+    case "]="  => endMAP.sets
+    case "]%"  => endMAP.setmods
     case "."   => dot
 
     /*
@@ -1154,7 +1156,7 @@ extension (env: ENV)
      */
     case ":=" => set
     /*
-    @s a b (i >SEQ) -> x
+    @s a (m >MAP) -> x
     #{:=} with `i` folded over `a`.
      */
     case ":/=" => sets
@@ -1164,7 +1166,7 @@ extension (env: ENV)
      */
     case ":%" => setmod
     /*
-    @s a b (i >SEQ) -> x
+    @s a (m >MAP[(_ => (_ >FN))*]) -> x
     #{:%} with `i` folded over `a`.
      */
     case ":/%" => setmods
@@ -1325,7 +1327,7 @@ extension (env: ENV)
      */
     case ">kv" => enumL
     /*
-    @s a -> MAP[(_ => _)*]
+    @s a -> MAP
     #{>kv} and #{>M}.
     ```sclin
     ["a" "b" "c" "d"] =>kv
@@ -2312,11 +2314,12 @@ extension (env: ENV)
   def gets: ENV   = env.mod2(_.gets(_))
 
   def set: ENV  = env.mod3((x, y, i) => x.set(i, y))
-  def sets: ENV = env.mod3((x, y, i) => x.sets(i.toSEQ.x, y))
+  def sets: ENV = env.mod2((x, y) => x.sets(y.toMAP.x))
   def setmod: ENV =
     env.mod3((x, f, i) => x.setmod(i, a => env.evalA1(Vector(a), f)))
-  def setmods: ENV =
-    env.mod3((x, f, i) => x.setmods(i.toSEQ.x, a => env.evalA1(Vector(a), f)))
+  def setmods: ENV = env.mod2((x, y) =>
+    x.setmods(y.toMAP.x.map { case (k, v) => (k, SIG_1f1(_: ANY)(v)) })
+  )
 
   def idel: ENV = env.mod2(_.remove(_))
 

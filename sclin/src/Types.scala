@@ -188,16 +188,15 @@ enum ANY:
       case MAP(x) => x.+(i -> t).toMAP
       case _      => this
 
-  def sets(is: SEQW[ANY], t: ANY): ANY = is match
-    case LazyList()  => this
-    case LazyList(i) => set(i, t)
-    case i #:: is    => setmod(i, _.sets(is, t))
+  def sets(is: Map[ANY, ANY]): ANY = is.foldLeft(this) { case (a, (i, t)) =>
+    a.set(i, t)
+  }
 
   def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
 
-  def setmods(is: SEQW[ANY], f: ANY => ANY): ANY = is match
-    case LazyList() => f(this)
-    case i #:: is   => setmod(i, if is.isEmpty then f else _.setmods(is, f))
+  def setmods(is: Map[ANY, ANY => ANY]) = is.foldLeft(this) {
+    case (a, (i, f)) => a.setmod(i, f)
+  }
 
   def remove(i: ANY): ANY =
     val oi = i.optI
