@@ -68,6 +68,10 @@ extension (env: ENV)
     case "["   => startARR
     case "]"   => endARR
     case "]:"  => endMAP
+    case "/]"  => endARR.getn
+    case "/]=" => endARR.setn
+    case "/]%" => endARR.setmodn
+    case "]*"  => endMAP.gets
     case "]="  => endMAP.sets
     case "]%"  => endMAP.setmods
     case "."   => dot
@@ -1146,10 +1150,15 @@ extension (env: ENV)
      */
     case ":`" => get$$
     /*
+    @s a (i >MAP) -> x
+    #{:`} with `i` mapped over `a`.
+     */
+    case ":*" => gets
+    /*
     @s a b (i >SEQ) -> x
     #{:`} with `i` folded over `a`.
      */
-    case ":/" => gets
+    case ":/" => getn
     /*
     @s a b i -> x
     Sets value at index `i` in `a` to `b`.
@@ -1157,19 +1166,29 @@ extension (env: ENV)
     case ":=" => set
     /*
     @s a (m >MAP) -> x
+    #{:=} with `i` mapped over `a`.
+     */
+    case ":*=" => sets
+    /*
+    @s a b (i >SEQ) -> x
     #{:=} with `i` folded over `a`.
      */
-    case ":/=" => sets
+    case ":/=" => setn
     /*
-    @s a f i -> x
+    @s a (f >FN) i -> x
     Modifies value at index `i` using `f`.
      */
     case ":%" => setmod
     /*
     @s a (m >MAP[(_ => (_ >FN))*]) -> x
+    #{:%} with `i` mapped over `a`.
+     */
+    case ":*%" => setmods
+    /*
+    @s a (f >FN) (i >SEQ) -> x
     #{:%} with `i` folded over `a`.
      */
-    case ":/%" => setmods
+    case ":/%" => setmodn
     /*
     @s a i -> x
     Removes index `i` from `a`.
@@ -2312,14 +2331,18 @@ extension (env: ENV)
   def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
   def get$$ : ENV = env.mod2(_.get(_))
   def gets: ENV   = env.mod2(_.gets(_))
+  def getn: ENV   = env.mod2(_.getn(_))
 
   def set: ENV  = env.mod3((x, y, i) => x.set(i, y))
   def sets: ENV = env.mod2((x, y) => x.sets(y.toMAP.x))
+  def setn: ENV = env.mod3((x, y, i) => x.setn(i.toSEQ.x, y))
+
   def setmod: ENV =
-    env.mod3((x, f, i) => x.setmod(i, a => env.evalA1(Vector(a), f)))
+    env.mod3((x, f, i) => x.setmod(i, a => SIG_1f1(f)(a)))
   def setmods: ENV = env.mod2((x, y) =>
     x.setmods(y.toMAP.x.map { case (k, v) => (k, SIG_1f1(_: ANY)(v)) })
   )
+  def setmodn: ENV = env.mod3((x, f, i) => x.setmodn(i.toSEQ.x, SIG_1f1(f)))
 
   def idel: ENV = env.mod2(_.remove(_))
 

@@ -169,7 +169,9 @@ enum ANY:
       case TRY(b, x, e) => if b then x else throw e
       case _            => UN
 
-  def gets(is: ANY): ANY = is.foldLeft(this)(_.get(_))
+  def gets(is: ANY): ANY = is.map(get)
+
+  def getn(is: ANY): ANY = is.foldLeft(this)(_.get(_))
 
   def set(i: ANY, t: ANY): ANY =
     val oi = i.optI
@@ -192,11 +194,21 @@ enum ANY:
     a.set(i, t)
   }
 
+  def setn(is: SEQW[ANY], t: ANY): ANY = is match
+    case LazyList()  => this
+    case LazyList(i) => set(i, t)
+    case i #:: is    => setmod(i, _.setn(is, t))
+
   def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
 
   def setmods(is: Map[ANY, ANY => ANY]) = is.foldLeft(this) {
     case (a, (i, f)) => a.setmod(i, f)
   }
+
+  def setmodn(is: SEQW[ANY], f: ANY => ANY): ANY = is match
+    case LazyList()  => f(this)
+    case LazyList(i) => setmod(i, f)
+    case i #:: is    => setmod(i, _.setmodn(is, f))
 
   def remove(i: ANY): ANY =
     val oi = i.optI
