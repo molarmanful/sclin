@@ -236,7 +236,7 @@ enum ANY:
     case Lsy(x) => (x :+ t).mSEQ(this)
     case ARR(x) => (x :+ t).toARR
     case MAP(x) => (x + (t.get(NUM(0)) -> t.get(NUM(1)))).toMAP
-    case Sty(x) => (toString + x).mSTR(this)
+    case Sty(x) => (x + t.toString).mSTR(this)
     case _      => toARR.snoc(t)
 
   def sub$$(t: ANY): ANY = (this, t) match

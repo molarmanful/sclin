@@ -1,5 +1,6 @@
 package sclin
 
+import scala.collection.immutable.VectorMap
 import ANY._
 
 trait TU extends munit.FunSuite:
@@ -8,6 +9,7 @@ trait TU extends munit.FunSuite:
   def dFN(l: Int, x: ANY*) = FN(dP(l), LazyList(x*))
   def dARR(x: ANY*)        = ARR(Vector(x*))
   def dSEQ(x: ANY*)        = SEQ(LazyList(x*))
+  def dMAP(x: (ANY, ANY)*) = MAP(VectorMap(x*))
 
   extension (s: String)
 
