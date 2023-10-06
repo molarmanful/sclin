@@ -57,6 +57,14 @@ class ConcatSuite extends TU:
   )
   "_ ++ _" |? "1 2+`" ==> dARR(NUM(1), NUM(2))
 
-class TakeSuite extends TU
+class TakeSuite extends TU:
 
-class DropSuite extends TU
+  "take 0" |? "[1 2 3] 0tk" ==> dARR()
+  "take n" |? "[1 2 3] 2tk" ==> dARR(NUM(1), NUM(2))
+  "take -n" |? "[1 2 3] 2_ tk" ==> dARR(NUM(2), NUM(3))
+
+class DropSuite extends TU:
+
+  "drop 0" |? "[1 2 3] 0dp" ==> dARR(NUM(1), NUM(2), NUM(3))
+  "drop n" |? "[1 2 3] 2dp" ==> dARR(NUM(3))
+  "drop -n" |? "[1 2 3] 2_ dp" ==> dARR(NUM(1))
