@@ -16,6 +16,7 @@ trait TU extends munit.FunSuite:
     def |?(x: => (Any, Any)): Unit = x match
       case (a, b) => test(s)(assertEquals(a, b))
     def |??(x: => Boolean): Unit  = test(s)(assert(x))
+    def |?|(x: String): Unit      = test(s)(assert(ENV.run(s).getStack(0).toBool))
     def ==>(x: ANY)               = (ENV.run(s).getStack(0), x)
     def =+>(x: ARRW[ANY])         = (ENV.run(s).stack, x)
     def =*>(f: ENV => (Any, Any)) = f(ENV.run(s))
