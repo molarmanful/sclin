@@ -7,7 +7,7 @@
 Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
 ```
-101I>a >A \; tap
+100I-a \; tap
   "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
 ```
 

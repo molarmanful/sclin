@@ -1,0 +1,4 @@
+; 100tk n>< n>o
+  $N ["""""Fizz"] [""]4*`"Buzz"+>.
+  \cyc.map '_ ++.
+  ( dup \pop |# ) zip.
