@@ -1,24 +1,24 @@
 30=$n.
-"Ixs"@# =$ixs.
-$n "Grid"@#.
+"Grid"@#.
 "loop"@#
 
-#Grid O>a 2^` ( 0 1, :r , ) map >M
+#Grid $n O>a 2^` ( 0 1, :r , ) map >M
 
 #loop.
   ( show next )#.
-  show $n next @
+  "Mrns"@# =$mrns.
+  show next @
 
-#next ( grid n )=.
+#next =$grid.
   $grid (( k v )=.) map
-    $ixs $k.+ map $n %.
+    $mrns $k.+ map $n %.
     ( $grid swap :` ) map +/.
-    3 4, = ,_ $v * - abs.
+    3 4, = ,_ $v & |.
     $k swap
 
-#Ixs 2O-a1- 2^` >A
+#Mrns 2O-a1- 2^` >A
 
 #show dup.
   ."\u001b[H\u001b[J">o.
   0 $n *` ,, $n *` ( rot :/= ) fold.
-  ".#"swap : ( w>< n>o ) tap pop
+  "·#"swap : ( w>< n>o ) tap pop
