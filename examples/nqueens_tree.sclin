@@ -7,12 +7,12 @@
   ( free show )#.
   $m $n = ( $b (.) $n *` show end ) &#.
   $a ( 0: $m = ) part.
-  ,_ \; <+ tap
+  ,_.; tap
     swap 1.: Q $b +`.
     \free dip $m1+ branch
 
 #free.
-  \; <+ fltr
+  .; fltr
     ddup != &/ rot_ - abs ,_ != &
 
 #show =$x.
