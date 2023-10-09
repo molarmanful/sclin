@@ -10,8 +10,8 @@
 ]:
 
 #eval.
-  $code over"i": : dup =$c ( ; @ ) &#
-    $fns $c : #.
+  $code over"i": : ( ; @ ) &&#
+    $fns swap : #.
     1.+ "i":%
 
 #Fns [.

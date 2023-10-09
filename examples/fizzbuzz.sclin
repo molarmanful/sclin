@@ -1,2 +1,2 @@
 100I-a \; tap
-  "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
+  "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o

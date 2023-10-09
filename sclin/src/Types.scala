@@ -168,14 +168,34 @@ enum ANY:
   def rank: Int  = shape.length
   def depth: Int = dshape.length
 
-  def reshape(t: ANY): ANY =
-    val t1 = t.rflat.toARR.x.map(_.toInt)
+  def reshape(t: Vector[Int]): ANY =
     def loop(a: Vector[Int])(b: ANY): ANY = a match
       case x +: xs => b.div$$(b.length / x).map(loop(xs)).mItr(this)
       case _       => b
-    loop(t1.init)(
-      LazyList.continually(rflat).toSEQ.flat.take(t1.product).mItr(this)
-    )
+    t match
+      case xs :+ _ =>
+        val a = flat.rflat
+        val a1 =
+          if a.toBool then LazyList.continually(a).toSEQ.flat
+          else LazyList.continually(UN).toSEQ
+        loop(xs)(a1.take(t.product).mItr(this))
+      case _ => this
+
+  def paxes: ANY = paxes$(shape.indices.reverse.toVector)
+
+  def paxes$(p: Vector[Int]): ANY =
+    val s  = shape
+    val pg = p.indices.sortBy(p).to(LazyList) #::: LazyList.continually(-1)
+    val p1 = s.indices
+      .lazyZip(pg)
+      .map { case (a, b) => if b < 0 then a else b }
+      .to(LazyList)
+    val s1 = p1.map(s)
+    cProd(s1.map(0.until(_).to(LazyList)))
+      .map(a => getn(p1.map(i => NUM(a(i))).toSEQ))
+      .toSEQ
+      .mItr(this)
+      .reshape(s1.toVector)
 
   def get(i: ANY): ANY =
     val oi = i.optI
@@ -484,6 +504,10 @@ enum ANY:
   def mItr(a: ANY): ANY = a match
     case Lsy(_) | Itr(_) => matchType(a)
     case _               => toARR
+
+  def mIts(a: ANY): ANY = a match
+    case Its(_) => matchType(a)
+    case _      => toARR
 
   def map(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.map(f).mSEQ(this)

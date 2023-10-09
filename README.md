@@ -8,7 +8,7 @@ Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
 
 ```
 100I-a \; tap
-  "Fizz""Buzz", over 3 5, % ! *` dup \pop |# n>o
+  "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o
 ```
 
 [Try it on scline!](https://scline.fly.dev/##H4sIAAY3AWUCAzM0MPS0S1SIsVYoSSzgUlBQcsusqlJScioFkjoK.WWpRQrGCqY6CqoKigpaCQoppQUKMQX5BQo1ygp5dvkAKdsWfD4AAAA#)

@@ -588,9 +588,23 @@ extension (env: ENV)
     case "&#" => evalAnd
     /*
     @s a* (b >TF) f -> _*
+    Non-destructive #{&#};
+    executes `f` on `b` if `b` is truthy,
+    otherwise keeps `b` on stack.
+     */
+    case "&&#" => evalAnd$
+    /*
+    @s a* (b >TF) f -> _*
     #{#}s `f` if `b` is falsy.
      */
     case "|#" => evalOr
+    /*
+    @s a* (b >TF) f -> _*
+    Non-destructive #{|#};
+    executes `f` on `b` if `b` is falsy,
+    otherwise keeps `b` on stack.
+     */
+    case "||#" => evalOr$
     /*
     @s a* (b >TF) f g -> _*
     #{#}s `f` if `b` is truthy; else #{#}s `g`.
@@ -1485,6 +1499,7 @@ extension (env: ENV)
     /*
     @s a[_*] -> _[_*]
     Transposes a collection of collections matrix-style.
+    Safe for infinite lists.
     ```sclin
     [[1 2 3][4 5 6][7 8 9]] tpose
     ```
@@ -1492,7 +1507,10 @@ extension (env: ENV)
     [[1 2][3 4 5][6]] tpose
     ```
      */
-    case "tpose" => tpose
+    case "tpose" => transpose
+    // TODO: docs
+    case "paxes"  => paxes
+    case "paxes~" => paxes$
     /*
     @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
     Atomic #{pad`}.
@@ -2190,8 +2208,16 @@ extension (env: ENV)
   def getLPrev: ENV  = env.push(NUM(-1)).getLRel
   def evalAnd: ENV =
     env.arg2((x, f, env) => if x.toBool then env.push(f).eval else env)
+  def evalAnd$ : ENV = env.arg2((x, f, env) =>
+    val env1 = env.push(x)
+    if x.toBool then env1.push(f).eval else env1
+  )
   def evalOr: ENV =
     env.arg2((x, f, env) => if x.toBool then env else env.push(f).eval)
+  def evalOr$ : ENV = env.arg2((x, f, env) =>
+    val env1 = env.push(x)
+    if x.toBool then env1 else env1.push(f).eval
+  )
   def evalIf: ENV =
     env.arg3((x, f, g, env) => env.push(if x.toBool then f else g).eval)
   def evalIf$ : ENV =
@@ -2375,7 +2401,7 @@ extension (env: ENV)
   def len: ENV     = env.mod1(_.length.pipe(NUM(_)))
   def shape: ENV   = env.mod1(_.shape.map(NUM(_)).toARR)
   def dshape: ENV  = env.mod1(_.dshape.map(NUM(_)).toARR)
-  def reshape: ENV = env.mod2(_.reshape(_))
+  def reshape: ENV = env.mod2(_ reshape _.toARR.x.map(_.toInt))
   def rank: ENV    = env.mod1(_.rank.pipe(NUM(_)))
   def depth: ENV   = env.mod1(_.depth.pipe(NUM(_)))
 
@@ -2434,10 +2460,10 @@ extension (env: ENV)
     x.toSEQ.x
       .map(_.toSEQ.x)
       .pipe(ANY.cProd)
-      .map(_.mSEQ(x.get(NUM(0))))
+      .map(_.toSEQ.mIts(x.get(NUM(0))))
       .toSEQ
   )
-  def tpose: ENV = env.mod1(x =>
+  def transpose: ENV = env.mod1(x =>
     def f(a: ANY): LazyList[ANY] = a match
       case MAP(a) => a.values.to(LazyList)
       case _      => a.toSEQ.x
@@ -2452,6 +2478,8 @@ extension (env: ENV)
       .map(g(_, x))
       .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
   )
+  def paxes: ENV   = env.mod1(_.paxes)
+  def paxes$ : ENV = env.mod2(_ paxes$ _.toARR.x.map(_.toInt))
 
   def padH(f: (String, Int, String) => String): ENV = env.vec3((x, y, z) =>
     val x1 = x.toString
