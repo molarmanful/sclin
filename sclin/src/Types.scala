@@ -170,17 +170,11 @@ enum ANY:
 
   def reshape(t: ANY): ANY =
     val t1 = t.rflat.toARR.x.map(_.toInt)
-    def loop(a: ANY, b: Vector[Int]): ANY = b match
-      case x +: xs => a.div$$(a.length / x).map(loop(_, xs)).mItr(this)
-      case _       => a
-    loop(
-      LazyList
-        .continually(rflat)
-        .toSEQ
-        .flat
-        .take(t1.product)
-        .mItr(this),
-      t1.init
+    def loop(a: Vector[Int])(b: ANY): ANY = a match
+      case x +: xs => b.div$$(b.length / x).map(loop(xs)).mItr(this)
+      case _       => b
+    loop(t1.init)(
+      LazyList.continually(rflat).toSEQ.flat.take(t1.product).mItr(this)
     )
 
   def get(i: ANY): ANY =
