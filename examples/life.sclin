@@ -13,7 +13,7 @@
   $grid (( k v )=.) map
     $mrns $k.+ map $n %.
     ( $grid swap :` ) map +/.
-    3 4, = ,_ $v & |.
+    3 4, = ,_ $v && ||.
     $k swap
 
 #Mrns 2O-a1- 2^` >A
