@@ -4,3 +4,4 @@ molarmanful/scline:
     deleteOrphaned: true
     exclude: |
       mandelbrot.sclin
+      life.sclin
