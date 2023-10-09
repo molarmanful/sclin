@@ -7,8 +7,7 @@ $n "Grid"@#.
 
 #loop.
   ( show next )#.
-  ; @
-  show $n next
+  show $n next @
 
 #next ( grid n )=.
   $grid (( k v )=.) map
