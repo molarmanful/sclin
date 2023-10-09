@@ -2,7 +2,7 @@
 "Grid"@#.
 "loop"@#
 
-#Grid $n O>a 2^` ( 0 1, :r , ) map >M
+#Grid $n O>a 2^` ( $F $T , :r , ) map >M
 
 #loop.
   ( show next )#.

@@ -570,6 +570,17 @@ enum ANY:
     case Itr(_) => mapM((k, v) => (k, v.rmap(f)), _.rmap(f))
     case x      => f(x)
 
+  def dmap(d: Int, f: ANY => ANY): ANY =
+    if d == 0 then rmap(f)
+    else
+      def loop(i: Int, t: ANY): ANY = t match
+        case Itr(_) if i > 0 =>
+          t.mapM((k, v) => (k, loop(i - 1, v)), loop(i - 1, _))
+        case Itr(_) if i < 0 && -i < t.depth =>
+          t.mapM((k, v) => (k, loop(i, v)), loop(i, _))
+        case _ => f(t)
+      loop(d, this)
+
   def toShape(t: ANY): ANY =
     val q = toSEQ.rflat.toSEQ.x
     var f = LazyList.continually(q).flatten
