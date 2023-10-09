@@ -1211,6 +1211,29 @@ extension (env: ENV)
      */
     case "len" => len
     /*
+    @s a -> ARR[NUM]
+    Shape of `a`, i.e. #{len} of each dimension of `a`.
+    Determined by first element of each dimension.
+     */
+    case "shape" => shape
+    /*
+    @s a -> ARR[NUM]
+    #{shape} but recursively maximizes lengths and depth
+    instead of just using the first element.
+     */
+    case "shape^" => dshape
+    case "shape=" => reshape
+    /*
+    @s a -> NUM
+    #{len} of #{shape} of `a`.
+     */
+    case "rank" => rank
+    /*
+    @s a -> NUM
+    #{len} of #{shape^} of `a`.
+     */
+    case "rank^" => depth
+    /*
     @s a b -> ARR[a b]
     Pairs `a` and `b` in an `ARR`.
      */
@@ -2349,7 +2372,12 @@ extension (env: ENV)
   def has: ENV    = env.mod2((x, y) => y.vec1(x.has(_).boolTF))
   def has$$ : ENV = env.mod2(_.has(_).boolTF)
 
-  def len: ENV = env.mod1(_.length.pipe(NUM(_)))
+  def len: ENV     = env.mod1(_.length.pipe(NUM(_)))
+  def shape: ENV   = env.mod1(_.shape.map(NUM(_)).toARR)
+  def dshape: ENV  = env.mod1(_.dshape.map(NUM(_)).toARR)
+  def reshape: ENV = env.mod2(_.reshape(_))
+  def rank: ENV    = env.mod1(_.rank.pipe(NUM(_)))
+  def depth: ENV   = env.mod1(_.depth.pipe(NUM(_)))
 
   def rep: ENV  = env.mod1(LazyList.continually(_).toSEQ)
   def cyc: ENV  = env.mod1(x => LazyList.continually(x).mSEQ(x).flat)
@@ -2568,7 +2596,7 @@ extension (env: ENV)
     "bad /~"
   )
   def div$ : ENV  = env.strnumq((x, y) => x.grouped(y.intValue).to(LazyList))
-  def div$$ : ENV = env.mod2((x, y) => y.vec1(x div$$ _))
+  def div$$ : ENV = env.mod2((x, y) => y.vec1(x div$$ _.toInt))
 
   def mod: ENV = env.num2(
     _.fmod(_),

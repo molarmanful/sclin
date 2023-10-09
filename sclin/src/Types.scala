@@ -153,6 +153,36 @@ enum ANY:
     case Sty(x) => x.length
     case _      => -1
 
+  def shape: Vector[Int] = this match
+    case Itr(x) => x.length +: x.get(NUM(0)).shape
+    case _      => Vector()
+
+  def dshape: Vector[Int] = this match
+    case Itr(x) =>
+      x.length +: x.foldLeft(Vector[Int]())((a, b) =>
+        val b1 = b.dshape
+        if a.length < b1.length then b1 else a
+      )
+    case _ => Vector()
+
+  def rank: Int  = shape.length
+  def depth: Int = dshape.length
+
+  def reshape(t: ANY): ANY =
+    val t1 = t.rflat.toARR.x.map(_.toInt)
+    def loop(a: ANY, b: Vector[Int]): ANY = b match
+      case x +: xs => a.div$$(a.length / x).map(loop(_, xs)).mItr(this)
+      case _       => a
+    loop(
+      LazyList
+        .continually(rflat)
+        .toSEQ
+        .flat
+        .take(t1.product)
+        .mItr(this),
+      t1.init
+    )
+
   def get(i: ANY): ANY =
     val oi = i.optI
     this match
@@ -267,10 +297,10 @@ enum ANY:
     case (Sty(_), y)      => toARR.mul$$(y).toString.mSTR(this)
     case (x, y)           => Vector(x).toARR.mul$$(y)
 
-  def div$$(t: ANY): ANY = this match
-    case Lsy(x) => x.grouped(t.toInt).map(_.toSEQ).mSEQ(this)
-    case ARR(x) => x.grouped(t.toInt).map(_.toARR).toSEQ
-    case MAP(x) => x.grouped(t.toInt).map(_.toMAP).toSEQ
+  def div$$(t: Int): ANY = this match
+    case Lsy(x) => x.grouped(t).map(_.toSEQ).mSEQ(this)
+    case ARR(x) => x.grouped(t).map(_.toARR).toSEQ
+    case MAP(x) => x.grouped(t).map(_.toMAP).toSEQ
     case Sty(_) => toARR.div$$(t).map(_.toString.mSTR(this)).toSEQ
     case x      => Vector(x).toARR.div$$(t)
 
@@ -452,6 +482,14 @@ enum ANY:
     case _: TRY   => toTRY
     case _: ERR   => toERR
     case UN       => UN
+
+  def toItr: ANY = this match
+    case Lsy(_) | Itr(_) => this
+    case _               => toARR
+
+  def mItr(a: ANY): ANY = a match
+    case Lsy(_) | Itr(_) => matchType(a)
+    case _               => toARR
 
   def map(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.map(f).mSEQ(this)
@@ -1033,9 +1071,9 @@ object ANY:
         STR("$") -> NUM(m.end)
       ).toMAP
 
-  extension (x: Double) def toDBL = DBL(x)
+  extension (n: Double) def toDBL: DBL = DBL(n)
 
-  extension (n: Real) def toNUM = NUM(n)
+  extension (n: Real) def toNUM: NUM = NUM(n)
 
   /** Pattern for `SEQ`-like. */
   object Itr:
