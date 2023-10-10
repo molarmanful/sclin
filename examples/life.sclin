@@ -18,4 +18,3 @@
 #show dup.
   ."\u001b[H\u001b[J">o.
   "·#"swap : ( w>< n>o ) tap pop.
-  "" $L* <+ n>< n>o
