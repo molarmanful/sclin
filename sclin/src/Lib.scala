@@ -2198,7 +2198,7 @@ extension (env: ENV)
     case Some(x) => STR(x.toString)
     case _       => UN
   )
-  def getLns: ENV    = env.push(env.lines.map { case (_, (l, _)) => l }.toARR)
+  def getLns: ENV    = env.push(env.lines.toSeq.sortBy(_._1._2).map(_._2._1).toARR)
   def evalLRel: ENV  = getLNum.add.evalLine
   def evalLHere: ENV = env.push(NUM(0)).evalLRel
   def evalLNext: ENV = env.push(NUM(1)).evalLRel
@@ -2232,10 +2232,10 @@ extension (env: ENV)
     )
   def evalTimes: ENV =
     env.arg2((f, n, env) =>
-      def loop(env: ENV, n: NUMF): ENV =
-        if n.compare(0) > 0 then loop(env.push(f).evale, n - 1)
+      def loop(env: ENV, n: Int): ENV =
+        if n > 0 then loop(env.push(f).evale, n - 1)
         else env
-      loop(env, n.toNUM.x)
+      loop(env, n.toInt)
     )
   def evalTry: ENV = env.arg2((f, g, env) =>
     try env.push(f).evale

@@ -1,24 +1,21 @@
-30=$n.
-"Grid"@#.
-"loop"@#
+30=$n "Grid"@# "loop"@#
 
-#Grid $n O>a 2^` ( $F $T , :r , ) map >M
+#Grid $F $n *` dup ( \! $rng |~ *# ) tbl
 
 #loop.
-  ( show next )#.
-  "Mrns"@# =$mrns.
-  show next @
+  ( show prop next )#.
+  (.)~ 50sleep , ~|| ~_ 0: \clr dip @
+    show prop next
 
-#next =$grid.
-  $grid (( k v )=.) map
-    $mrns $k.+ map $n %.
-    ( $grid swap :` ) map +/.
-    3 4, = ,_ $v && ||.
-    $k swap
+#prop dup.
+  \; 2*#
+    [ 1_.roll_.' () 1_.roll.' ].
+    map \+ fold~ paxes
 
-#Mrns 2O-a1- 2^` >A
+#next.
+  dup , 3 4, = ,_ rot && ||.
 
 #show dup.
   ."\u001b[H\u001b[J">o.
-  0 $n *` ,, $n *` ( rot :/= ) fold.
-  "·#"swap : ( w>< n>o ) tap pop
+  "·#"swap : ( w>< n>o ) tap pop.
+  "" $L* <+ n>< n>o
