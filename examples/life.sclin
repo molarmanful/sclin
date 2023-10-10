@@ -17,4 +17,4 @@
 
 #show dup.
   ."\u001b[H\u001b[J">o.
-  "·#"swap : ( w>< n>o ) tap pop.
+  "·#"swap : ( w>< n>o ) tap pop
