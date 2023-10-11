@@ -311,19 +311,19 @@ enum ANY:
     case (Sty(_), y)      => toARR.mul$$(y).toString.mSTR(this)
     case (x, y)           => Vector(x).toARR.mul$$(y)
 
-  def div$$(t: Int): ANY = this match
-    case Lsy(x) => x.grouped(t).map(_.toSEQ).mSEQ(this)
-    case ARR(x) => x.grouped(t).map(_.toARR).toSEQ
-    case MAP(x) => x.grouped(t).map(_.toMAP).toSEQ
-    case Sty(_) => toARR.div$$(t).map(_.toString.mSTR(this)).toSEQ
-    case x      => Vector(x).toARR.div$$(t)
+  def div$$(n: Int): ANY = this match
+    case Lsy(x) => x.grouped(n).map(_.toSEQ).mSEQ(this)
+    case ARR(x) => x.grouped(n).map(_.toARR).toSEQ
+    case MAP(x) => x.grouped(n).map(_.toMAP).toSEQ
+    case Sty(_) => toARR.div$$(n).map(_.toString.mSTR(this)).toSEQ
+    case x      => Vector(x).toARR.div$$(n)
 
-  def mod$$(t: ANY): ANY = this match
-    case Lsy(x) => x.sliding(t.toInt).map(_.toSEQ).mSEQ(this)
-    case ARR(x) => x.sliding(t.toInt).map(_.toARR).toSEQ
-    case MAP(x) => x.sliding(t.toInt).map(_.toMAP).toSEQ
-    case Sty(_) => toARR.mod$$(t).map(_.toString.mSTR(this)).toSEQ
-    case x      => Vector(x).toARR.mod$$(t)
+  def mod$$(n: Int): ANY = this match
+    case Lsy(x) => x.sliding(n).map(_.toSEQ).mSEQ(this)
+    case ARR(x) => x.sliding(n).map(_.toARR).toSEQ
+    case MAP(x) => x.sliding(n).map(_.toMAP).toSEQ
+    case Sty(_) => toARR.mod$$(n).map(_.toString.mSTR(this)).toSEQ
+    case x      => Vector(x).toARR.mod$$(n)
 
   def take(n: Int): ANY =
     if n < 0 && length != 0 then drop(length + n)
@@ -544,6 +544,20 @@ enum ANY:
             case _           => None
         }.toMAP
       case _ => flatMap$(g)
+  def winMap(n: Int, f: ARRW[ANY] => ANY): ANY =
+    mod$$(n).map(_.toARR.x.pipe(f)).mIts(this)
+  def winMapM(n: Int, f: ARRW[ANY] => (ANY, ANY), g: ARRW[ANY] => ANY): ANY =
+    this match
+      case _: MAP =>
+        mod$$(n)
+          .map(_ match
+            case MAP(x) =>
+              x.keys.++(x.values).pipe(f) match
+                case (k, v) => Vector(k, v).toARR
+            case _ => ???
+          )
+          .toMAP
+      case _ => winMap(n, g)
   def flat: ANY = flatMap(x => x)
   def rflat: ANY = this match
     case Itr(_) => flatMap(_.rflat)

@@ -1735,6 +1735,14 @@ extension (env: ENV)
      */
     case "mapf" => flatMap
     /*
+    @s a f' (n >NUM)' -> _'
+    `n`-wise reduction of `f` over `a`.
+    ```sclin
+    [1 2 3 4] \+ 2%map
+    ```
+     */
+    case "%map" => winMap
+    /*
     @s a b (f: x y -> _)' -> _'
     #{Q}s `f` over each element-wise pair of `a` and `b`.
     Iterables of differing length truncate to the shorter length when zipped.
@@ -2637,7 +2645,7 @@ extension (env: ENV)
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
   )
   def mod$ : ENV  = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
-  def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _))
+  def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _.toInt))
 
   def pow: ENV = env.num2(
     _.fpow(_),
@@ -2760,6 +2768,9 @@ extension (env: ENV)
     env.mod2((x, y) => y.vec1(f => x.mapM(SIG_2f_(f), SIG_1f_(f))))
   def flatMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.flatMapM(SIG_2f1(f), SIG_1f1(f))))
+  def winMap: ENV = env.mod3((x, y, z) =>
+    y.vec2(z, (f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
+  )
   def flat: ENV  = env.mod1(_.flat)
   def rflat: ENV = env.mod1(_.rflat)
   def rmap: ENV  = env.mod2((x, y) => y.vec1(f => x.rmap(SIG_1f1(f))))
