@@ -1149,6 +1149,42 @@ extension (env: ENV)
     case ">=`" => gt$$
 
     /*
+    @s (a >NUM)' -> NUM'
+    Bitwise NOT.
+     */
+    case "b~" => bNOT
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise AND.
+     */
+    case "b&" => bAND
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise OR.
+     */
+    case "b|" => bOR
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise XOR.
+     */
+    case "b^" => bXOR
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise LSHIFT.
+     */
+    case "b<<" => bLSH
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise RSHIFT.
+     */
+    case "b>>" => bRSH
+    /*
+    @s (a >NUM)' (b >NUM)' -> NUM'
+    Bitwise unsigned RSHIFT.
+     */
+    case "b>>>" => bURSH
+
+    /*
     @s a i' -> (a._ | UN)'
     Value at atomic index `i` in `a`.
      */
@@ -2742,6 +2778,21 @@ extension (env: ENV)
   def neq$$ : ENV  = eql$$.not
   def neqs: ENV    = eqls.not
   def neqs$$ : ENV = eqls$$.not
+
+  def bhelp1(f: Long => Long, g: SafeLong => NUMF): ENV =
+    env.num1(_.toLong.pipe(f).toDouble, _.toSafeLong.pipe(g))
+  def bhelp2(f: (Long, Long) => Long, g: (SafeLong, SafeLong) => NUMF): ENV =
+    env.num2(
+      (a, b) => f(a.toLong, b.toLong).toDouble,
+      (a, b) => g(a.toSafeLong, b.toSafeLong)
+    )
+  def bNOT: ENV  = bhelp1(~_, ~_.toBigInt)
+  def bAND: ENV  = bhelp2(_ & _, _ & _)
+  def bOR: ENV   = bhelp2(_ | _, _ | _)
+  def bXOR: ENV  = bhelp2(_ ^ _, _ ^ _)
+  def bLSH: ENV  = bhelp2(_ << _, _ << _.toInt)
+  def bRSH: ENV  = bhelp2(_ >> _, _ >> _.toInt)
+  def bURSH: ENV = bhelp2(_ >>> _, _.toLong >>> _.toLong)
 
   def SIG_1f1(f: ANY)(a: ANY): ANY     = env.evalA1(Vector(a), f)
   def SIG_1f_(f: ANY)(a: ANY): ANY     = SIG_1f1(f)(a).pipe(_ => a)
