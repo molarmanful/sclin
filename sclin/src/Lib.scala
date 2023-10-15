@@ -402,6 +402,7 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
+    case "/>"  => fread
     /*
     @s a -> a a
      */
@@ -2383,6 +2384,8 @@ extension (env: ENV)
 
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
+
+  def fread: ENV = env.mod1(x => os.read(x.toPath).toString.sSTR)
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)

@@ -42,18 +42,14 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case Sty(x)   => x
-    case NUM(x)   => x.toString
-    case DBL(x)   => x.toString
-    case FN(_, x) => x.mkString(" ")
-    case ERR(x)   => x.toString
-    case _: TF    => toNUM.toString
-    case _: TASK  => "(…)~"
-    case FUT(x) =>
-      s"(${x.value match
-          case Some(t) => t.toTRY.toForm
-          case _       => "…"
-        })~>"
+    case Sty(x)       => x
+    case NUM(x)       => x.toString
+    case DBL(x)       => x.toString
+    case FN(_, x)     => x.mkString(" ")
+    case ERR(x)       => x.toString
+    case _: TF        => toNUM.toString
+    case FUT(x)       => Await.result(x, Duration.Inf).toString
+    case _: TASK      => toFUT.toString
     case TRY(b, x, e) => (if b then x else e).toString
     case UN           => ""
     case _            => join("")
@@ -78,9 +74,15 @@ enum ANY:
     case TRY(b, x, e) =>
       if b then s"YES(${x.toForm})"
       else s"NO(${ERR(e).toForm})"
-    case TF(x) => if x then "$T" else "$F"
-    case UN    => "UN"
-    case _     => toString
+    case TF(x)   => if x then "$T" else "$F"
+    case _: TASK => "(…)~"
+    case FUT(x) =>
+      s"(${x.value match
+          case Some(t) => t.toTRY.toForm
+          case _       => "…"
+        })~>"
+    case UN => "UN"
+    case _  => toString
 
   def cmp(t: ANY): Int = (this, t) match
     case (UN, UN)                 => 0
@@ -508,6 +510,10 @@ enum ANY:
   def mIts(a: ANY): ANY = a match
     case Its(_) => matchType(a)
     case _      => toARR
+
+  def toPath: os.Path = this match
+    case Itr(_) | _: FN => foldLeft(os.pwd)((a, b) => os.Path(b.toPath, a))
+    case _              => os.Path(toString, os.pwd)
 
   def map(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.map(f).mSEQ(this)
@@ -1124,6 +1130,12 @@ object ANY:
     def unapply(a: ANY): Option[ANY] = a match
       case _: SEQ | _: ARR | _: MAP => Some(a)
       case _                        => None
+
+  object Fnr:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case Itr(_) | _: TASK | _: FUT | _: TRY => Some(a)
+      case _                                  => None
 
   /** Pattern for strict `SEQ`-like. */
   object It:
