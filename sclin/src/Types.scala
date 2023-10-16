@@ -3,6 +3,7 @@ package sclin
 import monix.eval.Task
 import monix.execution.CancelableFuture
 import monix.execution.Scheduler.Implicits.global
+import monix.reactive.Observable
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
@@ -58,8 +59,8 @@ enum ANY:
     case _: SEQ => s"[…]"
     case ARR(x) => s"[${x.map(_.toForm).mkString(" ")}]"
     case MAP(x) =>
-      s"{${x.toSeq.map { case (i, a) => i.toForm + "=>" + a.toForm }
-          .mkString(" ")}}"
+      s"[${x.toSeq.map { case (i, a) => i.toForm + "=>" + a.toForm }
+          .mkString(" ")}]:"
     case STR(x) =>
       s"\"${x.map {
           case '\n' => "\\n"
@@ -472,16 +473,16 @@ enum ANY:
 
   def toTASK: TASK = this match
     case x: TASK => x
-    case FUT(x)  => Task.fromFuture(x).pipe(TASK(_))
-    case x       => Task.pure(x).pipe(TASK(_))
+    case FUT(x)  => Task.fromFuture(x).toTASK
+    case x       => Task.pure(x).toTASK
 
   def modTASK(f: Task[ANY] => Task[ANY]): TASK =
-    toTASK.x.pipe(f).pipe(TASK(_))
+    toTASK.x.pipe(f).toTASK
 
   def toFUT: FUT = this match
     case x: FUT  => x
-    case TASK(x) => x.runToFuture.pipe(FUT(_))
-    case x       => CancelableFuture.pure(x).pipe(FUT(_))
+    case TASK(x) => x.runToFuture.toFUT
+    case x       => CancelableFuture.pure(x).toFUT
 
   def matchType(a: ANY): ANY = a match
     case FN(p, _) => pFN(p)
@@ -511,15 +512,17 @@ enum ANY:
     case Its(_) => matchType(a)
     case _      => toARR
 
-  def toPath: os.Path = this match
-    case Itr(_) | _: FN => foldLeft(os.pwd)((a, b) => os.Path(b.toPath, a))
-    case _              => os.Path(toString, os.pwd)
+  def toPath: os.Path = os.Path(toFilePath, os.pwd)
+
+  def toFilePath: os.FilePath = this match
+    case Itr(_) | _: FN => foldLeft(os.pwd)((a, b) => os.Path(b.toFilePath, a))
+    case _              => os.FilePath(toString)
 
   def map(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.map(f).mSEQ(this)
     case ARR(x)  => x.map(f).toARR
-    case TASK(x) => x.map(f).pipe(TASK(_))
-    case FUT(x)  => x.map(f).pipe(FUT(_))
+    case TASK(x) => x.map(f).toTASK
+    case FUT(x)  => x.map(f).toFUT
     case x: TRY  => x.toTry.map(f).toTRY
     case _       => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
@@ -529,8 +532,8 @@ enum ANY:
   def flatMap(f: ANY => ANY): ANY = this match
     case Lsy(x)  => x.flatMap(f(_).toSEQ.x).mSEQ(this)
     case ARR(x)  => x.flatMap(f(_).toARR.x).toARR
-    case TASK(x) => x.flatMap(f(_).toTASK.x).pipe(TASK(_))
-    case FUT(x)  => x.map(f).pipe(FUT(_))
+    case TASK(x) => x.flatMap(f(_).toTASK.x).toTASK
+    case FUT(x)  => x.flatMap(f(_).toFUT.x).toFUT
     case x: TRY  => x.toTry.flatMap(f(_).toTry).toTRY
     case _       => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
@@ -570,10 +573,9 @@ enum ANY:
     case x      => x
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (Lsy(x), _)   => x.zip(t.toSEQ.x).map(f.tupled).mSEQ(this)
-    case (_, Lsy(_))   => toSEQ.zip(t, f).mSEQ(t)
-    case (FN(p, x), _) => x.lazyZip(t.toARR.x).map(f).pFN(p)
-    case _             => toARR.x.lazyZip(t.toARR.x).map(f).toARR
+    case (Lsy(x), _) => x.zip(t.toSEQ.x).map(f.tupled).mSEQ(this)
+    case (_, Lsy(_)) => toSEQ.zip(t, f).mSEQ(t)
+    case _           => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -1123,6 +1125,12 @@ object ANY:
   extension (n: Double) def toDBL: DBL = DBL(n)
 
   extension (n: Real) def toNUM: NUM = NUM(n)
+
+  extension [T](o: Observable[T]) def toL: List[T] = o.toListL.runSyncUnsafe()
+
+  extension (t: Task[ANY]) def toTASK: TASK = TASK(t)
+
+  extension (t: FUTW[ANY]) def toFUT: FUT = FUT(t)
 
   /** Pattern for `SEQ`-like. */
   object Itr:

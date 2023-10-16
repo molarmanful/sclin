@@ -1,6 +1,7 @@
 package sclin
 
 import monix.eval.Task
+import monix.nio.file._
 import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
@@ -273,6 +274,11 @@ extension (env: ENV)
      */
     case "$FILE" => getLFile
     /*
+    @s -> STR
+    Current working directory of program execution.
+     */
+    case "$CWD" => env.push(os.pwd.toString.sSTR)
+    /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of 0 to ∞.
      */
@@ -402,7 +408,7 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
-    case "/>"  => fread
+    case "fs>" => fread
     /*
     @s a -> a a
      */
@@ -2385,7 +2391,8 @@ extension (env: ENV)
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
-  def fread: ENV = env.mod1(x => os.read(x.toPath).toString.sSTR)
+  def fread: ENV = ???
+  // env.mod1(x => readAsync(x.toPath.toNIO))
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
@@ -2986,13 +2993,13 @@ extension (env: ENV)
           .map(_.toTASK.x)
           .pipe(f)
           .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
-          .pipe(TASK(_))
+          .toTASK
       case Itr(x) =>
         x.toSEQ.x
           .map(_.toTASK.x)
           .pipe(f)
           .map(_.mSEQ(x))
-          .pipe(TASK(_))
+          .toTASK
       case x => x.toTASK
   def seqTASK: ENV = env.mod1(itrTASKW(_, Task.sequence))
   def parTASK: ENV = env.mod1(itrTASKW(_, Task.parSequence))
@@ -3000,11 +3007,11 @@ extension (env: ENV)
     env.mod2((x, n) => itrTASKW(x, Task.parSequenceN(n.toInt)))
   def parunTASK: ENV = env.mod1(itrTASKW(_, Task.parSequenceUnordered))
   def raceTASK: ENV =
-    env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).pipe(TASK(_)))
+    env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).toTASK)
 
   def sleep: ENV = env.vec1(n =>
     val n1 = n.toNUM.x.toLong
-    n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).pipe(TASK(_))
+    n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).toTASK
   )
 
   def dot: ENV = env.code.x match
