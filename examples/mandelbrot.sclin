@@ -1,9 +1,9 @@
-15 30"init"@#
+15 30"init"@# ~_
 
 #init ( a b )=.
   ( esc lim show )#.
-  $a4* O-a $a /2- D \; map
-    =$i ; ~|| ~_ n>o
+  $a4* O-a $a /2- D \; map ~|>
+    =$i ; ~|| \n>o tap
       $b4* O-a $b /2- D \;.~Q map
         $i esc lim show
 

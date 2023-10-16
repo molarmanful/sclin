@@ -5,7 +5,7 @@
 
 #branch ( a b m )=.
   ( free show )#.
-  $m $n = ( $b (.) $n *` show end ) &#.
+  $m $n = ( $b \· $n *` show end ) &#.
   $a ( 0: $m = ) part.
   ,_.; tap
     swap 1.: Q $b +`.
