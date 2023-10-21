@@ -4,8 +4,9 @@ import scala.annotation._
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.util.chaining._
+import scala.util.Success
+import scala.util.Failure
 import ANY._
-
 /** A single step in the execution of a lin program.
   *
   * @param lines
@@ -235,12 +236,13 @@ case class ENV(
   )
 
   def execA(c: ANY): ENV = c match
-    case CMD(x)       => this.cmd(x)
-    case _: TASK      => push(c.toFUT)
-    case _: FUT       => push(c).await
-    case TRY(b, x, e) => if b then push(x) else throw e
-    case ERR(x)       => throw x
-    case _            => push(c)
+    case CMD(x)          => this.cmd(x)
+    case _: TASK         => push(c.toFUT)
+    case _: FUT          => push(c).await
+    case TRY(Success(x)) => push(x)
+    case TRY(Failure(e)) => throw e
+    case ERR(e)          => throw e
+    case _               => push(c)
 
   @tailrec final def exec: ENV = code.x match
     case LazyList() => this

@@ -34,7 +34,7 @@ enum ANY:
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
-  case TRY(b: Boolean, x: ANY, e: Throwable)
+  case TRY(x: Try[ANY])
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -43,17 +43,18 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case Sty(x)       => x
-    case NUM(x)       => x.toString
-    case DBL(x)       => x.toString
-    case FN(_, x)     => x.mkString(" ")
-    case ERR(x)       => x.toString
-    case _: TF        => toNUM.toString
-    case FUT(x)       => Await.result(x, Duration.Inf).toString
-    case _: TASK      => toFUT.toString
-    case TRY(b, x, e) => (if b then x else e).toString
-    case UN           => ""
-    case _            => join("")
+    case Sty(x)          => x
+    case NUM(x)          => x.toString
+    case DBL(x)          => x.toString
+    case FN(_, x)        => x.mkString(" ")
+    case ERR(x)          => x.toString
+    case _: TF           => toNUM.toString
+    case FUT(x)          => Await.result(x, Duration.Inf).toString
+    case _: TASK         => toFUT.toString
+    case TRY(Success(x)) => x.toString
+    case TRY(Failure(e)) => e.toString
+    case UN              => ""
+    case _               => join("")
 
   def toForm: String = this match
     case _: SEQ => s"[…]"
@@ -71,12 +72,11 @@ enum ANY:
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(…)$n"
-    case ERR(x) => s"ERR(${x.getMessage})"
-    case TRY(b, x, e) =>
-      if b then s"YES(${x.toForm})"
-      else s"NO(${ERR(e).toForm})"
-    case TF(x)   => if x then "$T" else "$F"
-    case _: TASK => "(…)~"
+    case ERR(x)          => s"ERR(${x.getMessage})"
+    case TRY(Success(x)) => s"YES(${x.toForm})"
+    case TRY(Failure(e)) => s"NO(${ERR(e).toForm})"
+    case TF(x)           => if x then "$T" else "$F"
+    case _: TASK         => "(…)~"
     case FUT(x) =>
       s"(${x.value match
           case Some(t) => t.toTRY.toForm
@@ -115,29 +115,30 @@ enum ANY:
   def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
 
   def toBool: Boolean = this match
-    case TF(x)        => x
-    case SEQ(x)       => !x.isEmpty
-    case ARR(x)       => !x.isEmpty
-    case MAP(x)       => !x.isEmpty
-    case STR(x)       => !x.isEmpty
-    case NUM(x)       => !eql(NUM(0))
-    case DBL(x)       => !eql(DBL(0))
-    case CMD(x)       => !x.isEmpty
-    case FN(_, x)     => !x.isEmpty
-    case _: ERR       => false
-    case TRY(b, _, _) => b
-    case FUT(x)       => x.isCompleted && x.value.get.isSuccess
-    case _: TASK      => true
-    case UN           => false
+    case TF(x)           => x
+    case SEQ(x)          => !x.isEmpty
+    case ARR(x)          => !x.isEmpty
+    case MAP(x)          => !x.isEmpty
+    case STR(x)          => !x.isEmpty
+    case NUM(x)          => !eql(NUM(0))
+    case DBL(x)          => !eql(DBL(0))
+    case CMD(x)          => !x.isEmpty
+    case FN(_, x)        => !x.isEmpty
+    case _: ERR          => false
+    case TRY(Success(_)) => true
+    case TRY(Failure(_)) => false
+    case FUT(x)          => x.isCompleted && x.value.get.isSuccess
+    case _: TASK         => true
+    case UN              => false
 
   def toTF: TF = this match
     case x: TF => x
     case _     => toBool.boolTF
 
   def toTry: Try[ANY] = this match
-    case TRY(b, x, e) => if b then Success(x) else Failure(e)
-    case ERR(x)       => Failure(x)
-    case x            => Success(x)
+    case TRY(x) => x
+    case ERR(e) => Failure(e)
+    case x      => Success(x)
 
   def toJSON: ujson.Value = this match
     case MAP(x) => x.map { case (k, v) => (k.toString, v.toJSON) }
@@ -212,9 +213,10 @@ enum ANY:
           case Sty(x) =>
             if i2 < x.length then x(i2).toString.mSTR(this) else UN
           case _ => toARR.get(NUM(i2))
-      case MAP(x)       => x.applyOrElse(i, _ => UN)
-      case TRY(b, x, e) => if b then x else throw e
-      case _            => UN
+      case MAP(x)          => x.applyOrElse(i, _ => UN)
+      case TRY(Success(x)) => x
+      case TRY(Failure(e)) => throw e
+      case _               => UN
 
   def gets(is: ANY): ANY = is.map(get)
 
@@ -523,7 +525,7 @@ enum ANY:
     case ARR(x)  => x.map(f).toARR
     case TASK(x) => x.map(f).toTASK
     case FUT(x)  => x.map(f).toFUT
-    case x: TRY  => x.toTry.map(f).toTRY
+    case TRY(x)  => x.map(f).toTRY
     case _       => toARR.map(f)
   def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map(f.tupled).toMAP
@@ -534,7 +536,7 @@ enum ANY:
     case ARR(x)  => x.flatMap(f(_).toARR.x).toARR
     case TASK(x) => x.flatMap(f(_).toTASK.x).toTASK
     case FUT(x)  => x.flatMap(f(_).toFUT.x).toFUT
-    case x: TRY  => x.toTry.flatMap(f(_).toTry).toTRY
+    case TRY(x)  => x.flatMap(f(_).toTry).toTRY
     case _       => toARR.flatMap(f)
   def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
@@ -1070,11 +1072,7 @@ object ANY:
       case null => UN
       case _    => STR(s)
 
-  extension (t: Try[ANY])
-
-    def toTRY: TRY = t match
-      case Success(s) => TRY(true, s, LinEx("_", ""))
-      case Failure(e) => TRY(false, UN, e)
+  extension (t: Try[ANY]) def toTRY: TRY = TRY(t)
 
   extension (t: Throwable)
 
