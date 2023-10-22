@@ -4,9 +4,10 @@ import scala.annotation._
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.util.chaining._
-import scala.util.Success
 import scala.util.Failure
+import scala.util.Success
 import ANY._
+
 /** A single step in the execution of a lin program.
   *
   * @param lines

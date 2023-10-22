@@ -1,6 +1,7 @@
 package sclin
 
 import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
 import monix.nio.file._
 import scala.annotation._
 import scala.collection.immutable.VectorMap
@@ -328,6 +329,11 @@ extension (env: ENV)
     Newline character.
      */
     case "n\\" => env.push(STR("\n"))
+    /*
+    @s -> NUM
+    Number of milliseconds since UNIX epoch (January 1, 1970 00:00:00 UTC).
+     */
+    case "$NOW" => env.push(NUM(global.clockRealTime(MILLISECONDS)))
 
     /*
     @s (a >FN)' ->
