@@ -1,5 +1,6 @@
 package sclin
 
+import cats.kernel.Eq
 import monix.eval.Task
 import monix.execution.CancelableFuture
 import monix.execution.Scheduler.Implicits.global
@@ -35,6 +36,7 @@ enum ANY:
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
   case TRY(x: Try[ANY])
+  case OBS(x: Observable[ANY])
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -43,14 +45,16 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case Sty(x)          => x
-    case NUM(x)          => x.toString
-    case DBL(x)          => x.toString
-    case FN(_, x)        => x.mkString(" ")
-    case ERR(x)          => x.toString
-    case _: TF           => toNUM.toString
-    case FUT(x)          => Await.result(x, Duration.Inf).toString
+    case Sty(x)   => x
+    case NUM(x)   => x.toString
+    case DBL(x)   => x.toString
+    case FN(_, x) => x.mkString(" ")
+    case ERR(x)   => x.toString
+    case _: TF    => toNUM.toString
+    case FUT(x) =>
+      x.value.map(_.toTRY.toString).getOrElse("")
     case _: TASK         => toFUT.toString
+    case OBS(x)          => x.headOrElseL(UN).toTASK.toString
     case TRY(Success(x)) => x.toString
     case TRY(Failure(e)) => e.toString
     case UN              => ""
@@ -77,6 +81,7 @@ enum ANY:
     case TRY(Failure(e)) => s"NO(${ERR(e).toForm})"
     case TF(x)           => if x then "$T" else "$F"
     case _: TASK         => "(…)~"
+    case _: OBS          => "[…]~"
     case FUT(x) =>
       s"(${x.value match
           case Some(t) => t.toTRY.toForm
@@ -115,21 +120,21 @@ enum ANY:
   def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
 
   def toBool: Boolean = this match
-    case TF(x)           => x
-    case SEQ(x)          => !x.isEmpty
-    case ARR(x)          => !x.isEmpty
-    case MAP(x)          => !x.isEmpty
-    case STR(x)          => !x.isEmpty
-    case NUM(x)          => !eql(NUM(0))
-    case DBL(x)          => !eql(DBL(0))
-    case CMD(x)          => !x.isEmpty
-    case FN(_, x)        => !x.isEmpty
-    case _: ERR          => false
-    case TRY(Success(_)) => true
-    case TRY(Failure(_)) => false
-    case FUT(x)          => x.isCompleted && x.value.get.isSuccess
-    case _: TASK         => true
-    case UN              => false
+    case TF(x)            => x
+    case SEQ(x)           => !x.isEmpty
+    case ARR(x)           => !x.isEmpty
+    case MAP(x)           => !x.isEmpty
+    case STR(x)           => !x.isEmpty
+    case NUM(x)           => !eql(NUM(0))
+    case DBL(x)           => !eql(DBL(0))
+    case CMD(x)           => !x.isEmpty
+    case FN(_, x)         => !x.isEmpty
+    case _: ERR           => false
+    case TRY(Success(_))  => true
+    case TRY(Failure(_))  => false
+    case _: TASK | _: OBS => true
+    case FUT(x)           => x.isCompleted && x.value.get.isSuccess
+    case UN               => false
 
   def toTF: TF = this match
     case x: TF => x
@@ -156,6 +161,8 @@ enum ANY:
     case MAP(x) => x.size
     case Sty(x) => x.length
     case _      => -1
+
+  def olength: Task[Long] = toOBS.x.countL
 
   def shape: Vector[Int] = this match
     case Itr(x) => x.length +: x.get(NUM(0)).shape
@@ -208,6 +215,7 @@ enum ANY:
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         this match
+          case OBS(x) => x.drop(i2).headOrElseL(UN).toTASK
           case Lsy(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case Sty(x) =>
@@ -230,6 +238,7 @@ enum ANY:
         val i2 = if i1 < 0 then i1 + length else i1
         try
           this match
+            case OBS(x) => x.take(i2).:+(t).++(x.drop(i2 + 1)).toOBS
             case Lsy(x) => x.updated(i2, t).mSEQ(this)
             case ARR(x) => x.updated(i2, t).toARR
             case _      => toARR.set(NUM(i2), t).matchType(this)
@@ -267,6 +276,7 @@ enum ANY:
         val i2 = if i1 < 0 then i1 + length else i1
         if i2 >= 0 then
           this match
+            case OBS(x) => x.take(i2).++(x.drop(i2 + 1)).toOBS
             case Lsy(x) => x.patch(i2, Nil, 1).mSEQ(this)
             case ARR(x) => x.patch(i2, Nil, 1).toARR
             case _      => toARR.remove(NUM(i2)).matchType(this)
@@ -277,6 +287,7 @@ enum ANY:
   def add$$(t: ANY): ANY = (this, t) match
     case (UN, y)          => y
     case (x, UN)          => x
+    case (OBS(x), OBS(y)) => OBS(x ++ y)
     case (ARR(x), ARR(y)) => ARR(x ++ y)
     case (MAP(x), MAP(y)) => MAP(x ++ y)
     case (Lsy(x), Itr(y)) => SEQ(x #::: y.toSEQ.x).matchType(this)
@@ -286,6 +297,7 @@ enum ANY:
     case (x, y)           => Vector(x).toARR.add$$(y)
 
   def cons(t: ANY): ANY = t match
+    case OBS(x) => (this +: x).toOBS
     case Lsy(x) => (this #:: x).mSEQ(t)
     case ARR(x) => (this +: x).toARR
     case MAP(x) => (VectorMap(get(NUM(0)) -> get(NUM(1))) ++ x).toMAP
@@ -293,6 +305,7 @@ enum ANY:
     case _      => cons(t.toARR)
 
   def snoc(t: ANY): ANY = this match
+    case OBS(x) => (x :+ t).toOBS
     case Lsy(x) => (x :+ t).mSEQ(this)
     case ARR(x) => (x :+ t).toARR
     case MAP(x) => (x + (t.get(NUM(0)) -> t.get(NUM(1)))).toMAP
@@ -300,8 +313,11 @@ enum ANY:
     case _      => toARR.snoc(t)
 
   def sub$$(t: ANY): ANY = (this, t) match
-    case (UN, y)          => y
-    case (x, UN)          => x
+    case (UN, y) => y
+    case (x, UN) => x
+    case (OBS(x), OBS(y)) =>
+      x.filterEval(a => y.findL(_ == a).map(_ != None)).toOBS
+    case (OBS(x), y)      => x.filterNot(y.has).toOBS
     case (Lsy(x), Itr(y)) => x.filterNot(y.has).mSEQ(this)
     case (ARR(x), Itr(y)) => x.filterNot(y.has).toARR
     case (MAP(x), MAP(y)) => y.foldLeft(x)(_ - _._1).toMAP
@@ -317,23 +333,26 @@ enum ANY:
     case (x, y)           => Vector(x).toARR.mul$$(y)
 
   def div$$(n: Int): ANY = this match
+    case OBS(x) => x.bufferTumbling(n).map(_.toARR).toOBS
     case Lsy(x) => x.grouped(n).map(_.toSEQ).mSEQ(this)
     case ARR(x) => x.grouped(n).map(_.toARR).toSEQ
     case MAP(x) => x.grouped(n).map(_.toMAP).toSEQ
     case Sty(_) => toARR.div$$(n).map(_.toString.mSTR(this)).toSEQ
     case x      => Vector(x).toARR.div$$(n)
 
-  def mod$$(n: Int): ANY = this match
-    case Lsy(x) => x.sliding(n).map(_.toSEQ).mSEQ(this)
-    case ARR(x) => x.sliding(n).map(_.toARR).toSEQ
-    case MAP(x) => x.sliding(n).map(_.toMAP).toSEQ
-    case Sty(_) => toARR.mod$$(n).map(_.toString.mSTR(this)).toSEQ
-    case x      => Vector(x).toARR.mod$$(n)
+  def mod$$(n: Int, k: Int = 1): ANY = this match
+    case OBS(x) => x.bufferSliding(n, k).map(_.toARR).toOBS
+    case Lsy(x) => x.sliding(n, k).map(_.toSEQ).mSEQ(this)
+    case ARR(x) => x.sliding(n, k).map(_.toARR).toSEQ
+    case MAP(x) => x.sliding(n, k).map(_.toMAP).toSEQ
+    case Sty(_) => toARR.mod$$(n, k).map(_.toString.mSTR(this)).toSEQ
+    case x      => Vector(x).toARR.mod$$(n, k)
 
   def take(n: Int): ANY =
     if n < 0 && length != 0 then drop(length + n)
     else
       this match
+        case OBS(x) => x.take(n).toOBS
         case Lsy(x) => x.take(n).mSEQ(this)
         case ARR(x) => ARR(x.take(n))
         case MAP(x) => MAP(x.take(n))
@@ -344,6 +363,7 @@ enum ANY:
     if n < 0 && length != 0 then take(length + n)
     else
       this match
+        case OBS(x) => x.drop(n).toOBS
         case Lsy(x) => x.drop(n).mSEQ(this)
         case ARR(x) => ARR(x.drop(n))
         case MAP(x) => MAP(x.drop(n))
@@ -408,6 +428,7 @@ enum ANY:
 
   def toARR: ARR = this match
     case UN     => Vector().toARR
+    case _: OBS => toTASK.x.runSyncUnsafe(Duration.Inf).toARR
     case x: ARR => x
     case Lsy(x) => x.toARR
     case MAP(x) => x.toVector.map { case (i, a) => Vector(i, a).toARR }.toARR
@@ -475,7 +496,9 @@ enum ANY:
 
   def toTASK: TASK = this match
     case x: TASK => x
+    case OBS(x)  => x.toListL.map(_.toARR).toTASK
     case FUT(x)  => Task.fromFuture(x).toTASK
+    case ERR(x)  => Task.raiseError(x).toTASK
     case x       => Task.pure(x).toTASK
 
   def modTASK(f: Task[ANY] => Task[ANY]): TASK =
@@ -484,7 +507,19 @@ enum ANY:
   def toFUT: FUT = this match
     case x: FUT  => x
     case TASK(x) => x.runToFuture.toFUT
+    case _: OBS  => toTASK.toFUT
+    case ERR(x)  => CancelableFuture.failed(x).toFUT
     case x       => CancelableFuture.pure(x).toFUT
+
+  def toOBS: OBS = this match
+    case x: OBS          => x
+    case Lsy(_) | Itr(_) => Observable.fromIterable(toSEQ.x).toOBS
+    case FUT(x)          => Observable.fromFuture(x).toOBS
+    case TASK(x)         => Observable.fromTask(x).toOBS
+    case TRY(x)          => Observable.fromTry(x).toOBS
+    case ERR(x)          => Observable.raiseError(x).toOBS
+    case UN              => Observable.empty.toOBS
+    case x               => Observable.pure(x).toOBS
 
   def matchType(a: ANY): ANY = a match
     case FN(p, _) => pFN(p)
@@ -496,8 +531,9 @@ enum ANY:
     case _: DBL   => toDBL
     case _: TF    => toTF
     case _: CMD   => toString.pipe(CMD(_))
-    case _: TASK  => toTASK
     case _: FUT   => toFUT
+    case _: TASK  => toTASK
+    case _: OBS   => toOBS
     case _: TRY   => toTRY
     case _: ERR   => toERR
     case UN       => UN
@@ -521,31 +557,34 @@ enum ANY:
     case _              => os.FilePath(toString)
 
   def map(f: ANY => ANY): ANY = this match
-    case Lsy(x)  => x.map(f).mSEQ(this)
-    case ARR(x)  => x.map(f).toARR
+    case OBS(x)  => x.map(f).toOBS
     case TASK(x) => x.map(f).toTASK
     case FUT(x)  => x.map(f).toFUT
+    case Lsy(x)  => x.map(f).mSEQ(this)
+    case ARR(x)  => x.map(f).toARR
     case TRY(x)  => x.map(f).toTRY
     case _       => toARR.map(f)
-  def mapM(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
+  def map(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map(f.tupled).toMAP
     case _      => map(g)
+  def mapEval(f: ANY => ANY): Observable[ANY] = toOBS.x.mapEval(f(_).toTASK.x)
 
   def flatMap(f: ANY => ANY): ANY = this match
-    case Lsy(x)  => x.flatMap(f(_).toSEQ.x).mSEQ(this)
-    case ARR(x)  => x.flatMap(f(_).toARR.x).toARR
+    case OBS(x)  => x.flatMap(f(_).toOBS.x).toOBS
     case TASK(x) => x.flatMap(f(_).toTASK.x).toTASK
     case FUT(x)  => x.flatMap(f(_).toFUT.x).toFUT
+    case Lsy(x)  => x.flatMap(f(_).toSEQ.x).mSEQ(this)
+    case ARR(x)  => x.flatMap(f(_).toARR.x).toARR
     case TRY(x)  => x.flatMap(f(_).toTry).toTRY
     case _       => toARR.flatMap(f)
-  def flatMapM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
+  def flatMap(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) => x.flatMap { case (a, b) => f(a, b).toARR.x }.toARR
     case _      => flatMap(g)
   def flatMap$(f: ANY => ARRW[ANY]): ANY = this match
     case Lsy(x) => x.flatMap(f).mSEQ(this)
     case ARR(x) => x.flatMap(f).toARR
     case _      => toARR.flatMap$(f)
-  def flatMap$M(f: (ANY, ANY) => ARRW[ANY], g: ANY => ARRW[ANY]): ANY =
+  def flatMap$(f: (ANY, ANY) => ARRW[ANY], g: ANY => ARRW[ANY]): ANY =
     this match
       case MAP(x) =>
         x.flatMap { case (a, b) =>
@@ -569,29 +608,45 @@ enum ANY:
           )
           .toMAP
       case _ => winMap(n, g)
-  def flat: ANY = flatMap(x => x)
+  def mergeMap(f: ANY => ANY): Observable[ANY] = toOBS.x.mergeMap(f(_).toOBS.x)
+  def flat: ANY                                = flatMap(x => x)
+  def merge: Observable[ANY]                   = mergeMap(x => x)
   def rflat: ANY = this match
     case Itr(_) => flatMap(_.rflat)
     case x      => x
 
   def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (Lsy(x), _) => x.zip(t.toSEQ.x).map(f.tupled).mSEQ(this)
-    case (_, Lsy(_)) => toSEQ.zip(t, f).mSEQ(t)
-    case _           => toARR.x.lazyZip(t.toARR.x).map(f).toARR
+    case (OBS(x), _)  => x.zipMap(t.toOBS.x)(f).toOBS
+    case (_, _: OBS)  => toOBS.zip(t, f).toOBS
+    case (TASK(x), _) => Task.map2(x, t.toTASK.x)(f).toTASK
+    case (_, _: TASK) => toTASK.zip(t, f).toTASK
+    case (FUT(x), _)  => x.zip(t.toFUT.x).map(f.tupled).toFUT
+    case (_, _: FUT)  => toFUT.zip(t, f).toFUT
+    case (Lsy(x), _)  => x.zip(t.toSEQ.x).map(f.tupled).mSEQ(this)
+    case (_, Lsy(_))  => toSEQ.zip(t, f).mSEQ(t)
+    case _            => toARR.x.lazyZip(t.toARR.x).map(f).toARR
+
+  def combine(t: ANY, f: (ANY, ANY) => ANY): Observable[ANY] =
+    toOBS.x.combineLatestMap(t.toOBS.x)(f)
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
-      case (Lsy(x), _) =>
-        x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).mSEQ(this)
-      case (_, Lsy(_)) => toSEQ.zipAll(t, d1, d2, f).mSEQ(t)
-      case _           => toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
+      case (_: OBS, _)  => combine(t, f).toOBS
+      case (_, _: OBS)  => toOBS.zipAll(t, d1, d2, f).toOBS
+      case (_, _: TASK) => toTASK.zip(t, f)
+      case (_: TASK, _) => zip(t.toTASK, f)
+      case (_, _: FUT)  => toFUT.zip(t, f)
+      case (_: FUT, _)  => zip(t.toFUT, f)
+      case (Lsy(x), _)  => x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).mSEQ(this)
+      case (_, Lsy(_))  => toSEQ.zipAll(t, d1, d2, f).mSEQ(t)
+      case _            => toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
 
   def table(t: ANY, f: (ANY, ANY) => ANY): ANY = map(x => t.map(y => f(x, y)))
   def flatTable(t: ANY, f: (ANY, ANY) => ANY): ANY =
     flatMap(x => t.map(y => f(x, y)))
 
   def rmap(f: ANY => ANY): ANY = this match
-    case Itr(_) => mapM((k, v) => (k, v.rmap(f)), _.rmap(f))
+    case Itr(_) => map((k, v) => (k, v.rmap(f)), _.rmap(f))
     case x      => f(x)
 
   def dmap(d: Int, f: ANY => ANY): ANY =
@@ -599,9 +654,9 @@ enum ANY:
     else
       def loop(i: Int, t: ANY): ANY = t match
         case Itr(_) if i > 0 =>
-          t.mapM((k, v) => (k, loop(i - 1, v)), loop(i - 1, _))
+          t.map((k, v) => (k, loop(i - 1, v)), loop(i - 1, _))
         case Itr(_) if i < 0 && -i < t.depth =>
-          t.mapM((k, v) => (k, loop(i, v)), loop(i, _))
+          t.map((k, v) => (k, loop(i, v)), loop(i, _))
         case _ => f(t)
       loop(d, this)
 
@@ -620,16 +675,17 @@ enum ANY:
     case Lsy(x) => x.foldLeft(a)(f)
     case ARR(x) => x.foldLeft(a)(f)
     case _      => toARR.foldLeft(a)(f)
-  def foldLeftM[T](a: T)(f: (T, (ANY, ANY)) => T, g: (T, ANY) => T): T =
+  def foldLeft[T](a: T)(f: (T, (ANY, ANY)) => T, g: (T, ANY) => T): T =
     this match
       case MAP(x) => x.foldLeft(a)((b, c) => f(b, c))
       case _      => foldLeft(a)(g)
+  def ofoldLeft[T](a: T)(f: (T, ANY) => T): Task[T] = toOBS.x.foldLeftL(a)(f)
 
   def foldRight[T](a: T)(f: (ANY, T) => T): T = this match
     case Lsy(x) => x.foldRight(a)(f)
     case ARR(x) => x.foldRight(a)(f)
     case _      => toARR.foldRight(a)(f)
-  def foldRightM[T](a: T)(f: ((ANY, ANY), T) => T, g: (ANY, T) => T): T =
+  def foldRight[T](a: T)(f: ((ANY, ANY), T) => T, g: (ANY, T) => T): T =
     this match
       case MAP(x) => x.foldRight(a)(f)
       case _      => foldRight(a)(g)
@@ -637,7 +693,7 @@ enum ANY:
   def rfoldLeft[T](a: T)(f: (T, ANY) => T): T =
     this match
       case Itr(_) =>
-        foldLeftM(a)(
+        foldLeft(a)(
           { case (s, (_, v)) => v.rfoldLeft(s)(f) },
           (s, v) => v.rfoldLeft(s)(f)
         )
@@ -646,7 +702,7 @@ enum ANY:
   def rfoldRight[T](a: T)(f: (T, ANY) => T): T =
     this match
       case Itr(_) =>
-        foldRightM(a)(
+        foldRight(a)(
           { case ((_, v), s) => v.rfoldRight(s)(f) },
           (v, s) => v.rfoldRight(s)(f)
         )
@@ -662,7 +718,7 @@ enum ANY:
       case e: java.lang.UnsupportedOperationException =>
         throw LinEx("ITR", s"unable to reduce empty $getType")
       case e => throw e
-  def reduceLeftM(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
+  def reduceLeft(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
         toARR.reduceLeft {
@@ -681,7 +737,7 @@ enum ANY:
       case e: java.lang.UnsupportedOperationException =>
         throw LinEx("ITR", s"unable to reduce empty $getType")
       case e => throw e
-  def reduceRightM(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
+  def reduceRight(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
         toARR.reduceRight {
@@ -691,63 +747,73 @@ enum ANY:
       case _ => reduceRight(g)
 
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
+    case OBS(x) => x.scan0(a)(f).toOBS
     case Lsy(x) => x.scanLeft(a)(f).mSEQ(this)
     case ARR(x) => x.scanLeft(a)(f).toARR
     case _      => toARR.scanLeft(a)(f)
-  def scanLeftM(
+  def scanLeft(
       a: ANY
   )(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY = this match
     case MAP(x) => x.scanLeft(a)(f).toARR
     case _      => scanLeft(a)(g)
+  def scanEval(a: ANY)(f: (ANY, ANY) => ANY): Observable[ANY] =
+    toOBS.x.scanEval0(a.toTASK.x)(f(_, _).toTASK.x)
 
   def scanRight(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case Lsy(x) => x.scanRight(a)(f).mSEQ(this)
     case ARR(x) => x.scanRight(a)(f).toARR
     case _      => toARR.scanRight(a)(f)
-  def scanRightM(
+  def scanRight(
       a: ANY
   )(f: ((ANY, ANY), ANY) => ANY, g: (ANY, ANY) => ANY): ANY = this match
     case MAP(x) => x.scanRight(a)(f).toARR
     case _      => scanRight(a)(g)
 
   def filter(f: ANY => Boolean): ANY = this match
+    case OBS(x) => x.filter(f).toOBS
     case Lsy(x) => x.filter(f).mSEQ(this)
     case ARR(x) => x.filter(f).toARR
     case x: TRY => x.toTry.filter(f).toTRY
     case _      => toARR.filter(f)
-  def filterM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
+  def filter(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter(f.tupled).toMAP
     case _      => filter(g)
+  def filterEval(f: ANY => ANY): Observable[ANY] =
+    toOBS.x.filterEval(f(_).toTASK.x.map(_.toBool))
 
   def any(f: ANY => Boolean): Boolean = this match
     case Lsy(x) => x.exists(f)
     case ARR(x) => x.exists(f)
     case _      => toARR.any(f)
-  def anyM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
+  def any(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.exists(f.tupled)
     case _      => any(g)
+  def oany(f: ANY => Boolean): Task[Boolean] = toOBS.x.existsL(f)
 
   def all(f: ANY => Boolean): Boolean = this match
     case Lsy(x) => x.forall(f)
     case ARR(x) => x.forall(f)
     case _      => toARR.all(f)
-  def allM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
+  def all(f: (ANY, ANY) => Boolean, g: ANY => Boolean): Boolean = this match
     case MAP(x) => x.forall(f.tupled)
     case _      => all(g)
+  def oall(f: ANY => Boolean): Task[Boolean] = toOBS.x.forallL(f)
 
   def takeWhile(f: ANY => Boolean): ANY = this match
+    case OBS(x) => x.takeWhile(f).toOBS
     case Lsy(x) => x.takeWhile(f).mSEQ(this)
     case ARR(x) => x.takeWhile(f).toARR
     case _      => toARR.takeWhile(f)
-  def takeWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
+  def takeWhile(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.takeWhile(f.tupled).toMAP
     case _      => takeWhile(g)
 
   def dropWhile(f: ANY => Boolean): ANY = this match
+    case OBS(x) => x.dropWhile(f).toOBS
     case Lsy(x) => x.dropWhile(f).mSEQ(this)
     case ARR(x) => x.dropWhile(f).toARR
     case _      => toARR.dropWhile(f)
-  def dropWhileM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
+  def dropWhile(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.dropWhile(f.tupled).toMAP
     case _      => dropWhile(g)
 
@@ -755,12 +821,13 @@ enum ANY:
     case Lsy(x) => x.find(f)
     case ARR(x) => x.find(f)
     case _      => toARR.find(f)
-  def findM(
+  def find(
       f: (ANY, ANY) => Boolean,
       g: ANY => Boolean
   ): Option[ANY | (ANY, ANY)] = this match
     case MAP(x) => x.find(f.tupled)
     case _      => find(g)
+  def ofind(f: ANY => Boolean): Task[Option[ANY]] = toOBS.x.findL(f)
 
   def findIndex(f: ANY => Boolean): Int = this match
     case Lsy(x) => x.indexWhere(f)
@@ -771,7 +838,7 @@ enum ANY:
     case Lsy(x) => x.delBy(f).mSEQ(this)
     case ARR(x) => x.delBy(f).toARR
     case _      => toARR.delBy(f)
-  def delByM(
+  def delBy(
       f: (ANY, ANY) => Boolean,
       g: ANY => Boolean
   ): ANY = this match
@@ -779,10 +846,11 @@ enum ANY:
     case _      => delBy(g)
 
   def uniqBy(f: ANY => ANY): ANY = this match
+    case OBS(x) => x.distinctUntilChangedByKey(f).toOBS
     case Lsy(x) => x.distinctBy(f).mSEQ(this)
     case ARR(x) => x.distinctBy(f).toARR
     case _      => toARR.uniqBy(f)
-  def uniqByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
+  def uniqBy(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.distinctBy(f.tupled).to(VectorMap).toMAP
     case _ => uniqBy(g)
@@ -791,7 +859,7 @@ enum ANY:
     case Lsy(x) => x.uniqWith(f).mSEQ(this)
     case ARR(x) => x.uniqWith(f).toARR
     case _      => toARR.uniqWith(f)
-  def uniqWithM(
+  def uniqWith(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
   ): ANY = this match
@@ -802,7 +870,7 @@ enum ANY:
     case Lsy(x) => x.sortBy(f)(OrdANY).mSEQ(this)
     case ARR(x) => x.sortBy(f)(OrdANY).toARR
     case _      => toARR.sortBy(f)
-  def sortByM(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
+  def sortBy(f: (ANY, ANY) => ANY, g: ANY => ANY): ANY = this match
     case MAP(x) =>
       x.toSeq.sortBy(f.tupled)(OrdANY).to(VectorMap).toMAP
     case _ => sortBy(g)
@@ -811,7 +879,7 @@ enum ANY:
     case Lsy(x) => x.sortWith(f).mSEQ(this)
     case ARR(x) => x.sortWith(f).toARR
     case _      => toARR.sortWith(f)
-  def sortWithM(
+  def sortWith(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
   ): ANY = this match
@@ -823,7 +891,7 @@ enum ANY:
       x.partition(f).pipe { case (a, b) => (a.mSEQ(this), b.mSEQ(this)) }
     case ARR(x) => x.partition(f).pipe { case (a, b) => (a.toARR, b.toARR) }
     case _      => toARR.partition(f)
-  def partitionM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
+  def partition(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
       case MAP(x) =>
         x.partition(f.tupled).pipe { case (a, b) => (a.toMAP, b.toMAP) }
@@ -833,7 +901,7 @@ enum ANY:
     case Lsy(x) => x.groupBy(f).view.mapValues(_.mSEQ(this)).toMap
     case ARR(x) => x.groupBy(f).view.mapValues(_.toARR).toMap
     case _      => toARR.groupBy(f)
-  def groupByM(f: (ANY, ANY) => ANY, g: ANY => ANY): Map[ANY, ANY] = this match
+  def groupBy(f: (ANY, ANY) => ANY, g: ANY => ANY): Map[ANY, ANY] = this match
     case MAP(x) =>
       x.groupBy(f.tupled).view.mapValues(_.toMAP).toMap
     case _ => groupBy(g)
@@ -843,7 +911,7 @@ enum ANY:
       x.span(f).pipe { case (a, b) => (a.mSEQ(this), b.mSEQ(this)) }
     case ARR(x) => x.span(f).pipe { case (a, b) => (a.toARR, b.toARR) }
     case _      => toARR.span(f)
-  def spanM(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
+  def span(f: (ANY, ANY) => Boolean, g: ANY => Boolean): (ANY, ANY) =
     this match
       case MAP(x) => x.span(f.tupled).pipe { case (a, b) => (a.toMAP, b.toMAP) }
       case _      => span(g)
@@ -852,7 +920,7 @@ enum ANY:
     case Lsy(x) => x.packWith(f).map(_.mSEQ(this)).mSEQ(this)
     case ARR(x) => x.packWith(f).map(_.toARR).toARR
     case _      => toARR.packWith(f)
-  def packWithM(
+  def packWith(
       f: ((ANY, ANY), (ANY, ANY)) => Boolean,
       g: (ANY, ANY) => Boolean
   ): ANY = this match
@@ -967,6 +1035,10 @@ enum ANY:
       case (x, y)           => g(x.toNUM.x, y.toNUM.x)
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
+
+given a: Eq[ANY] with
+
+  def eqv(x: ANY, y: ANY): Boolean = x.eqls(y)
 
 object OrdANY extends Ordering[ANY]:
 
@@ -1130,12 +1202,14 @@ object ANY:
 
   extension (t: FUTW[ANY]) def toFUT: FUT = FUT(t)
 
+  extension (t: Observable[ANY]) def toOBS: OBS = OBS(t)
+
   /** Pattern for `SEQ`-like. */
   object Itr:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR | _: MAP => Some(a)
-      case _                        => None
+      case _: OBS | _: SEQ | _: ARR | _: MAP => Some(a)
+      case _                                 => None
 
   object Fnr:
 
@@ -1154,8 +1228,8 @@ object ANY:
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
-      case _                                => None
+      case _: OBS | Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
+      case _                                         => None
 
   object Lsy:
 

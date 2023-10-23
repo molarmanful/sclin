@@ -3,6 +3,8 @@ package sclin
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.nio.file._
+import monix.nio.text._
+import monix.reactive.Observable
 import scala.annotation._
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
@@ -149,10 +151,15 @@ extension (env: ENV)
      */
     case ">~" => toTASK
     /*
-    @s a -> FUT'
+    @s a -> FUT
     Converts `a` to `FUT`.
      */
     case "~>" => toFUT
+    /*
+    @s a -> OBS
+    Converts `a` to `OBS`.
+     */
+    case ">~*" => toOBS
     /*
     @s a -> TRY
     Converts `a` to `TRY`.
@@ -163,6 +170,8 @@ extension (env: ENV)
     Converts `a` to `TF`.
      */
     case ">?" => toTF
+    // TODO: docs
+    case "~>?" => otoTF
     /*
     @s (a >NUM) (b >NUM)' -> STR
     Converts `a` to an `STR` formatted to `b`'s specifications.
@@ -414,6 +423,7 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
+    // TODO: docs
     case "fs>" => fread
     /*
     @s a -> a a
@@ -893,6 +903,14 @@ extension (env: ENV)
      */
     case "%`" => mod$$
     /*
+    @s a (b >NUM)' (c >NUM)' -> SEQ
+    #{%`} with extra skip parameter `c`.
+    ```sclin
+    [1 2 3 4 5] 3 2%` >A
+    ```
+     */
+    case "%`~" => mod2$$
+    /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a ^ b`. Throws error if result would be a complex number.
      */
@@ -1273,6 +1291,8 @@ extension (env: ENV)
     Length of `a`.
      */
     case "len" => len
+    // TODO: docs
+    case "~len" => olen
     /*
     @s a -> ARR[NUM]
     Shape of `a`, i.e. #{len} of each dimension of `a`.
@@ -1348,6 +1368,8 @@ extension (env: ENV)
     Flattens `a` by one depth.
      */
     case "flat" => flat
+    // TODO: docs
+    case "~flat" => merge
     /*
     @s a -> _
     Flattens `a` recursively.
@@ -1364,6 +1386,8 @@ extension (env: ENV)
     ```
      */
     case "rep" => rep
+    // TODO: docs
+    case "~rep" => orep
     /*
     @s a -> SEQ
     Infinite `SEQ` with elements of `a` cycled.
@@ -1372,6 +1396,8 @@ extension (env: ENV)
     ```
      */
     case "cyc" => cyc
+    // TODO: docs
+    case "~cyc" => ocyc
     /*
     @s (a >NUM)' -> ARR[1*]'
     Length-`a` `ARR` of 1's.
@@ -1767,6 +1793,8 @@ extension (env: ENV)
     ```
      */
     case "map" => map
+    // TODO: docs
+    case "~map" => mapEval
     /*
     @s a f' -> a
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
@@ -1783,6 +1811,8 @@ extension (env: ENV)
     ```
      */
     case "mapf" => flatMap
+    // TODO: docs
+    case "~mapf" => mergeMap
     /*
     @s a f' (n >NUM)' -> _'
     `n`-wise reduction of `f` over `a`.
@@ -1859,6 +1889,8 @@ extension (env: ENV)
     ```
      */
     case "fold" => fold
+    // TODO: docs
+    case "~fold" => ofold
     /*
     @s a b f' -> _'
     #{fold} from the right.
@@ -1905,6 +1937,8 @@ extension (env: ENV)
     ```
      */
     case "scan" => scan
+    // TODO: docs
+    case "~scan" => scanEval
     /*
     @s a b f' -> _'
     #{scan} from the right.
@@ -1963,6 +1997,8 @@ extension (env: ENV)
     ```
      */
     case "any" => any
+    // TODO: docs
+    case "~any" => oany
     /*
     @s a f' -> TF'
     Whether all elements of `a` satisfy predicate `f`.
@@ -1972,6 +2008,8 @@ extension (env: ENV)
     ```
      */
     case "all" => all
+    // TODO: docs
+    case "~all" => all
     /*
     @s a f' -> _'
     Takes elements of `a` until #{Q}ing `f` is falsy.
@@ -2000,6 +2038,8 @@ extension (env: ENV)
     ```
      */
     case "find" => find
+    // TODO: docs
+    case "~find" => ofind
     /*
     @s a f' -> NUM'
     Finds index of first element of `a` where predicate `f` is truthy.
@@ -2328,6 +2368,7 @@ extension (env: ENV)
   def toTRY: ENV   = env.mod1(_.toTRY)
   def toERR: ENV   = env.mod2((x, y) => ERR(LinERR(env, y.toString, x.toString)))
   def toTF: ENV    = env.mod1(_.toTF)
+  def otoTF: ENV   = env.mod1(_.toOBS.x.nonEmptyL.map(_.boolTF).toTASK)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).sSTR))
   def matchType: ENV = env.mod2(_.matchType(_))
@@ -2397,8 +2438,17 @@ extension (env: ENV)
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
-  def fread: ENV = ???
-  // env.mod1(x => readAsync(x.toPath.toNIO))
+  def fread: ENV = env.mod2((x, y) =>
+    y.vec1(n =>
+      val n1 = n.toInt
+      if n1 < 2 then throw LinEx("BUF_N", "buffer size < 2")
+      else
+        readAsync(x.toPath.toNIO, n1)
+          .pipeThrough(UTF8Codec.utf8Decode)
+          .map(_.sSTR)
+          .toOBS
+    )
+  )
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
@@ -2461,6 +2511,7 @@ extension (env: ENV)
   def has$$ : ENV = env.mod2(_.has(_).boolTF)
 
   def len: ENV     = env.mod1(_.length.pipe(NUM(_)))
+  def olen: ENV    = env.mod1(_.olength.map(NUM(_)).toTASK)
   def shape: ENV   = env.mod1(_.shape.map(NUM(_)).toARR)
   def dshape: ENV  = env.mod1(_.dshape.map(NUM(_)).toARR)
   def reshape: ENV = env.mod2(_ reshape _.toARR.x.map(_.toInt))
@@ -2468,7 +2519,9 @@ extension (env: ENV)
   def depth: ENV   = env.mod1(_.depth.pipe(NUM(_)))
 
   def rep: ENV  = env.mod1(LazyList.continually(_).toSEQ)
+  def orep: ENV = env.mod1(Observable.repeat(_).toOBS)
   def cyc: ENV  = env.mod1(x => LazyList.continually(x).mSEQ(x).flat)
+  def ocyc: ENV = env.mod1(Observable.repeat(_).toOBS.flat)
   def ones: ENV = env.vec1(_.toInt.pipe(Vector.fill(_)(NUM(1)).toARR))
   def one$ : ENV =
     env.mod1(_.foldRight(NUM(1))((x, y) => Vector.fill(x.toInt)(y).toARR))
@@ -2698,6 +2751,8 @@ extension (env: ENV)
   )
   def mod$ : ENV  = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
   def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _.toInt))
+  def mod2$$ : ENV =
+    env.mod3((x, y, z) => y.vec2(z, (n, k) => x.mod$$(n.toInt, k.toInt)))
 
   def pow: ENV = env.num2(
     _.fpow(_),
@@ -2754,7 +2809,7 @@ extension (env: ENV)
       .to(VectorMap)
       .map { case (x, y) => (NUM(x), NUM(y)) }
       .toMAP
-      .sortByM((a, _) => a, a => a)
+      .sortBy((a, _) => a, a => a)
   )
 
   def not: ENV    = env.vec1(_.toBool.unary_!.boolTF)
@@ -2830,15 +2885,20 @@ extension (env: ENV)
       .toBool
 
   def map: ENV =
-    env.mod2((x, y) => y.vec1(f => x.mapM(SIG_2f2(f), SIG_1f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.map(SIG_2f2(f), SIG_1f1(f))))
+  def mapEval: ENV =
+    env.mod2((x, y) => y.vec1(f => x.mapEval(SIG_1f1(f)).toOBS))
   def tapMap: ENV =
-    env.mod2((x, y) => y.vec1(f => x.mapM(SIG_2f_(f), SIG_1f_(f))))
+    env.mod2((x, y) => y.vec1(f => x.map(SIG_2f_(f), SIG_1f_(f))))
   def flatMap: ENV =
-    env.mod2((x, y) => y.vec1(f => x.flatMapM(SIG_2f1(f), SIG_1f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.flatMap(SIG_2f1(f), SIG_1f1(f))))
+  def mergeMap: ENV =
+    env.mod2((x, y) => y.vec1(f => x.mergeMap(SIG_1f1(f)).toOBS))
   def winMap: ENV = env.mod3((x, y, z) =>
     y.vec2(z, (f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
   )
   def flat: ENV  = env.mod1(_.flat)
+  def merge: ENV = env.mod1(_.merge.toOBS)
   def rflat: ENV = env.mod1(_.rflat)
   def rmap: ENV  = env.mod2((x, y) => y.vec1(f => x.rmap(SIG_1f1(f))))
   def dmap: ENV =
@@ -2856,25 +2916,25 @@ extension (env: ENV)
   def tblf: ENV = env.mod3((x, y, z) => z.vec1(f => x.flatTable(y, SIG_2f1(f))))
 
   def fold: ENV =
-    env.mod3((x, y, z) => z.vec1(f => x.foldLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
+    env.mod3((x, y, z) => z.vec1(f => x.foldLeft(y)(SIG_1y2f1(f), SIG_2f1(f))))
+  def ofold: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.ofoldLeft(y)(SIG_2f1(f)).toTASK))
   def foldR: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.foldRightM(y)(SIG_2y1f1(f), SIG_2f1(f)))
-    )
+    env.mod3((x, y, z) => z.vec1(f => x.foldRight(y)(SIG_2y1f1(f), SIG_2f1(f))))
   def rfold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldLeft(y)(SIG_2f1(f))))
   def rfoldR: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldRight(y)(SIG_2f1(f))))
   def reduce: ENV =
-    env.mod2((x, y) => y.vec1(f => x.reduceLeftM(SIG_1y2f1(f), SIG_2f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.reduceLeft(SIG_1y2f1(f), SIG_2f1(f))))
   def reduceR: ENV =
-    env.mod2((x, y) => y.vec1(f => x.reduceRightM(SIG_1y2f1(f), SIG_2f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.reduceRight(SIG_1y2f1(f), SIG_2f1(f))))
   def scan: ENV =
-    env.mod3((x, y, z) => z.vec1(f => x.scanLeftM(y)(SIG_1y2f1(f), SIG_2f1(f))))
+    env.mod3((x, y, z) => z.vec1(f => x.scanLeft(y)(SIG_1y2f1(f), SIG_2f1(f))))
+  def scanEval: ENV =
+    env.mod3((x, y, z) => z.vec1(f => x.scanEval(y)(SIG_2f1(f)).toOBS))
   def scanR: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.scanRightM(y)(SIG_2y1f1(f), SIG_2f1(f)))
-    )
+    env.mod3((x, y, z) => z.vec1(f => x.scanRight(y)(SIG_2y1f1(f), SIG_2f1(f))))
 
   def walk: ENV = env.mod2((x, y) =>
     y.vec1(f =>
@@ -2897,7 +2957,7 @@ extension (env: ENV)
               )
         case _ => Vector()
       def fn(t: ANY): ANY =
-        t.flatMap$M(
+        t.flatMap$(
           (k, v) => env.evalS(Vector(k, v), f).pipe(loop(true)),
           v => env.evalS(Vector(v), f).pipe(loop())
         )
@@ -2906,62 +2966,69 @@ extension (env: ENV)
   )
 
   def fltr: ENV =
-    env.mod2((x, y) => y.vec1(f => x.filterM(SIG_2fb(f), SIG_1fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.filter(SIG_2fb(f), SIG_1fb(f))))
 
   def any: ENV =
-    env.mod2((x, y) => y.vec1(f => x.anyM(SIG_2fb(f), SIG_1fb(f)).boolTF))
+    env.mod2((x, y) => y.vec1(f => x.any(SIG_2fb(f), SIG_1fb(f)).boolTF))
+  def oany: ENV =
+    env.mod2((x, y) => y.vec1(f => x.oany(SIG_1fb(f)).map(_.boolTF).toTASK))
   def all: ENV =
-    env.mod2((x, y) => y.vec1(f => x.allM(SIG_2fb(f), SIG_1fb(f)).boolTF))
+    env.mod2((x, y) => y.vec1(f => x.all(SIG_2fb(f), SIG_1fb(f)).boolTF))
+  def oall: ENV =
+    env.mod2((x, y) => y.vec1(f => x.oall(SIG_1fb(f)).map(_.boolTF).toTASK))
 
   def tkwl: ENV =
-    env.mod2((x, y) => y.vec1(f => x.takeWhileM(SIG_2fb(f), SIG_1fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.takeWhile(SIG_2fb(f), SIG_1fb(f))))
   def dpwl: ENV =
-    env.mod2((x, y) => y.vec1(f => x.dropWhileM(SIG_2fb(f), SIG_1fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.dropWhile(SIG_2fb(f), SIG_1fb(f))))
 
   def find: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      x.findM(SIG_2fb(f), SIG_1fb(f)) match
+      x.find(SIG_2fb(f), SIG_1fb(f)) match
         case Some((a, b)) => Vector(a, b).toARR
         case Some(a: ANY) => a
-        case _            => UN
+        case None         => UN
     )
+  )
+  def ofind: ENV = env.mod2((x, y) =>
+    y.vec1(f => x.ofind(SIG_1fb(f)).map(_.getOrElse(UN)).toTASK)
   )
 
   def findi: ENV =
     env.mod2((x, y) => y.vec1(f => x.findIndex(SIG_1fb(f)).pipe(NUM(_))))
 
   def del: ENV =
-    env.mod2((x, y) => y.vec1(f => x.delByM(SIG_2fb(f), SIG_1fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.delBy(SIG_2fb(f), SIG_1fb(f))))
 
   def uniq: ENV =
-    env.mod2((x, y) => y.vec1(f => x.uniqByM(SIG_2f1(f), SIG_1f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.uniqBy(SIG_2f1(f), SIG_1f1(f))))
   def uniq$ : ENV =
-    env.mod2((x, y) => y.vec1(f => x.uniqWithM(SIG_2x2fb(f), SIG_2fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.uniqWith(SIG_2x2fb(f), SIG_2fb(f))))
 
   def sort: ENV =
-    env.mod2((x, y) => y.vec1(f => x.sortByM(SIG_2f1(f), SIG_1f1(f))))
+    env.mod2((x, y) => y.vec1(f => x.sortBy(SIG_2f1(f), SIG_1f1(f))))
   def sort$ : ENV =
-    env.mod2((x, y) => y.vec1(f => x.sortWithM(SIG_2x2fb(f), SIG_2fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.sortWith(SIG_2x2fb(f), SIG_2fb(f))))
 
   def part: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      val (a, b) = x.partitionM(SIG_2fb(f), SIG_1fb(f))
+      val (a, b) = x.partition(SIG_2fb(f), SIG_1fb(f))
       Vector(a, b).toARR
     )
   )
 
   def group: ENV =
-    env.mod2((x, y) => y.vec1(f => x.groupByM(SIG_2f1(f), SIG_1f1(f)).toMAP))
+    env.mod2((x, y) => y.vec1(f => x.groupBy(SIG_2f1(f), SIG_1f1(f)).toMAP))
 
   def span: ENV = env.mod2((x, y) =>
     y.vec1(f =>
-      val (a, b) = x.spanM(SIG_2fb(f), SIG_1fb(f))
+      val (a, b) = x.span(SIG_2fb(f), SIG_1fb(f))
       Vector(a, b).toARR
     )
   )
 
   def pack: ENV =
-    env.mod2((x, y) => y.vec1(f => x.packWithM(SIG_2x2fb(f), SIG_2fb(f))))
+    env.mod2((x, y) => y.vec1(f => x.packWith(SIG_2x2fb(f), SIG_2fb(f))))
 
   def union: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.unionWith(y, SIG_2fb(f))))
@@ -2977,7 +3044,8 @@ extension (env: ENV)
     env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
   def awaitTRY: ENV =
     env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
-  def toFUT: ENV = env.vec1(_.toFUT)
+  def toFUT: ENV = env.mod1(_.toFUT)
+  def toOBS: ENV = env.mod1(_.toOBS)
   def cancelFUT: ENV = env.arg1((x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
