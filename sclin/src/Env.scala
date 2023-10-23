@@ -46,10 +46,7 @@ case class ENV(
     ids: IDS = HashMap(),
     gids: GIDS = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
-    eS: Boolean = false,
-    eV: Boolean = false,
-    eI: Boolean = false,
-    eNC: Boolean = false,
+    flags: Flags = Flags(),
     cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
 ):
 
@@ -248,22 +245,22 @@ case class ENV(
   @tailrec final def exec: ENV = code.x match
     case LazyList() => this
     case c #:: cs =>
-      if eS then print("\u001b[2J\u001b[;H")
-      if eS || eV then trace1
+      if flags.s then print("\u001b[2J\u001b[;H")
+      if flags.s || flags.v then trace1
       val env = setCur(c).modCode(_ => cs)
       try
         return env
           .execA(c)
-          .tap(e => if eS || eV then e.trace2)
+          .tap(e => if flags.s || flags.v then e.trace2)
           .pipe(e =>
-            if eS then
+            if flags.s then
               print(cflag(fansi.Color.DarkGray)("———? "))
               io.StdIn.readLine match
-                case "v" => e.copy(eS = false, eV = true)
+                case "v" => e.copy(flags = flags.copy(s = false, v = true))
                 case _   => e
             else e
           )
-          .tap(_ => if eS then print("\u001b[2J\u001b[;H"))
+          .tap(_ => if flags.s then print("\u001b[2J\u001b[;H"))
           .exec
       catch
         case e: LinEx => throw e.toLinERR(env)
@@ -276,7 +273,7 @@ object ENV:
   def run(
       l: String,
       f: FILE = None,
-      flags: Map[String, Boolean] = Map().withDefaultValue(false),
+      flags: Flags = Flags(),
       cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
   ): ENV =
     ENV(
@@ -284,15 +281,12 @@ object ENV:
         (PATH(f, i), (STR(x), UN))
       }),
       FN(PATH(f, 0), LazyList()),
-      eS = flags("s"),
-      eV = flags("v"),
-      eI = flags("i"),
-      eNC = flags("nc"),
+      flags = flags,
       cflag = cflag
     )
       .loadLine(0)
       .exec
-      .tap(env => if env.eS || env.eV || env.eI then env.trace)
+      .tap(env => if env.flags.s || env.flags.v || env.flags.i then env.trace)
 
   def docRun(l: String): Unit =
     val s = ENV.run(l).stack.map(_.toForm).mkString(" ")

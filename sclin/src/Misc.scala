@@ -43,6 +43,13 @@ case class LinERR(env: ENV, t: String, x: String) extends Exception(x):
 
   override def hashCode: Int = t.##
 
+case class Flags(
+    s: Boolean = false,
+    v: Boolean = false,
+    i: Boolean = false,
+    nc: Boolean = false
+)
+
 object Util:
 
   def asinh(x: Double): Double = log(x + (x * x + 1).sqrt)

@@ -30,13 +30,12 @@ object Main:
     case _ =>
       def cflag(x: fansi.Attrs) = if nocolor.value then fansi.Attrs() else x
       def err(e: String)        = println(cflag(fansi.Color.Red)(e))
-      val flags = Map(
-        "s"  -> step.value,
-        "v"  -> verb.value,
-        "i"  -> impl.value,
-        "nc" -> nocolor.value
-      ).withDefaultValue(false)
-
+      val flags = Flags(
+        s = step.value,
+        v = verb.value,
+        i = impl.value,
+        nc = nocolor.value
+      )
       try
         file match
           case Some(f) =>
