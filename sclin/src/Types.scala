@@ -54,7 +54,7 @@ enum ANY:
     case FUT(x) =>
       x.value.map(_.toTRY.toString).getOrElse("")
     case _: TASK         => toFUT.toString
-    case OBS(x)          => x.headOrElseL(UN).toTASK.toString
+    case _: OBS          => toARR.toString
     case TRY(Success(x)) => x.toString
     case TRY(Failure(e)) => e.toString
     case UN              => ""
