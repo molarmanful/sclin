@@ -905,6 +905,8 @@ enum ANY:
     case MAP(x) =>
       x.groupBy(f.tupled).view.mapValues(_.toMAP).toMap
     case _ => groupBy(g)
+  def ogroupBy(f: ANY => ANY): Observable[ANY] =
+    toOBS.x.groupBy(f).map(a => Vector(a.key, a.toOBS).toARR)
 
   def span(f: ANY => Boolean): (ANY, ANY) = this match
     case Lsy(x) =>

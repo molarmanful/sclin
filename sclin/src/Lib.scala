@@ -2129,6 +2129,8 @@ extension (env: ENV)
     ```
      */
     case "group" => group
+    // TODO: docs
+    case "~group" => ogroup
     /*
     @s a f' -> ARR[_ _]'
     Equivalent to a combination of #{tk*} and #{dp*}.
@@ -3019,6 +3021,8 @@ extension (env: ENV)
 
   def group: ENV =
     env.mod2((x, y) => y.vec1(f => x.groupBy(SIG_2f1(f), SIG_1f1(f)).toMAP))
+  def ogroup: ENV =
+    env.mod2((x, y) => y.vec1(f => x.ogroupBy(SIG_1f1(f)).toOBS))
 
   def span: ENV = env.mod2((x, y) =>
     y.vec1(f =>
