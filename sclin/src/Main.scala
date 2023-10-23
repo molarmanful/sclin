@@ -5,7 +5,7 @@ import scala.util.chaining._
 
 object Main:
 
-  implicit object PathRead extends TokensReader.Simple[os.Path]:
+  given TokensReader.Simple[os.Path] with
 
     def shortName               = "path"
     def read(strs: Seq[String]) = Right(os.Path(strs.head, os.pwd))

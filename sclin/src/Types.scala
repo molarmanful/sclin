@@ -1038,7 +1038,7 @@ enum ANY:
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
 
-given a: Eq[ANY] with
+given Eq[ANY] with
 
   def eqv(x: ANY, y: ANY): Boolean = x.eqls(y)
 
