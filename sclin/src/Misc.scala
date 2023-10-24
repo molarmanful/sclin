@@ -4,7 +4,6 @@ import monix.execution.CancelableFuture
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
-import spire.implicits._
 import spire.math._
 import util.chaining._
 
@@ -49,9 +48,3 @@ case class Flags(
     i: Boolean = false,
     nc: Boolean = false
 )
-
-object Util:
-
-  def asinh(x: Double): Double = log(x + (x * x + 1).sqrt)
-  def acosh(x: Double): Double = log(x + (x * x - 1).sqrt)
-  def atanh(x: Double): Double = asinh(x).fquot(acosh(x))

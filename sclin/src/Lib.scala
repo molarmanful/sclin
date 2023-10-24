@@ -2576,7 +2576,7 @@ extension (env: ENV)
   def cProd: ENV = env.mod1(x =>
     x.toSEQ.x
       .map(_.toSEQ.x)
-      .pipe(ANY.cProd)
+      .pipe(Util.cProd)
       .map(_.toSEQ.mIts(x.get(NUM(0))))
       .toSEQ
   )
@@ -2591,7 +2591,7 @@ extension (env: ENV)
       case _      => a.toARR
     val x1 = f(x)
     x1.map(f)
-      .pipe(ANY.transpose)
+      .pipe(Util.transpose)
       .map(g(_, x))
       .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
   )
@@ -2684,12 +2684,12 @@ extension (env: ENV)
   def ceil: ENV  = env.num1(_.ceil, _.ceil)
 
   def fromDec: ENV =
-    env.num2a((x, y) => ANY.fromDec(x.toSafeLong, y.toInt).map(Real(_)))
+    env.num2a((x, y) => Util.fromDec(x.toSafeLong, y.toInt).map(Real(_)))
   def toDec: ENV = env.mod2((x, y) =>
     val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
     y.num1(
-      n => ANY.toDec(x1, n.toInt).toDouble,
-      n => ANY.toDec(x1, n.toInt)
+      n => Util.toDec(x1, n.toInt).toDouble,
+      n => Util.toDec(x1, n.toInt)
     )
   )
   def toNumDen: ENV = env.vec1(x =>
@@ -2765,10 +2765,10 @@ extension (env: ENV)
   )
   def powi: ENV = env.num2(_ ** _.intValue, _ ** _.intValue)
   def pow$ : ENV = env.vec2((x, y) =>
-    ANY.cPow(x.toSTR.toSEQ.x, y.toInt).map(_.toARR.toSTR).toSEQ
+    Util.cPow(x.toSTR.toSEQ.x, y.toInt).map(_.toARR.toSTR).toSEQ
   )
   def pow$$ : ENV = env.mod2((x, y) =>
-    y.vec1(n => ANY.cPow(x.toSEQ.x, n.toInt).map(_.toARR.matchType(x)).toSEQ)
+    y.vec1(n => Util.cPow(x.toSEQ.x, n.toInt).map(_.toARR.matchType(x)).toSEQ)
   )
 
   def exp: ENV = env.num1(_.exp, _.exp)
