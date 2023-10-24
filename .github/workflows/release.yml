@@ -23,8 +23,8 @@ jobs:
           gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
       - name: test
         run: |
-          ./mill sclin.reformat
-          ./mill sclin.test.reformat
+          ./mill sclin.checkFormat
+          ./mill sclin.test.checkFormat
           ./mill sclin.test
       - name: mvn release
         env:

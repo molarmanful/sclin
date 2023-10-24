@@ -24,8 +24,8 @@ jobs:
           java-version: 20
       - name: test
         run: |
-          ./mill sclin.reformat
-          ./mill sclin.test.reformat
+          ./mill sclin.checkFormat
+          ./mill sclin.test.checkFormat
           ./mill sclin.test
       - name: build
         run: ./mill sclin.assembly
