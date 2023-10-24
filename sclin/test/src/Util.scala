@@ -1,7 +1,7 @@
 package sclin
 
 import scala.collection.immutable.VectorMap
-import ANY._
+import ANY.*
 
 trait TU extends munit.FunSuite:
 

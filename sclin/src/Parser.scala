@@ -1,7 +1,7 @@
 package sclin
 
-import scala.util.chaining._
-import ANY._
+import scala.util.chaining.*
+import ANY.*
 
 /** Parser primitive tags. */
 enum PT:
@@ -23,31 +23,32 @@ case class Parser(
     t: PT = PT.UN
 ):
 
-  def clean: Parser = Parser(t match
-    case PT.STR => xs :+ STR(x)
-    case PT.ESC => xs :+ STR(x + "\\")
-    case PT.CMD =>
-      if x.forall("()[]{}".contains) then
-        xs ++ x.map(_.toString.pipe(CMD.apply)).toList
-      else xs :+ CMD(x)
-    case PT.DEC =>
-      x match
-        case "."    => xs :+ CMD(".")
-        case s"$x." => xs :+ x.toNUM :+ CMD(".")
-        case _      => xs :+ x.toNUM
-    case PT.NUM => xs :+ x.toNUM
-    case _      => xs
-  )
+  def clean: Parser = Parser:
+    t match
+      case PT.STR => xs :+ STR(x)
+      case PT.ESC => xs :+ STR(x + "\\")
+      case PT.CMD =>
+        if x.forall("()[]{}".contains) then
+          xs ++ x.map(_.toString.pipe(CMD.apply)).toList
+        else xs :+ CMD(x)
+      case PT.DEC =>
+        x match
+          case "."    => xs :+ CMD(".")
+          case s"$x." => xs :+ x.toNUM :+ CMD(".")
+          case _      => xs :+ x.toNUM
+      case PT.NUM => xs :+ x.toNUM
+      case _      => xs
 
   def addc(c: String | Char): Parser = copy(x = x + c)
   def sett(t: PT): Parser            = copy(t = t)
 
   def pstr(c: Char): Parser = t match
     case PT.ESC =>
-      addc(c match
-        case '"' => "\""
-        case _   => "\\" + c
-      ).sett(PT.STR)
+      addc:
+        c match
+          case '"' => "\""
+          case _   => "\\" + c
+      .sett(PT.STR)
     case _ =>
       c match
         case '\\' => sett(PT.ESC)

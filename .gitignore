@@ -39,3 +39,5 @@ out
 !examples/*.sclin
 sclin-docs-gen
 node_modules
+
+.scala-build

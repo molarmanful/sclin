@@ -1,7 +1,7 @@
 package sclin
 
-import spire.implicits._
-import spire.math._
+import spire.implicits.*
+import spire.math.*
 
 object Util:
 
@@ -30,10 +30,9 @@ object Util:
     else if b < 0 then toDec(ns.reverse, -b)
     else if b == 1 then ns.length
     else
-      ns.reverseIterator.zipWithIndex.foldLeft[SafeLong](0) {
+      ns.reverseIterator.zipWithIndex.foldLeft[SafeLong](0):
         case (a, (n, i)) =>
           b ** i * n + a
-      }
 
   def cProd[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] = ls match
     case LazyList()       => LazyList()
@@ -42,9 +41,8 @@ object Util:
       val y = cProd(xs)
       x.flatMap(a => y.map(b => a #:: b))
 
-  def cPow[A](seed: SEQW[A], n: Int): SEQW[SEQW[A]] = cProd(
+  def cPow[A](seed: SEQW[A], n: Int): SEQW[SEQW[A]] = cProd:
     LazyList.fill(n)(seed)
-  )
 
   def transpose[A](ls: SEQW[SEQW[A]]): SEQW[SEQW[A]] =
     ls.filter(_.nonEmpty) match

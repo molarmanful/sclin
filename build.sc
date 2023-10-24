@@ -7,8 +7,9 @@ import mill.contrib.scoverage.ScoverageModule
 import scala.util.chaining._
 import scalalib._
 import scalalib.publish._
+import scalalib.scalafmt._
 
-object sclin extends ScoverageModule with PublishModule {
+object sclin extends ScoverageModule with PublishModule with ScalafmtModule {
 
   def scalaVersion                       = "3.3.1"
   def scoverageVersion                   = "2.0.11"
@@ -46,7 +47,7 @@ object sclin extends ScoverageModule with PublishModule {
       .pipe(os.write.over(os.pwd / "sclin-docs-gen" / "Commands.md", _))
   }
 
-  object test extends ScoverageTests with TestModule.Munit {
+  object test extends ScoverageTests with TestModule.Munit with ScalafmtModule {
 
     def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M10")
 

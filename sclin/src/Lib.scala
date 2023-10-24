@@ -3,21 +3,21 @@ package sclin
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import scala.annotation._
+import scala.annotation.*
 import scala.collection.immutable.VectorMap
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.io.StdIn._
-import scala.util.chaining._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.io.StdIn.*
+import scala.util.chaining.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import spire.algebra._
-import spire.implicits._
-import spire.math._
-import upickle.default._
-import ANY._
-import Lambda._
+import spire.algebra.*
+import spire.implicits.*
+import spire.math.*
+import upickle.default.*
+import ANY.*
+import Lambda.*
 
 extension (env: ENV)
 
@@ -2255,7 +2255,7 @@ extension (env: ENV)
 
     // CMDOC END
 
-  def eval: ENV = env.arg1((x, env) =>
+  def eval: ENV = env.arg1: (x, env) =>
     x match
       case f: FN =>
         val env1 =
@@ -2264,12 +2264,10 @@ extension (env: ENV)
           case LazyList() => env1
           case _          => env.modStack(_ => env1.addCall(f).exec.stack)
       case _ => env.push(x).toFN.eval
-  )
-  def evale: ENV = env.arg1((x, env) =>
+  def evale: ENV = env.arg1: (x, env) =>
     x match
       case f: FN => env.modStack(_ => env.copy(code = f).addCall(f).exec.stack)
       case _     => env.push(x).toFN.evale
-  )
   def evalS(x: ARRW[ANY], f: ANY): ARRW[ANY] =
     env.modStack(_ => x :+ f).evale.stack
   def evalA1(x: ARRW[ANY], f: ANY): ANY =
@@ -2287,16 +2285,15 @@ extension (env: ENV)
       case _       => (l.ys, ")")
     env.modCode(_ => l.xs).push(FN(env.code.p, cs)).cmd(c)
 
-  def evalLine: ENV = env.arg1((x, env) =>
+  def evalLine: ENV = env.arg1: (x, env) =>
     val i    = x.toInt
     val env1 = env.fnLine(i)
     env1.push(env1.getLineF(i)).eval
-  )
   def getLNum: ENV = env.push(NUM(env.code.p.l))
-  def getLFile: ENV = env.push(env.code.p.f match
-    case Some(x) => STR(x.toString)
-    case _       => UN
-  )
+  def getLFile: ENV = env.push:
+    env.code.p.f match
+      case Some(x) => STR(x.toString)
+      case _       => UN
   def getLns: ENV    = env.push(env.lines.toSeq.sortBy(_._1._2).map(_._2._1).toARR)
   def evalLRel: ENV  = getLNum.add.evalLine
   def evalLHere: ENV = env.push(NUM(0)).evalLRel
@@ -2309,44 +2306,37 @@ extension (env: ENV)
   def getLPrev: ENV  = env.push(NUM(-1)).getLRel
   def evalAnd: ENV =
     env.arg2((x, f, env) => if x.toBool then env.push(f).eval else env)
-  def evalAnd$ : ENV = env.arg2((x, f, env) =>
+  def evalAnd$ : ENV = env.arg2: (x, f, env) =>
     val env1 = env.push(x)
     if x.toBool then env1.push(f).eval else env1
-  )
   def evalOr: ENV =
     env.arg2((x, f, env) => if x.toBool then env else env.push(f).eval)
-  def evalOr$ : ENV = env.arg2((x, f, env) =>
+  def evalOr$ : ENV = env.arg2: (x, f, env) =>
     val env1 = env.push(x)
     if x.toBool then env1 else env1.push(f).eval
-  )
   def evalIf: ENV =
     env.arg3((x, f, g, env) => env.push(if x.toBool then f else g).eval)
   def evalIf$ : ENV =
-    env.arg1((f, env) =>
-      f.toMAP.x.find { case (k, _) =>
-        env.push(k).evale.getStack(0).toBool
-      } match
+    env.arg1: (f, env) =>
+      f.toMAP.x.find:
+        case (k, _) => env.push(k).evale.getStack(0).toBool
+      match
         case Some(_, v) => env.push(v).eval
         case _          => env
-    )
   def evalTimes: ENV =
-    env.arg2((f, n, env) =>
+    env.arg2: (f, n, env) =>
       def loop(env: ENV, n: Int): ENV =
         if n > 0 then loop(env.push(f).evale, n - 1)
         else env
       loop(env, n.toInt)
-    )
-  def evalTry: ENV = env.arg2((f, g, env) =>
+  def evalTry: ENV = env.arg2: (f, g, env) =>
     try env.push(f).evale
     catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
-  )
-  def evalTRY: ENV = env.arg1((x, env) =>
+  def evalTRY: ENV = env.arg1: (x, env) =>
     env.push(x.vec1(f => Try(env.push(f).quar.getStack(0)).toTRY))
-  )
   def throwERR: ENV = env.arg1((x, env) => throw x.toERR.x)
-  def evalArrSt: ENV = env.arg2((x, f, env) =>
+  def evalArrSt: ENV = env.arg2: (x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
-  )
   def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
 
   def startARR: ENV = env.setArr(env.stack :: env.arr).clr
@@ -2374,61 +2364,48 @@ extension (env: ENV)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).sSTR))
   def matchType: ENV = env.mod2(_.matchType(_))
-  def lineMAP: ENV = env.vec1(
+  def lineMAP: ENV = env.vec1:
     _.toSTR.x
       .split("\n")
       .map(s => env.evalA2(Vector(), STR(s)))
       .to(VectorMap)
       .toMAP
-  )
   def fromJSON: ENV = env.vec1(_.toString.pipe(read(_)))
   def toJSON: ENV   = env.mod1(write(_).sSTR)
 
-  def locId: ENV = env.arg1((x, env) =>
-    x.vef1(env)((env, cs) =>
+  def locId: ENV = env.arg1: (x, env) =>
+    x.vef1(env): (env, cs) =>
       cs.xFN.foldLeft(env)((env, c) => env.addLocId(c.toString))
-    )
-  )
-  def globId: ENV = env.arg1((x, env) =>
-    x.vef1(env)((env, cs) =>
+  def globId: ENV = env.arg1: (x, env) =>
+    x.vef1(env): (env, cs) =>
       cs.xFN.foldLeft(env)((env, c) => env.addGlobId(c.toString))
-    )
-  )
-  def locIdS: ENV = env.arg1((x, env) =>
+  def locIdS: ENV = env.arg1: (x, env) =>
     val x1   = x.toString
     val env1 = env.addLocId(x1)
     env1.push(env1.getLineF(env1.ids(x1).l))
-  )
-  def globIdS: ENV = env.arg1((x, env) =>
+  def globIdS: ENV = env.arg1: (x, env) =>
     val x1   = x.toString
     val env1 = env.addGlobId(x1)
     env1.push(env1.getLineF(env1.gids(x1).l))
-  )
-  def locIdF: ENV = env.arg1((x, env) =>
+  def locIdF: ENV = env.arg1: (x, env) =>
     val x1   = x.toString
     val env1 = env.addLocId(x1)
     val l    = env1.ids(x1).l
     env.fnLine(l)
     env1.push(env1.getLineF(l))
-  )
-  def globIdF: ENV = env.arg1((x, env) =>
+  def globIdF: ENV = env.arg1: (x, env) =>
     val x1   = x.toString
     val env1 = env.addGlobId(x1)
     val l    = env1.gids(x1).l
     env.fnLine(l)
     env1.push(env1.getLineF(l))
-  )
 
-  def lambda: ENV = env.arg1((x, env) =>
+  def lambda: ENV = env.arg1: (x, env) =>
     val x1 = x.xFN
-    env.arg(
-      x1.length,
-      (cs, env) =>
-        x1.lazyZip(cs).foldLeft(env) { case (env, (k, v)) =>
-          env.addLoc(k.toString, v)
-        }
-    )
-  )
+    env.arg(x1.length): (cs, env) =>
+      x1.lazyZip(cs)
+        .foldLeft(env):
+          case (env, (k, v)) => env.addLoc(k.toString, v)
 
   def getSc =
     env.push(MAP(env.scope.map { case (k, v) => (k.sSTR, v) }.to(VectorMap)))
@@ -2440,15 +2417,13 @@ extension (env: ENV)
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
-  def fread: ENV = env.mod2((x, y) =>
-    y.vec1(n =>
+  def fread: ENV = env.mod2: (x, y) =>
+    y.vec1: n =>
       os.read
         .chunks(x.toPath, n.toInt)
         .obs
         .map { case (xs, n) => xs.take(n).toVector.map(_.toChar).mkString.sSTR }
         .toOBS
-    )
-  )
   def freadl: ENV =
     env.mod1(x => os.read.lines.stream(x.toPath).obs.map(_.sSTR).toOBS)
 
@@ -2464,12 +2439,10 @@ extension (env: ENV)
   def pop: ENV = env.mods1(_ => Vector())
   def clr: ENV = env.modStack(_ => Vector())
   def nip: ENV = env.mod2((_, x) => x)
-  def nix: ENV = env.arg1((x, env) =>
-    env.modStack(s =>
+  def nix: ENV = env.arg1: (x, env) =>
+    env.modStack: s =>
       val i = env.iStack(x.toInt)
       if 0 <= i && i < s.length then s.patch(i, Nil, 1) else s
-    )
-  )
 
   def swap: ENV  = env.mods2((x, y) => Vector(y, x))
   def rev: ENV   = env.modStack(_.reverse)
@@ -2480,14 +2453,12 @@ extension (env: ENV)
 
   def rot: ENV  = env.mods3((x, y, z) => Vector(y, z, x))
   def rotu: ENV = env.mods3((x, y, z) => Vector(z, x, y))
-  def roll: ENV = env.arg1((x, env) =>
+  def roll: ENV = env.arg1: (x, env) =>
     val a = env.getStack(x.toInt)
     env.push(x).nix.push(a)
-  )
-  def rollu: ENV = env.arg1((x, env) =>
+  def rollu: ENV = env.arg1: (x, env) =>
     val a = env.getStack(0)
     env.modStack(s => s.patch(env.iStack(x.toInt), Vector(a), 0)).pop
-  )
 
   def dip: ENV = env.arg2((x, f, env) => env.push(f).evale.push(x))
 
@@ -2502,9 +2473,10 @@ extension (env: ENV)
 
   def setmod: ENV =
     env.mod3((x, f, i) => x.setmod(i, a => SIG_1f1(f)(a)))
-  def setmods: ENV = env.mod2((x, y) =>
-    x.setmods(y.toMAP.x.map { case (k, v) => (k, SIG_1f1(_: ANY)(v)) })
-  )
+  def setmods: ENV = env.mod2: (x, y) =>
+    x.setmods:
+      y.toMAP.x.map:
+        case (k, v) => (k, SIG_1f1(_: ANY)(v))
   def setmodn: ENV = env.mod3((x, f, i) => x.setmodn(i.toSEQ.x, SIG_1f1(f)))
 
   def idel: ENV = env.mod2(_.remove(_))
@@ -2530,34 +2502,29 @@ extension (env: ENV)
   def toShape: ENV =
     env.mod2(_.toShape(_))
 
-  def itr: ENV = env.mod2((x, y) =>
+  def itr: ENV = env.mod2: (x, y) =>
     y.vec1(f => LazyList.iterate(x)(s => env.evalA1(Vector(s), f)).toSEQ)
-  )
-  def unfold: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
+  def unfold: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
       LazyList
-        .unfold(x)(s =>
+        .unfold(x): s =>
           env.evalS(Vector(s), f) match
             case st :+ n =>
               st match
                 case _ :+ m => Some(m, n)
                 case _      => throw LinEx("ST_LEN", "stack length = 1")
             case _ => None
-        )
         .toSEQ
-    )
-  )
 
-  def enumL: ENV = env.mod1 {
+  def enumL: ENV = env.mod1:
     case x: MAP => x.toARR
     case x =>
       LazyList
         .from(0)
         .map(NUM(_))
         .toSEQ
-        .zip(x, Vector(_, _).toARR)
+        .zip(x)(Vector(_, _).toARR)
         .matchType(x)
-  }
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))
   def vals: ENV = env.enumL.mod1(_.map(_.get(NUM(1))))
 
@@ -2573,14 +2540,13 @@ extension (env: ENV)
   def perm: ENV    = env.mod1(_.permutations)
   def comb: ENV    = env.mod2((x, y) => y.vec1(n => x.combinations(n.toInt)))
   def powset: ENV  = env.mod1(_.powset)
-  def cProd: ENV = env.mod1(x =>
+  def cProd: ENV = env.mod1: x =>
     x.toSEQ.x
       .map(_.toSEQ.x)
       .pipe(Util.cProd)
       .map(_.toSEQ.mIts(x.get(NUM(0))))
       .toSEQ
-  )
-  def transpose: ENV = env.mod1(x =>
+  def transpose: ENV = env.mod1: x =>
     def f(a: ANY): LazyList[ANY] = a match
       case MAP(a) => a.values.to(LazyList)
       case _      => a.toSEQ.x
@@ -2594,46 +2560,39 @@ extension (env: ENV)
       .pipe(Util.transpose)
       .map(g(_, x))
       .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
-  )
   def paxes: ENV   = env.mod1(_.paxes)
   def paxes$ : ENV = env.mod2(_ paxes$ _.toARR.x.map(_.toInt))
 
-  def padH(f: (String, Int, String) => String): ENV = env.vec3((x, y, z) =>
+  def padH(f: (String, Int, String) => String): ENV = env.vec3: (x, y, z) =>
     val x1 = x.toString
     val y1 = y.toInt - x1.length
     val z1 = z.toString
     f(x1, y1, z1).sSTR
-  )
   def padH1(s: String, n: Int): String =
     LazyList.continually(s).flatten.take(n).mkString
   def pad: ENV  = padH((x, y, z) => x + padH1(z, y))
   def padl: ENV = padH((x, y, z) => padH1(z, y) + x)
-  def padc: ENV = padH((x, y, z) =>
+  def padc: ENV = padH: (x, y, z) =>
     val q  = y / 2
     val y1 = y - q
     padH1(z, q) + x.toString + padH1(z, y1)
-  )
 
-  def pad$H(f: (ANY, Int, ANY) => ANY): ENV = env.mod3((x, y, z) =>
-    y.vec1(y =>
+  def pad$H(f: (ANY, Int, ANY) => ANY): ENV = env.mod3: (x, y, z) =>
+    y.vec1: y =>
       val y1 = y.toInt - x.length
       if x.toSEQ.x.drop(y1).isEmpty then f(x, y1, z) else x
-    )
-  )
   def pad$H1(s: ANY, n: Int): ANY = ARR(Vector()).add$$(s).mul$$(NUM(n))
   def pad$ : ENV                  = pad$H((x, y, z) => x.add$$(pad$H1(z, y)))
   def padl$ : ENV                 = pad$H((x, y, z) => pad$H1(z, y).add$$(x))
-  def padc$ : ENV = pad$H((x, y, z) =>
+  def padc$ : ENV = pad$H: (x, y, z) =>
     val q  = y / 2
     val y1 = y - q
     pad$H1(z, q).add$$(x).add$$(pad$H1(z, y1))
-  )
 
   def toCodePt: ENV =
     env.mod1(_.vec1(x => x.toString.map(_.toInt.pipe(NUM(_))).toARR))
-  def fromCodePt: ENV = env.mod1(
+  def fromCodePt: ENV = env.mod1:
     _.map(_.toInt.toChar.toString.sSTR).toString.sSTR
-  )
 
   def split: ENV   = env.str2a(_.split(_))
   def ssplit: ENV  = env.str1a(_.split(raw"\s"))
@@ -2651,16 +2610,15 @@ extension (env: ENV)
   def rmatchGroups: ENV = env.vec2(rmatchBase(_, _).map(_.get(STR("*"))).toSEQ)
   def rmatchStart: ENV  = env.vec2(rmatchBase(_, _).map(_.get(STR("^"))).toSEQ)
   def rmatchEnd: ENV    = env.vec2(rmatchBase(_, _).map(_.get(STR("$"))).toSEQ)
-  def rsub: ENV = env.vec3((x, r, f) =>
+  def rsub: ENV = env.vec3: (x, r, f) =>
     r.toSTR.x.r
       .replaceAllIn(x.toSTR.x, m => env.evalA1(Vector(m.matchMAP), f).toSTR.x)
       .sSTR
-  )
   def rsubFirst: ENV =
     env.vec3((x, r, f) => r.toSTR.x.r.replaceFirstIn(x.toSTR.x, f.toSTR.x).sSTR)
 
-  def wrap$ : ENV   = env.modx(2, _.toARR)
-  def wrap: ENV     = env.modx(1, _.toARR)
+  def wrap$ : ENV   = env.modx(2)(_.toARR)
+  def wrap: ENV     = env.modx(1)(_.toARR)
   def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
   def wrapv$ : ENV  = env.vec2(Vector(_, _).toARR)
   def wrapv: ENV    = env.vec1(Vector(_).toARR)
@@ -2670,12 +2628,10 @@ extension (env: ENV)
 
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toInt)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
-  def splitAt: ENV = env.mod2((x, y) =>
-    y.vec1(n =>
+  def splitAt: ENV = env.mod2: (x, y) =>
+    y.vec1: n =>
       val i = n.toInt
       Vector(x.take(i), x.drop(i)).toARR
-    )
-  )
 
   def scale: ENV = env.push(NUM(10)).swap.pow.mul
   def trunc: ENV = env.num1(_.toBigInt.toDouble, _.toBigInt)
@@ -2685,24 +2641,18 @@ extension (env: ENV)
 
   def fromDec: ENV =
     env.num2a((x, y) => Util.fromDec(x.toSafeLong, y.toInt).map(Real(_)))
-  def toDec: ENV = env.mod2((x, y) =>
+  def toDec: ENV = env.mod2: (x, y) =>
     val x1 = x.toARR.x.map(_.toNUM.x.toSafeLong)
-    y.num1(
-      n => Util.toDec(x1, n.toInt).toDouble,
-      n => Util.toDec(x1, n.toInt)
-    )
-  )
-  def toNumDen: ENV = env.vec1(x =>
+    y.num1(n => Util.toDec(x1, n.toInt).toDouble, n => Util.toDec(x1, n.toInt))
+  def toNumDen: ENV = env.vec1: x =>
     val a = x.toNUM.x.toRational
     Vector(a.numerator, a.denominator).map(NUM(_)).toARR
-  )
   def isInt: ENV = env.vec1(_.toNUM.x.isWhole.boolTF)
-  def isExact: ENV = env.vec1(x =>
-    TF(x.toNUM.x match
-      case Real.Exact(_) => true
-      case _             => false
-    )
-  )
+  def isExact: ENV = env.vec1: x =>
+    TF:
+      x.toNUM.x match
+        case Real.Exact(_) => true
+        case _             => false
 
   def neg: ENV   = env.num1(-_, -_)
   def neg$ : ENV = env.str1(_.reverse)
@@ -2748,9 +2698,8 @@ extension (env: ENV)
     (x, y) => if y == 0 then throw ArithmeticException() else x.fmod(y),
     "bad %"
   )
-  def divmod: ENV = env.arg2((x, y, env) =>
+  def divmod: ENV = env.arg2: (x, y, env) =>
     env.pushs(Vector(x, y)).divi.pushs(Vector(x, y)).mod
-  )
   def mod$ : ENV  = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
   def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _.toInt))
   def mod2$$ : ENV =
@@ -2764,12 +2713,10 @@ extension (env: ENV)
     "bad ^"
   )
   def powi: ENV = env.num2(_ ** _.intValue, _ ** _.intValue)
-  def pow$ : ENV = env.vec2((x, y) =>
+  def pow$ : ENV = env.vec2: (x, y) =>
     Util.cPow(x.toSTR.toSEQ.x, y.toInt).map(_.toARR.toSTR).toSEQ
-  )
-  def pow$$ : ENV = env.mod2((x, y) =>
+  def pow$$ : ENV = env.mod2: (x, y) =>
     y.vec1(n => Util.cPow(x.toSEQ.x, n.toInt).map(_.toARR.matchType(x)).toSEQ)
-  )
 
   def exp: ENV = env.num1(_.exp, _.exp)
   def abs: ENV = env.num1(_.abs, _.abs)
@@ -2805,14 +2752,13 @@ extension (env: ENV)
   def log10: ENV = env.push(NUM(10)).log
 
   def isPrime: ENV = env.vec1(_.toNUM.x.toSafeLong.pipe(prime.isPrime).boolTF)
-  def factor: ENV = env.vec1(
+  def factor: ENV = env.vec1:
     _.toNUM.x.toSafeLong
       .pipe(prime.factor)
       .to(VectorMap)
       .map { case (x, y) => (NUM(x), NUM(y)) }
       .toMAP
       .sortBy((a, _) => a, a => a)
-  )
 
   def not: ENV    = env.vec1(_.toBool.unary_!.boolTF)
   def not$$ : ENV = env.mod1(_.toBool.unary_!.boolTF)
@@ -2831,18 +2777,14 @@ extension (env: ENV)
   def lt$$ : ENV  = cmp$$.push(NUM(-1)).eql
   def gt: ENV     = cmp.push(NUM(1)).eql
   def gt$$ : ENV  = cmp$$.push(NUM(1)).eql
-  def lteq: ENV = env.arg2((x, y, env) =>
+  def lteq: ENV = env.arg2: (x, y, env) =>
     env.pushs(Vector(x, y)).lt.pushs(Vector(x, y)).eql.or
-  )
-  def lteq$$ : ENV = env.arg2((x, y, env) =>
+  def lteq$$ : ENV = env.arg2: (x, y, env) =>
     env.pushs(Vector(x, y)).lt$$.pushs(Vector(x, y)).eql$$.or
-  )
-  def gteq: ENV = env.arg2((x, y, env) =>
+  def gteq: ENV = env.arg2: (x, y, env) =>
     env.pushs(Vector(x, y)).gt.pushs(Vector(x, y)).eql.or
-  )
-  def gteq$$ : ENV = env.arg2((x, y, env) =>
+  def gteq$$ : ENV = env.arg2: (x, y, env) =>
     env.pushs(Vector(x, y)).gt$$.pushs(Vector(x, y)).eql$$.or
-  )
   def eql: ENV     = env.vec2(_.eql(_).boolTF)
   def eql$$ : ENV  = env.mod2(_.eql(_).boolTF)
   def eqls: ENV    = env.vec2(_.eqls(_).boolTF)
@@ -2896,9 +2838,8 @@ extension (env: ENV)
     env.mod2((x, y) => y.vec1(f => x.flatMap(SIG_2f1(f), SIG_1f1(f))))
   def mergeMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.mergeMap(SIG_1f1(f)).toOBS))
-  def winMap: ENV = env.mod3((x, y, z) =>
+  def winMap: ENV = env.mod3: (x, y, z) =>
     y.vec2(z, (f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
-  )
   def flat: ENV  = env.mod1(_.flat)
   def merge: ENV = env.mod1(_.merge.toOBS)
   def rflat: ENV = env.mod1(_.rflat)
@@ -2906,14 +2847,10 @@ extension (env: ENV)
   def dmap: ENV =
     env.mod3((x, y, z) => y.vec2(z, (f, d) => x.dmap(d.toInt, SIG_1f1(f))))
 
-  def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y, SIG_2f1(f))))
-  def zip$ : ENV = env.modx(
-    5,
-    {
-      case Vector(x, y, v, w, z) => z.vec1(f => x.zipAll(y, v, w, SIG_2f1(f)))
-      case _                     => ???
-    }
-  )
+  def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y)(SIG_2f1(f))))
+  def zip$ : ENV = env.modx(5):
+    case Vector(x, y, v, w, z) => z.vec1(f => x.zipAll(y, v, w, SIG_2f1(f)))
+    case _                     => ???
   def tbl: ENV  = env.mod3((x, y, z) => z.vec1(f => x.table(y, SIG_2f1(f))))
   def tblf: ENV = env.mod3((x, y, z) => z.vec1(f => x.flatTable(y, SIG_2f1(f))))
 
@@ -2938,8 +2875,8 @@ extension (env: ENV)
   def scanR: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.scanRight(y)(SIG_2y1f1(f), SIG_2f1(f))))
 
-  def walk: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
+  def walk: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
       def loop(b: Boolean = false)(xs: ARRW[ANY]): ARRW[ANY] = xs match
         case st :+ n =>
           st match
@@ -2953,10 +2890,10 @@ extension (env: ENV)
                   Vector(m, n1)
             case _ :+ m => Vector(if n.toBool then fn(m) else m)
             case _ =>
-              Vector(n match
-                case Itr(_) => fn(n)
-                case _      => n
-              )
+              Vector:
+                n match
+                  case Itr(_) => fn(n)
+                  case _      => n
         case _ => Vector()
       def fn(t: ANY): ANY =
         t.flatMap$(
@@ -2964,8 +2901,6 @@ extension (env: ENV)
           v => env.evalS(Vector(v), f).pipe(loop())
         )
       env.evalS(Vector(x), f).pipe(loop()).lastOption.getOrElse(UN)
-    )
-  )
 
   def fltr: ENV =
     env.mod2((x, y) => y.vec1(f => x.filter(SIG_2fb(f), SIG_1fb(f))))
@@ -2984,17 +2919,14 @@ extension (env: ENV)
   def dpwl: ENV =
     env.mod2((x, y) => y.vec1(f => x.dropWhile(SIG_2fb(f), SIG_1fb(f))))
 
-  def find: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
+  def find: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
       x.find(SIG_2fb(f), SIG_1fb(f)) match
         case Some((a, b)) => Vector(a, b).toARR
         case Some(a: ANY) => a
         case None         => UN
-    )
-  )
-  def ofind: ENV = env.mod2((x, y) =>
+  def ofind: ENV = env.mod2: (x, y) =>
     y.vec1(f => x.ofind(SIG_1fb(f)).map(_.getOrElse(UN)).toTASK)
-  )
 
   def findi: ENV =
     env.mod2((x, y) => y.vec1(f => x.findIndex(SIG_1fb(f)).pipe(NUM(_))))
@@ -3012,24 +2944,20 @@ extension (env: ENV)
   def sort$ : ENV =
     env.mod2((x, y) => y.vec1(f => x.sortWith(SIG_2x2fb(f), SIG_2fb(f))))
 
-  def part: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
+  def part: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
       val (a, b) = x.partition(SIG_2fb(f), SIG_1fb(f))
       Vector(a, b).toARR
-    )
-  )
 
   def group: ENV =
     env.mod2((x, y) => y.vec1(f => x.groupBy(SIG_2f1(f), SIG_1f1(f)).toMAP))
   def ogroup: ENV =
     env.mod2((x, y) => y.vec1(f => x.ogroupBy(SIG_1f1(f)).toOBS))
 
-  def span: ENV = env.mod2((x, y) =>
-    y.vec1(f =>
+  def span: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
       val (a, b) = x.span(SIG_2fb(f), SIG_1fb(f))
       Vector(a, b).toARR
-    )
-  )
 
   def pack: ENV =
     env.mod2((x, y) => y.vec1(f => x.packWith(SIG_2x2fb(f), SIG_2fb(f))))
@@ -3041,29 +2969,25 @@ extension (env: ENV)
   def diff: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.differWith(y, SIG_2fb(f))))
 
-  def evalTASK: ENV = env.arg1((x, env) =>
+  def evalTASK: ENV = env.arg1: (x, env) =>
     env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
-  )
   def await: ENV =
     env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
   def awaitTRY: ENV =
     env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
   def toFUT: ENV = env.mod1(_.toFUT)
   def toOBS: ENV = env.mod1(_.toOBS)
-  def cancelFUT: ENV = env.arg1((x, env) =>
+  def cancelFUT: ENV = env.arg1: (x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
-  )
   def forkTASK: ENV     = env.vec1(_.modTASK(_.executeAsync))
   def memoTASK: ENV     = env.vec1(_.modTASK(_.memoize))
   def memoTASK$ : ENV   = env.vec1(_.modTASK(_.memoizeOnSuccess))
   def uncancelTASK: ENV = env.vec1(_.modTASK(_.uncancelable))
-  def timeoutTASK: ENV = env.vec2((x, n) =>
+  def timeoutTASK: ENV = env.vec2: (x, n) =>
     val n1 = n.toNUM.x.toLong
-    x.modTASK(
+    x.modTASK:
       _.timeoutWith(n1.milliseconds, LinEx("TASK", s"timeout after ${n1}ms"))
-    )
-  )
   def itrTASKW(t: ANY, f: Iterable[Task[ANY]] => Task[Iterable[ANY]]): ANY =
     t match
       case MAP(x) =>
@@ -3087,19 +3011,17 @@ extension (env: ENV)
   def raceTASK: ENV =
     env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).toTASK)
 
-  def sleep: ENV = env.vec1(n =>
+  def sleep: ENV = env.vec1: n =>
     val n1 = n.toNUM.x.toLong
     n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).toTASK
-  )
 
   def dot: ENV = env.code.x match
     case c #:: cs =>
       env
         .modCode(_ => cs)
-        .pipe(env =>
+        .pipe: env =>
           c match
             case STR(x) => env.push(STR(StringContext.processEscapes(x)))
             case CMD(x) => env.wrapFN.push(CMD(x)).snoc
             case _      => env.push(c)
-        )
     case _ => evalLNext

@@ -3,24 +3,24 @@ package sclin
 import cats.kernel.Eq
 import geny.Generator
 import monix.eval.Task
-import monix.execution._
+import monix.execution.*
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
-import monix.reactive._
+import monix.reactive.*
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.quoted._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.quoted.*
 import scala.util.matching.Regex.Match
 import scala.util.Failure
 import scala.util.Random
 import scala.util.Success
 import scala.util.Try
-import spire.math._
-import upickle.default._
-import util.chaining._
-import ANY._
+import spire.math.*
+import upickle.default.*
+import util.chaining.*
+import ANY.*
 
 /** ADT for lin types. */
 enum ANY:
@@ -69,12 +69,13 @@ enum ANY:
       s"[${x.toSeq.map { case (i, a) => i.toForm + "=>" + a.toForm }
           .mkString(" ")}]:"
     case STR(x) =>
-      s"\"${x.map {
-          case '\n' => "\\n"
-          case '\r' => "\\r"
-          case '"'  => "\\\""
-          case c    => c
-        }.mkString}\""
+      s"\"${x
+          .map:
+            case '\n' => "\\n"
+            case '\r' => "\\r"
+            case '"'  => "\\\""
+            case c    => c
+          .mkString}\""
     case FN(PATH(_, l), x) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(…)$n"
@@ -172,10 +173,9 @@ enum ANY:
 
   def dshape: Vector[Int] = this match
     case Itr(x) =>
-      x.length +: x.foldLeft(Vector[Int]())((a, b) =>
+      x.length +: x.foldLeft(Vector[Int]()): (a, b) =>
         val b1 = b.dshape
         if a.length < b1.length then b1 else a
-      )
     case _ => Vector()
 
   def rank: Int  = shape.length
@@ -251,9 +251,8 @@ enum ANY:
       case MAP(x) => x.+(i -> t).toMAP
       case _      => this
 
-  def sets(is: Map[ANY, ANY]): ANY = is.foldLeft(this) { case (a, (i, t)) =>
-    a.set(i, t)
-  }
+  def sets(is: Map[ANY, ANY]): ANY = is.foldLeft(this):
+    case (a, (i, t)) => a.set(i, t)
 
   def setn(is: SEQW[ANY], t: ANY): ANY = is match
     case LazyList()  => this
@@ -262,9 +261,8 @@ enum ANY:
 
   def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
 
-  def setmods(is: Map[ANY, ANY => ANY]) = is.foldLeft(this) {
+  def setmods(is: Map[ANY, ANY => ANY]) = is.foldLeft(this):
     case (a, (i, f)) => a.setmod(i, f)
-  }
 
   def setmodn(is: SEQW[ANY], f: ANY => ANY): ANY = is match
     case LazyList()  => f(this)
@@ -329,7 +327,7 @@ enum ANY:
     case (x, y)           => Vector(x).toARR.sub$$(y)
 
   def mul$$(t: ANY): ANY = (this, t) match
-    case (Itr(x), Itr(y)) => x.zip(y, _ mul$$ _).flat
+    case (Itr(x), Itr(y)) => x.zip(y)(_ mul$$ _).flat
     case (Lsy(_), y)      => LazyList.fill(y.toInt)(this).toSEQ.flat.matchType(this)
     case (x: ARR, y)      => Vector.fill(y.toInt)(x).toARR.flat
     case (Sty(_), y)      => toARR.mul$$(y).toString.mSTR(this)
@@ -441,10 +439,11 @@ enum ANY:
   def toMAP: MAP = this match
     case x: MAP => x
     case ARR(x) =>
-      x.flatMap {
+      x.flatMap:
         case Itr(a) if a.length > 0 => Some((a.get(NUM(0)), a.get(NUM(1))))
         case _                      => None
-      }.to(VectorMap).toMAP
+      .to(VectorMap)
+        .toMAP
     case _ => toARR.toMAP
 
   def toSTR: STR = STR(toString)
@@ -587,12 +586,13 @@ enum ANY:
   def flatMap$(f: (ANY, ANY) => ARRW[ANY], g: ANY => ARRW[ANY]): ANY =
     this match
       case MAP(x) =>
-        x.flatMap { case (a, b) =>
-          f(a, b) match
-            case _ :+ k :+ v => Some(k, v)
-            case Vector(v)   => Some(a, v)
-            case _           => None
-        }.toMAP
+        x.flatMap:
+          case (a, b) =>
+            f(a, b) match
+              case _ :+ k :+ v => Some(k, v)
+              case Vector(v)   => Some(a, v)
+              case _           => None
+        .toMAP
       case _ => flatMap$(g)
   def winMap(n: Int, f: ARRW[ANY] => ANY): ANY =
     mod$$(n).map(_.toARR.x.pipe(f)).mIts(this)
@@ -600,12 +600,12 @@ enum ANY:
     this match
       case _: MAP =>
         mod$$(n)
-          .map(_ match
-            case MAP(x) =>
-              x.keys.++(x.values).pipe(f) match
-                case (k, v) => Vector(k, v).toARR
-            case _ => ???
-          )
+          .map:
+            _ match
+              case MAP(x) =>
+                x.keys.++(x.values).pipe(f) match
+                  case (k, v) => Vector(k, v).toARR
+              case _ => ???
           .toMAP
       case _ => winMap(n, g)
   def mergeMap(f: ANY => ANY): Observable[ANY] = toOBS.x.mergeMap(f(_).toOBS.x)
@@ -615,15 +615,15 @@ enum ANY:
     case Itr(_) => flatMap(_.rflat)
     case x      => x
 
-  def zip(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
+  def zip(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (OBS(x), _)  => x.zipMap(t.toOBS.x)(f).toOBS
-    case (_, _: OBS)  => toOBS.zip(t, f).toOBS
+    case (_, _: OBS)  => toOBS.zip(t)(f).toOBS
     case (TASK(x), _) => Task.map2(x, t.toTASK.x)(f).toTASK
-    case (_, _: TASK) => toTASK.zip(t, f).toTASK
+    case (_, _: TASK) => toTASK.zip(t)(f).toTASK
     case (FUT(x), _)  => x.zip(t.toFUT.x).map(f.tupled).toFUT
-    case (_, _: FUT)  => toFUT.zip(t, f).toFUT
+    case (_, _: FUT)  => toFUT.zip(t)(f).toFUT
     case (Lsy(x), _)  => x.zip(t.toSEQ.x).map(f.tupled).mSEQ(this)
-    case (_, Lsy(_))  => toSEQ.zip(t, f).mSEQ(t)
+    case (_, Lsy(_))  => toSEQ.zip(t)(f).mSEQ(t)
     case _            => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
   def combine(t: ANY, f: (ANY, ANY) => ANY): Observable[ANY] =
@@ -633,10 +633,10 @@ enum ANY:
     (this, t) match
       case (_: OBS, _)  => combine(t, f).toOBS
       case (_, _: OBS)  => toOBS.zipAll(t, d1, d2, f).toOBS
-      case (_, _: TASK) => toTASK.zip(t, f)
-      case (_: TASK, _) => zip(t.toTASK, f)
-      case (_, _: FUT)  => toFUT.zip(t, f)
-      case (_: FUT, _)  => zip(t.toFUT, f)
+      case (_, _: TASK) => toTASK.zip(t)(f)
+      case (_: TASK, _) => zip(t.toTASK)(f)
+      case (_, _: FUT)  => toFUT.zip(t)(f)
+      case (_: FUT, _)  => zip(t.toFUT)(f)
       case (Lsy(x), _)  => x.zipAll(t.toSEQ.x, d1, d2).map(f.tupled).mSEQ(this)
       case (_, Lsy(_))  => toSEQ.zipAll(t, d1, d2, f).mSEQ(t)
       case _            => toARR.x.zipAll(t.toARR.x, d1, d2).map(f.tupled).toARR
@@ -663,13 +663,12 @@ enum ANY:
   def toShape(t: ANY): ANY =
     val q = toSEQ.rflat.toSEQ.x
     var f = LazyList.continually(q).flatten
-    t.rmap(_ =>
+    t.rmap: _ =>
       f match
         case x #:: xs =>
           f = xs
           x
         case _ => UN
-    )
 
   def foldLeft[T](a: T)(f: (T, ANY) => T): T = this match
     case Lsy(x) => x.foldLeft(a)(f)
@@ -721,10 +720,9 @@ enum ANY:
   def reduceLeft(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
-        toARR.reduceLeft {
+        toARR.reduceLeft:
           case (a, ARR(k +: v +: _)) => f(a, (k, v))
           case _                     => ???
-        }
       case _ => reduceLeft(g)
 
   def reduceRight(f: (ANY, ANY) => ANY): ANY =
@@ -740,10 +738,9 @@ enum ANY:
   def reduceRight(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
-        toARR.reduceRight {
+        toARR.reduceRight:
           case (a, ARR(k +: v +: _)) => f(a, (k, v))
           case _                     => ???
-        }
       case _ => reduceRight(g)
 
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
@@ -949,20 +946,17 @@ enum ANY:
     case _      => f(this)
 
   def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (Itr(_), Itr(_)) => zip(t, _.vec2(_, f))
+    case (Itr(_), Itr(_)) => zip(t)(_.vec2(_, f))
     case (Itr(_), _)      => vec1(f(_, t))
     case (_, Itr(_))      => t.vec1(f(this, _))
     case _                => f(this, t)
 
   def vec3(t: ANY, s: ANY, f: (ANY, ANY, ANY) => ANY): ANY = (this, t, s) match
     case (Itr(_), Itr(_), Itr(_)) =>
-      zip(t, Vector(_, _).toARR).zip(
-        s,
-        (x, c) =>
-          x.toARR.x match
-            case Vector(a, b) => a.vec3(b, c, f)
-            case _            => ???
-      )
+      zip(t)(Vector(_, _).toARR).zip(s): (x, c) =>
+        x.toARR.x match
+          case Vector(a, b) => a.vec3(b, c, f)
+          case _            => ???
     case (Itr(_), Itr(_), _) => vec2(t, f(_, _, s))
     case (Itr(_), _, Itr(_)) => vec2(t, f(_, t, _))
     case (_, Itr(_), Itr(_)) => t.vec2(s, f(this, _, _))
@@ -1004,9 +998,8 @@ enum ANY:
 
   def str1(f: String => String): ANY = vec1(_.toString.pipe(f).sSTR)
 
-  def str1a(f: String => Iterable[String]): ANY = vec1(
+  def str1a(f: String => Iterable[String]): ANY = vec1:
     _.toString.pipe(f).map(STR(_)).toARR
-  )
 
   def str2(t: ANY, f: (String, String) => String): ANY =
     vec2(t, (x, y) => f(x.toString, y.toString).sSTR)
@@ -1100,9 +1093,8 @@ object ANY:
       loop(xs)
 
     def uniqWith(f: (T, T) => Boolean): Iterable[T] =
-      xs.foldLeft(Iterable[T]())((acc, x) =>
+      xs.foldLeft(Iterable[T]()): (acc, x) =>
         if acc.exists(f(x, _)) then acc else acc ++ Iterable(x)
-      )
 
     def delBy(f: T => Boolean): Iterable[T] =
       val (x, y) = xs.span(f)
@@ -1217,16 +1209,18 @@ object ANY:
         STR("`") -> m.before.pipe(strun),
         STR("'") -> m.after.pipe(strun),
         STR("*") ->
-          m.subgroups.zipWithIndex.map { case (g, i) =>
-            val i1 = i + 1
-            VectorMap(
-              STR("&") -> g.strun,
-              STR("`") -> m.before(i1).pipe(strun),
-              STR("'") -> m.after(i1).pipe(strun),
-              STR("^") -> NUM(m.start(i1)),
-              STR("$") -> NUM(m.end(i1))
-            ).toMAP
-          }.toARR,
+          m.subgroups.zipWithIndex
+            .map:
+              case (g, i) =>
+                val i1 = i + 1
+                VectorMap(
+                  STR("&") -> g.strun,
+                  STR("`") -> m.before(i1).pipe(strun),
+                  STR("'") -> m.after(i1).pipe(strun),
+                  STR("^") -> NUM(m.start(i1)),
+                  STR("$") -> NUM(m.end(i1))
+                ).toMAP
+            .toARR,
         STR("^") -> NUM(m.start),
         STR("$") -> NUM(m.end)
       ).toMAP
@@ -1246,14 +1240,13 @@ object ANY:
   extension [T](g: Generator[T])
 
     def obs: Observable[T] =
-      Observable.create(OverflowStrategy.Unbounded)(s =>
-        g.generate(s.onNext(_) match
-          case Ack.Continue => Generator.Continue
-          case Ack.Stop     => Generator.End
-        )
+      Observable.create(OverflowStrategy.Unbounded): s =>
+        g.generate:
+          s.onNext(_) match
+            case Ack.Continue => Generator.Continue
+            case Ack.Stop     => Generator.End
         s.onComplete()
         Cancelable.empty
-      )
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
 

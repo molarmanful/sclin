@@ -1,7 +1,7 @@
 package sclin
 
-import scala.util.chaining._
-import ANY._
+import scala.util.chaining.*
+import ANY.*
 
 case class Lambda(
     xs: LazyList[ANY] = LazyList(),

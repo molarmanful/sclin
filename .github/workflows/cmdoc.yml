@@ -22,10 +22,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 20
+      - name: test
+        run: |
+          ./mill sclin.reformat
+          ./mill sclin.test.reformat
+          ./mill sclin.test
       - name: build
         run: ./mill sclin.assembly
-      - name: test
-        run: ./mill sclin.test
       - name: generate docs
         run: ./mill sclin.cmdoc
       - name: run examples

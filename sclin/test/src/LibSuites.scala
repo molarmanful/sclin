@@ -1,6 +1,6 @@
 package sclin
 
-import ANY._
+import ANY.*
 
 class CmpSuite extends TU:
 

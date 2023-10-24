@@ -22,7 +22,10 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.SONATYPE_GPG_SECRET }}
       - name: test
-        run: ./mill sclin.test
+        run: |
+          ./mill sclin.reformat
+          ./mill sclin.test.reformat
+          ./mill sclin.test
       - name: mvn release
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -49,10 +52,13 @@ jobs:
           distribution: temurin
           java-version: 20
       - uses: coursier/cache-action@v6
+      - name: test
+        run: |
+          ./mill sclin.reformat
+          ./mill sclin.test.reformat
+          ./mill sclin.test
       - name: build
         run: ./mill sclin.assembly
-      - name: test
-        run: ./mill sclin.test
       - name: gh release
         uses: svenstaro/upload-release-action@v2
         with:

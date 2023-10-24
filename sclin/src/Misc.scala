@@ -4,8 +4,8 @@ import monix.execution.CancelableFuture
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
-import spire.math._
-import util.chaining._
+import spire.math.*
+import util.chaining.*
 
 type FILE = Option[os.Path]
 

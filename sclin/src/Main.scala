@@ -1,7 +1,7 @@
 package sclin
 
-import mainargs._
-import scala.util.chaining._
+import mainargs.*
+import scala.util.chaining.*
 
 object Main:
 
@@ -41,9 +41,8 @@ object Main:
         err(s"no file ${e.getFile()}")
       case e: LinERR => err(e.toString)
       case e =>
-        err(
+        err:
           s"ERR: $e\n     ---\n${e.getStackTrace.map("     " + _).mkString("\n")}"
-        )
 
   given TokensReader.Simple[os.Path] with
 
