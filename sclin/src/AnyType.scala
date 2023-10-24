@@ -1036,17 +1036,54 @@ enum ANY:
       case (Nmy(x), DBL(y)) => f(x.toDBL.x, y)
       case (x, y)           => g(x.toNUM.x, y.toNUM.x)
 
-given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
-
-given Eq[ANY] with
-
-  def eqv(x: ANY, y: ANY): Boolean = x.eqls(y)
-
-object OrdANY extends Ordering[ANY]:
-
-  def compare(x: ANY, y: ANY): Int = x.cmp(y)
-
 object ANY:
+
+  /** Pattern for `SEQ`-like. */
+  object Itr:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: OBS | _: SEQ | _: ARR | _: MAP => Some(a)
+      case _                                 => None
+
+  object Fnr:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case Itr(_) | _: TASK | _: FUT | _: TRY => Some(a)
+      case _                                  => None
+
+  /** Pattern for strict `SEQ`-like. */
+  object It:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: SEQ | _: ARR => Some(a)
+      case _               => None
+
+  /** Pattern for loose `SEQ`-like. */
+  object Its:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: OBS | Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
+      case _                                         => None
+
+  object Lsy:
+
+    def unapply(a: ANY): Option[LazyList[ANY]] = a match
+      case SEQ(x)   => Some(x)
+      case FN(_, x) => Some(x)
+      case _        => None
+
+  object Nmy:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case _: NUM | _: DBL => Some(a)
+      case _               => None
+
+  object Sty:
+
+    def unapply(a: ANY): Option[String] = a match
+      case STR(x) => Some(x)
+      case CMD(x) => Some(x)
+      case _      => None
 
   extension [T](xs: Iterable[T])
 
@@ -1218,49 +1255,12 @@ object ANY:
         Cancelable.empty
       )
 
-  /** Pattern for `SEQ`-like. */
-  object Itr:
+given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
 
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: OBS | _: SEQ | _: ARR | _: MAP => Some(a)
-      case _                                 => None
+given Eq[ANY] with
 
-  object Fnr:
+  def eqv(x: ANY, y: ANY): Boolean = x.eqls(y)
 
-    def unapply(a: ANY): Option[ANY] = a match
-      case Itr(_) | _: TASK | _: FUT | _: TRY => Some(a)
-      case _                                  => None
+object OrdANY extends Ordering[ANY]:
 
-  /** Pattern for strict `SEQ`-like. */
-  object It:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: SEQ | _: ARR => Some(a)
-      case _               => None
-
-  /** Pattern for loose `SEQ`-like. */
-  object Its:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: OBS | Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
-      case _                                         => None
-
-  object Lsy:
-
-    def unapply(a: ANY): Option[LazyList[ANY]] = a match
-      case SEQ(x)   => Some(x)
-      case FN(_, x) => Some(x)
-      case _        => None
-
-  object Nmy:
-
-    def unapply(a: ANY): Option[ANY] = a match
-      case _: NUM | _: DBL => Some(a)
-      case _               => None
-
-  object Sty:
-
-    def unapply(a: ANY): Option[String] = a match
-      case STR(x) => Some(x)
-      case CMD(x) => Some(x)
-      case _      => None
+  def compare(x: ANY, y: ANY): Int = x.cmp(y)
