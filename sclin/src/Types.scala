@@ -1,10 +1,12 @@
 package sclin
 
 import cats.kernel.Eq
+import geny.Generator
 import monix.eval.Task
-import monix.execution.CancelableFuture
+import monix.execution._
+import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
-import monix.reactive.Observable
+import monix.reactive._
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent._
@@ -107,7 +109,7 @@ enum ANY:
         .find(_ != 0)
         .getOrElse(x1.sizeCompare(t1))
     case (_, Itr(_))      => -t.cmp(this)
-    case (DBL(x), Nmy(y)) => x.compare(y.toDouble)
+    case (DBL(x), Nmy(y)) => x.compare(y.toDBL.x)
     case (Nmy(x), DBL(y)) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
@@ -449,8 +451,8 @@ enum ANY:
   def toNUM: NUM =
     try
       this match
-        case UN     => NUM(0)
         case x: NUM => x
+        case UN     => NUM(0)
         case TF(x)  => x.boolNUM
         case Sty(x) => x.toNUM
         case _      => toSTR.x.toNUM
@@ -459,17 +461,14 @@ enum ANY:
         throw LinEx("CAST", "bad NUM cast " + toForm)
       case e => throw e
 
-  def toDBL: DBL = DBL(toDouble)
-
-  def toDouble: Double = toNUM.x.toDouble
-
-  def toThrow: Throwable = this match
-    case ERR(x) => x
-    case x      => LinEx("_", x.toString)
+  def toDBL: DBL = this match
+    case x: DBL => x
+    case UN     => DBL(0)
+    case _      => toNUM.x.toDouble.toDBL
 
   def toERR: ERR = this match
     case x: ERR => x
-    case _      => toThrow.pipe(ERR(_))
+    case x      => LinEx("_", x.toString).pipe(ERR(_))
 
   def toTRY: TRY = this match
     case x: TRY => x
@@ -1032,8 +1031,8 @@ enum ANY:
 
   def fNum2(t: ANY, f: (Double, Double) => ANY, g: (NUMF, NUMF) => ANY) =
     (this, t) match
-      case (DBL(x), Nmy(y)) => f(x, y.toDouble)
-      case (Nmy(x), DBL(y)) => f(x.toDouble, y)
+      case (DBL(x), Nmy(y)) => f(x, y.toDBL.x)
+      case (Nmy(x), DBL(y)) => f(x.toDBL.x, y)
       case (x, y)           => g(x.toNUM.x, y.toNUM.x)
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
@@ -1205,6 +1204,18 @@ object ANY:
   extension (t: FUTW[ANY]) def toFUT: FUT = FUT(t)
 
   extension (t: Observable[ANY]) def toOBS: OBS = OBS(t)
+
+  extension [T](g: Generator[T])
+
+    def obs: Observable[T] =
+      Observable.create(OverflowStrategy.Unbounded)(s =>
+        g.generate(s.onNext(_) match
+          case Ack.Continue => Generator.Continue
+          case Ack.Stop     => Generator.End
+        )
+        s.onComplete()
+        Cancelable.empty
+      )
 
   /** Pattern for `SEQ`-like. */
   object Itr:

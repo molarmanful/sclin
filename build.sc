@@ -30,10 +30,7 @@ object sclin extends ScoverageModule with PublishModule {
     ivy"com.lihaoyi::fansi:0.4.0",
     ivy"com.lihaoyi::upickle:3.1.3",
     ivy"io.monix::monix:3.4.1",
-    ivy"io.monix::monix-nio:0.1.0",
-    ivy"dev.zio::zio:2.0.18",
-    ivy"dev.zio::zio-streams:2.0.18",
-    ivy"dev.zio::zio-connect-file:0.4.4",
+    ivy"com.lihaoyi::geny:1.0.0",
     ivy"com.lihaoyi::os-lib:0.9.1"
   )
 

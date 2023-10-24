@@ -40,7 +40,10 @@ object Main:
       case e: java.nio.file.NoSuchFileException =>
         err(s"no file ${e.getFile()}")
       case e: LinERR => err(e.toString)
-      case e         => err(s"ERR: $e\n${e.getStackTrace.mkString("\n")}")
+      case e =>
+        err(
+          s"ERR: $e\n     ---\n${e.getStackTrace.map("     " + _).mkString("\n")}"
+        )
 
   given TokensReader.Simple[os.Path] with
 

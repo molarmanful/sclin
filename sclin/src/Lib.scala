@@ -2,8 +2,6 @@ package sclin
 
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import monix.nio.file._
-import monix.nio.text._
 import monix.reactive.Observable
 import scala.annotation._
 import scala.collection.immutable.VectorMap
@@ -425,6 +423,8 @@ extension (env: ENV)
     case "f>o" => outf
     // TODO: docs
     case "fs>" => fread
+    // TODO: docs
+    case "fs>n" => freadl
     /*
     @s a -> a a
      */
@@ -2343,7 +2343,7 @@ extension (env: ENV)
   def evalTRY: ENV = env.arg1((x, env) =>
     env.push(x.vec1(f => Try(env.push(f).quar.getStack(0)).toTRY))
   )
-  def throwERR: ENV = env.arg1((x, env) => throw x.toThrow)
+  def throwERR: ENV = env.arg1((x, env) => throw x.toERR.x)
   def evalArrSt: ENV = env.arg2((x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
   )
@@ -2442,15 +2442,15 @@ extension (env: ENV)
 
   def fread: ENV = env.mod2((x, y) =>
     y.vec1(n =>
-      val n1 = n.toInt
-      if n1 < 2 then throw LinEx("BUF_N", "buffer size < 2")
-      else
-        readAsync(x.toPath.toNIO, n1)
-          .pipeThrough(UTF8Codec.utf8Decode)
-          .map(_.sSTR)
-          .toOBS
+      os.read
+        .chunks(x.toPath, n.toInt)
+        .obs
+        .map { case (xs, n) => xs.take(n).toVector.map(_.toChar).mkString.sSTR }
+        .toOBS
     )
   )
+  def freadl: ENV =
+    env.mod1(x => os.read.lines.stream(x.toPath).obs.map(_.sSTR).toOBS)
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
