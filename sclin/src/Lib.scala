@@ -2,6 +2,7 @@ package sclin
 
 import better.files.*
 import java.io.File as JFile
+import java.nio.charset.Charset
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.nio.file.*
@@ -457,6 +458,11 @@ extension (env: ENV)
     // TODO: docs
     // decently fast, requires encoding param
     case "fs>n" => fsreadn
+
+    // TODO: docs
+    case "~b>S" => oBtoU
+    // TODO: docs
+    case "~S>b" => oUtoB
 
     /*
     @s a -> a a
@@ -2471,7 +2477,7 @@ extension (env: ENV)
   def fsreadb: ENV = env.mod1: x =>
     Task(x.toFile.newInputStream)
       .pipe(Observable.fromInputStream(_))
-      .map(_.map(_.&(0xff).toChar).mkString.sSTR)
+      .map(Util.abtobs(_).sSTR)
       .toOBS
   def fsreadn: ENV = env.mod2: (x, y) =>
     y.vec1: s =>
@@ -2479,6 +2485,19 @@ extension (env: ENV)
         .pipe(Observable.fromLinesReader)
         .map(_.sSTR)
         .toOBS
+
+  def oBtoU: ENV = env.mod1: x =>
+    x.toOBS.x
+      .map(_.toString.pipe(Util.bstoab))
+      .pipeThrough(UTF8Codec.utf8Decode)
+      .map(_.sSTR)
+      .toOBS
+  def oUtoB: ENV = env.mod1: x =>
+    x.toOBS.x
+      .map(_.toString)
+      .pipeThrough(UTF8Codec.utf8Encode)
+      .map(Util.abtobs(_).sSTR)
+      .toOBS
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)

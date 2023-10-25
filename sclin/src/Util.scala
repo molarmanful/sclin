@@ -54,3 +54,6 @@ object Util:
   def charset(s: String): Charset = s match
     case "" => Charset.defaultCharset
     case _  => s
+
+  def abtobs(s: Array[Byte]): String = s.map(_.&(0xff).toChar).mkString
+  def bstoab(s: String): Array[Byte] = s.toString.getBytes("ISO-8859-1")
