@@ -406,14 +406,14 @@ enum ANY:
     case _      => toSEQ.permutations.map(_.matchType(this))
 
   def combinations(n: Int): ANY = this match
-    case Lsy(x) => x.comb(n).map(_.mSEQ(this)).toSEQ
+    case Lsy(x) => x.combo(n).map(_.mSEQ(this)).toSEQ
     case ARR(x) => combHelper(x, _.combinations(n)).map(_.toARR).toSEQ
     case _      => toARR.combinations(n).map(_.matchType(this))
 
   def powset: ANY = this match
     case SEQ(x) =>
       val x1 = x.zipWithIndex.map(_._2)
-      x1.flatMap(a => x1.comb(a + 1))
+      x1.flatMap(a => x1.combo(a + 1))
         .pipe(LazyList() #:: _)
         .map(_.map(x).toSEQ)
         .toSEQ
@@ -1136,13 +1136,13 @@ object ANY:
     def unionWith(ys: SEQW[T], f: (T, T) => Boolean): SEQW[T] =
       xs #::: ys.uniqWith(f).filter(y => !xs.exists(f(_, y)))
 
-    def comb(n: Int): SEQW[SEQW[T]] =
+    def combo(n: Int): SEQW[SEQW[T]] =
       if n < 0 then LazyList()
       else if n == 0 then LazyList(LazyList())
       else
         xs match
           case LazyList() => LazyList()
-          case x #:: xs   => xs.comb(n - 1).map(x #:: _) #::: xs.comb(n)
+          case x #:: xs   => xs.combo(n - 1).map(x #:: _) #::: xs.combo(n)
 
   extension (x: Iterable[ANY])
 
