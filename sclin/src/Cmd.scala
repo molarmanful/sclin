@@ -121,7 +121,10 @@ extension (env: ENV)
     Converts `a` to `TF`.
      */
     case ">?" => env.envTF
-    // TODO: docs
+    /*
+    @s (a >OBS) -> TASK[TF]
+    `OBS`-specific #{>?}.
+     */
     case "~>?" => env.otoTF
     /*
     @s (a >NUM) (b >NUM)' -> STR
@@ -1297,7 +1300,10 @@ extension (env: ENV)
     Length of `a`.
      */
     case "len" => env.len
-    // TODO: docs
+    /*
+    @s (a >OBS) -> TASK[NUM]
+    `OBS`-specific #{len}.
+     */
     case "~len" => env.olen
     /*
     @s a -> ARR[NUM]
@@ -1374,7 +1380,10 @@ extension (env: ENV)
     Flattens `a` by one depth.
      */
     case "flat" => env.flat
-    // TODO: docs
+    /*
+    @s (a >OBS) -> OBS
+    `OBS`-friendly #{flat}.
+     */
     case "~flat" => env.merge
     /*
     @s a -> _
@@ -1392,7 +1401,10 @@ extension (env: ENV)
     ```
      */
     case "rep" => env.rep
-    // TODO: docs
+    /*
+    @s a -> OBS
+    `OBS`-specific #{rep}.
+     */
     case "~rep" => env.orep
     /*
     @s a -> SEQ
@@ -1402,7 +1414,10 @@ extension (env: ENV)
     ```
      */
     case "cyc" => env.cyc
-    // TODO: docs
+    /*
+    @s a -> OBS
+    `OBS`-specific #{cyc}.
+     */
     case "~cyc" => env.ocyc
     /*
     @s (a >NUM)' -> ARR[1*]'
@@ -1590,7 +1605,8 @@ extension (env: ENV)
      */
     case "tpose" => env.transpose
     // TODO: docs
-    case "paxes"  => env.paxes
+    case "paxes" => env.paxes
+    // TODO: docs
     case "paxes~" => env.paxes$
     /*
     @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
@@ -1799,7 +1815,10 @@ extension (env: ENV)
     ```
      */
     case "map" => env.map
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK) -> OBS
+    `OBS`-specific #{map}.
+     */
     case "~map" => env.mapEval
     /*
     @s a f' -> a
@@ -1817,7 +1836,12 @@ extension (env: ENV)
     ```
      */
     case "mapf" => env.flatMap
-    // TODO: docs
+    /*
+    @s (a >OBS) f -> OBS
+    `OBS`-specific #{mapf}. Unlike #{mapf}, #{~mapf} is non-deterministic;
+    order is obtained on a first-come, first-serve basis.
+    See #{mapf} for the signature of `f`.
+     */
     case "~mapf" => env.mergeMap
     /*
     @s a f' (n >NUM)' -> _'
@@ -1895,7 +1919,10 @@ extension (env: ENV)
     ```
      */
     case "fold" => env.fold
-    // TODO: docs
+    /*
+    @s (a >OBS) b (f: x y -> _) -> TASK
+    `OBS`-specific #{fold}.
+     */
     case "~fold" => env.ofold
     /*
     @s a b f' -> _'
@@ -1943,7 +1970,10 @@ extension (env: ENV)
     ```
      */
     case "scan" => env.scan
-    // TODO: docs
+    /*
+    @s (a >OBS) (b >TASK) (f: x y -> >TASK) -> OBS
+    `OBS`-specific #{scan}.
+     */
     case "~scan" => env.scanEval
     /*
     @s a b f' -> _'
@@ -1995,6 +2025,11 @@ extension (env: ENV)
      */
     case "fltr" => env.fltr
     /*
+    @s (a >OBS) (f: x -> >TASK[TF]) -> OBS
+    `OBS`-specific #{fltr}.
+     */
+    case "~fltr" => env.ofltr
+    /*
     @s a f' -> TF'
     Whether any elements of `a` satisfy predicate `f`.
     See #{fltr} for the signature of `f`.
@@ -2003,7 +2038,10 @@ extension (env: ENV)
     ```
      */
     case "any" => env.any
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK[TF]) -> TASK[TF]
+    `OBS`-specific #{any}.
+     */
     case "~any" => env.oany
     /*
     @s a f' -> TF'
@@ -2014,7 +2052,10 @@ extension (env: ENV)
     ```
      */
     case "all" => env.all
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK[TF]) -> TASK[TF]
+    `OBS`-specific #{all}.
+     */
     case "~all" => env.all
     /*
     @s a f' -> _'
@@ -2044,7 +2085,10 @@ extension (env: ENV)
     ```
      */
     case "find" => env.find
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK[TF]) -> TASK
+    `OBS`-specific #{find}.
+     */
     case "~find" => env.ofind
     /*
     @s a f' -> NUM'

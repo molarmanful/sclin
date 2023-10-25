@@ -748,6 +748,8 @@ extension (env: ENV)
 
   def fltr: ENV =
     env.mod2((x, y) => y.vec1(f => x.filter(SIG_2fb(f), SIG_1fb(f))))
+  def ofltr: ENV =
+    env.mod2((x, y) => y.vec1(f => x.filterEval(SIG_1f1(f)).toOBS))
 
   def any: ENV =
     env.mod2((x, y) => y.vec1(f => x.any(SIG_2fb(f), SIG_1fb(f)).boolTF))
