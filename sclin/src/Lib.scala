@@ -2471,7 +2471,7 @@ extension (env: ENV)
   def fsreadb: ENV = env.mod1: x =>
     Task(x.toFile.newInputStream)
       .pipe(Observable.fromInputStream(_))
-      .map(_.map(_.&(0xff).toChar).toString.sSTR)
+      .map(_.map(_.&(0xff).toChar).mkString.sSTR)
       .toOBS
   def fsreadn: ENV = env.mod2: (x, y) =>
     y.vec1: s =>
