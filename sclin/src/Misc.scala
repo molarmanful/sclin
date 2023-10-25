@@ -1,5 +1,6 @@
 package sclin
 
+import better.files.*
 import monix.execution.CancelableFuture
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
@@ -7,7 +8,7 @@ import scala.collection.immutable.VectorMap
 import spire.math.*
 import util.chaining.*
 
-type FILE = Option[os.Path]
+type FILE = Option[File]
 
 type ARRW[T]    = Vector[T]
 type SEQW[T]    = LazyList[T]

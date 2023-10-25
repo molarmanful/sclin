@@ -1,5 +1,6 @@
 package sclin
 
+import better.files.*
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
@@ -283,9 +284,19 @@ extension (env: ENV)
     case "$FILE" => getLFile
     /*
     @s -> STR
-    Current working directory of program execution.
+    Current working directory at start of program execution.
      */
-    case "$CWD" => env.push(os.pwd.toString.sSTR)
+    case "$PWD" => env.push(Dsl.pwd.toString.sSTR)
+    /*
+    @s -> STR
+    Current working directory at current state in program execution.
+     */
+    case "$CWD" => env.push(Dsl.cwd.toString.sSTR)
+    /*
+    @s -> STR
+    Home directory.
+     */
+    case "$~" => env.push(File.home.toString.sSTR)
     /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of 0 to ∞.
@@ -2417,15 +2428,16 @@ extension (env: ENV)
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
-  def fread: ENV = env.mod2: (x, y) =>
-    y.vec1: n =>
-      os.read
-        .chunks(x.toPath, n.toInt)
-        .obs
-        .map { case (xs, n) => xs.take(n).toVector.map(_.toChar).mkString.sSTR }
-        .toOBS
-  def freadl: ENV =
-    env.mod1(x => os.read.lines.stream(x.toPath).obs.map(_.sSTR).toOBS)
+  def fread: ENV = env.mod1: x =>
+    Observable
+      .fromIterator(Task(x.toPath.bytes))
+      .map(_.toChar.toString.sSTR)
+      .toOBS
+  def freadl: ENV = env.mod1: x =>
+    Observable
+      .fromIterator(Task(x.toPath.lineIterator))
+      .map(_.sSTR)
+      .toOBS
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)

@@ -1,5 +1,6 @@
 package sclin
 
+import better.files.*
 import mainargs.*
 import scala.util.chaining.*
 
@@ -9,7 +10,7 @@ object Main:
     ParserForMethods(this).runOrExit(args.toIndexedSeq, allowPositional = true)
 
   @main def sclin(
-      @arg(short = 'f', doc = "Execute file.") file: Option[os.Path],
+      @arg(short = 'f', doc = "Execute file.") file: Option[File],
       @arg(short = 'e', doc = "Execute string.") eval: Option[String],
       @arg(hidden = true) doceval: Option[String],
       @arg(short = 's', doc = "Step mode.") step: Flag,
@@ -31,7 +32,7 @@ object Main:
             nc = nocolor.value
           )
           file match
-            case Some(f) => ENV.run(os.read(f), file, flags, cflag)
+            case Some(f) => ENV.run(f.contentAsString, file, flags, cflag)
             case _ =>
               eval match
                 case Some(s) => ENV.run(s, file, flags, cflag)
@@ -44,7 +45,7 @@ object Main:
         err:
           s"ERR: $e\n     ---\n${e.getStackTrace.map("     " + _).mkString("\n")}"
 
-  given TokensReader.Simple[os.Path] with
+  given TokensReader.Simple[File] with
 
     def shortName               = "path"
-    def read(strs: Seq[String]) = Right(os.Path(strs.head, os.pwd))
+    def read(strs: Seq[String]) = Right(File(strs.head))

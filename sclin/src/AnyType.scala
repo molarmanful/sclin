@@ -1,5 +1,6 @@
 package sclin
 
+import better.files.*
 import cats.kernel.Eq
 import geny.Generator
 import monix.eval.Task
@@ -549,11 +550,9 @@ enum ANY:
     case Its(_) => matchType(a)
     case _      => toARR
 
-  def toPath: os.Path = os.Path(toFilePath, os.pwd)
-
-  def toFilePath: os.FilePath = this match
-    case Itr(_) | _: FN => foldLeft(os.pwd)((a, b) => os.Path(b.toFilePath, a))
-    case _              => os.FilePath(toString)
+  def toPath: File = this match
+    case Itr(_) => foldLeft(File(""))((a, b) => a / b.toString)
+    case _      => File(toString)
 
   def map(f: ANY => ANY): ANY = this match
     case OBS(x)  => x.map(f).toOBS
@@ -1236,17 +1235,6 @@ object ANY:
   extension (t: FUTW[ANY]) def toFUT: FUT = FUT(t)
 
   extension (t: Observable[ANY]) def toOBS: OBS = OBS(t)
-
-  extension [T](g: Generator[T])
-
-    def obs: Observable[T] =
-      Observable.create(OverflowStrategy.Unbounded): s =>
-        g.generate:
-          s.onNext(_) match
-            case Ack.Continue => Generator.Continue
-            case Ack.Stop     => Generator.End
-        s.onComplete()
-        Cancelable.empty
 
 given ReadWriter[ANY] = readwriter[ujson.Value].bimap[ANY](_.toJSON, _.toANY)
 
