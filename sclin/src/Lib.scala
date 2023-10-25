@@ -460,6 +460,10 @@ extension (env: ENV)
     case "fs>n" => fsreadn
 
     // TODO: docs
+    case "b>S" => btou
+    // TODO: docs
+    case "S>b" => utob
+    // TODO: docs
     case "~b>S" => oBtoU
     // TODO: docs
     case "~S>b" => oUtoB
@@ -2485,6 +2489,9 @@ extension (env: ENV)
         .pipe(Observable.fromLinesReader)
         .map(_.sSTR)
         .toOBS
+
+  def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
+  def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))
 
   def oBtoU: ENV = env.mod1: x =>
     x.toOBS.x
