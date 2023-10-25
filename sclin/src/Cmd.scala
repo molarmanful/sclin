@@ -386,15 +386,30 @@ extension (env: ENV)
      */
     case "f>o" => env.outf
 
-    // TODO: docs
+    /*
+    @s a -> ARR
+    Gets filepath `a` in segments.
+     */
     case "_/<>" => env.pathARR
-    // TODO: docs
+    /*
+    @s a -> STR
+    Gets filepath `a` as a string.
+     */
     case "_/><" => env.pathSTR
-    // TODO: docs
+    /*
+    @s a -> STR
+    Gets the filename of filepath `a`.
+     */
     case "_/x" => env.pathname
-    // TODO: docs
+    /*
+    @s a -> STR
+    Gets the basename of filepath `a`.
+     */
     case "_/x_" => env.pathbase
-    // TODO: docs
+    /*
+    @s a -> STR
+    Gets the file extension of filepath `a`.
+     */
     case "_/_x" => env.pathext
 
     // TODO: docs
