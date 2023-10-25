@@ -72,9 +72,13 @@ enum ANY:
     case STR(x) =>
       s"\"${x
           .map:
+            case '\t' => "\\t"
+            case '\b' => "\\b"
             case '\n' => "\\n"
             case '\r' => "\\r"
+            case '\f' => "\\f"
             case '"'  => "\\\""
+            case '\\' => "\\\\"
             case c    => c
           .mkString}\""
     case FN(PATH(_, l), x) =>
