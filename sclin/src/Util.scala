@@ -1,5 +1,7 @@
 package sclin
 
+import better.files.*
+import java.nio.charset.Charset
 import spire.implicits.*
 import spire.math.*
 
@@ -48,3 +50,7 @@ object Util:
     ls.filter(_.nonEmpty) match
       case LazyList() => LazyList()
       case xs         => xs.map(_.head) #:: transpose(xs.map(_.tail))
+
+  def charset(s: String): Charset = s match
+    case "" => Charset.defaultCharset
+    case _  => s

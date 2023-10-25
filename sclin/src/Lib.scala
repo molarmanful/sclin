@@ -1,8 +1,11 @@
 package sclin
 
 import better.files.*
+import java.io.File as JFile
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
+import monix.nio.file.*
+import monix.nio.text.*
 import monix.reactive.Observable
 import scala.annotation.*
 import scala.collection.immutable.VectorMap
@@ -286,27 +289,28 @@ extension (env: ENV)
     @s -> STR
     Current working directory at start of program execution.
      */
-    case "$PWD" => env.push(Dsl.pwd.toString.sSTR)
+    case "$PWD/" => env.push(Dsl.pwd.toString.sSTR)
     /*
     @s -> STR
     Current working directory at current state in program execution.
      */
-    case "$CWD" => env.push(Dsl.cwd.toString.sSTR)
+    case "$CWD/" => env.push(Dsl.cwd.toString.sSTR)
     /*
     @s -> STR
     Home directory.
      */
-    case "$~" => env.push(File.home.toString.sSTR)
+    case "$~/" => env.push(File.home.toString.sSTR)
     /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of 0 to ∞.
      */
-    case "$W" => env.push(LazyList.from(0).map(NUM(_)).toSEQ)
+    case "$W" => env.push(ANY.wholes.toSEQ)
     /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of 1 to ∞.
      */
-    case "$N" => env.push(LazyList.from(1).map(NUM(_)).toSEQ)
+    case "$N" =>
+      env.push(ANY.wholes.drop(1).toSEQ)
     /*
     @s -> SEQ[NUM*]
     Infinite `SEQ` of primes.
@@ -432,10 +436,28 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => outf
+
     // TODO: docs
-    case "fs>" => fread
+    case "_/<>" => pathARR
     // TODO: docs
-    case "fs>n" => freadl
+    case "_/><" => pathSTR
+    // TODO: docs
+    case "_/x" => pathname
+    // TODO: docs
+    case "_/x_" => pathbase
+    // TODO: docs
+    case "_/_x" => pathext
+
+    // TODO: docs
+    // slowest but works for everything
+    case "fs>" => fsread
+    // TODO: docs
+    // fastest but most situational
+    case "fs>b" => fsreadb
+    // TODO: docs
+    // decently fast, requires encoding param
+    case "fs>n" => fsreadn
+
     /*
     @s a -> a a
      */
@@ -2428,16 +2450,35 @@ extension (env: ENV)
   def form: ENV = env.mod1(_.toForm.sSTR)
   def outf: ENV = env.form.outn
 
-  def fread: ENV = env.mod1: x =>
-    Observable
-      .fromIterator(Task(x.toPath.bytes))
-      .map(_.toChar.toString.sSTR)
-      .toOBS
-  def freadl: ENV = env.mod1: x =>
-    Observable
-      .fromIterator(Task(x.toPath.lineIterator))
+  def pathARR: ENV = env.mod1:
+    _.toFile.toString
+      .split(JFile.separator)
+      .filter(_.nonEmpty)
+      .map(_.sSTR)
+      .toVector
+      .toARR
+  def pathSTR: ENV  = env.mod1(_.toFile.toString.sSTR)
+  def pathname: ENV = env.mod1(_.toFile.name.sSTR)
+  def pathbase: ENV = env.mod1(_.toFile.nameWithoutExtension.sSTR)
+  def pathext: ENV  = env.mod1(_.toFile.extension.getOrElse("").sSTR)
+
+  def fsread: ENV = env.mod1: x =>
+    Task(x.toFile.newInputStream)
+      .pipe(Observable.fromInputStream(_))
+      .pipeThrough(UTF8Codec.utf8Decode)
       .map(_.sSTR)
       .toOBS
+  def fsreadb: ENV = env.mod1: x =>
+    Task(x.toFile.newInputStream)
+      .pipe(Observable.fromInputStream(_))
+      .map(_.map(_.&(0xff).toChar).toString.sSTR)
+      .toOBS
+  def fsreadn: ENV = env.mod2: (x, y) =>
+    y.vec1: s =>
+      Task(x.toFile.newBufferedReader(Util.charset(s.toString)))
+        .pipe(Observable.fromLinesReader)
+        .map(_.sSTR)
+        .toOBS
 
   def dup: ENV  = env.mods1(x => Vector(x, x))
   def dups: ENV = env.push(env.stack.toARR)
@@ -2530,11 +2571,13 @@ extension (env: ENV)
 
   def enumL: ENV = env.mod1:
     case x: MAP => x.toARR
+    case OBS(x) =>
+      Observable
+        .fromIterable(ANY.wholes)
+        .zipMap(x)(Vector(_, _).toARR)
+        .toOBS
     case x =>
-      LazyList
-        .from(0)
-        .map(NUM(_))
-        .toSEQ
+      ANY.wholes.toSEQ
         .zip(x)(Vector(_, _).toARR)
         .matchType(x)
   def keys: ENV = env.enumL.mod1(_.map(_.get(NUM(0))))

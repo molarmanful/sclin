@@ -550,7 +550,7 @@ enum ANY:
     case Its(_) => matchType(a)
     case _      => toARR
 
-  def toPath: File = this match
+  def toFile: File = this match
     case Itr(_) => foldLeft(File(""))((a, b) => a / b.toString)
     case _      => File(toString)
 
@@ -1029,6 +1029,8 @@ enum ANY:
       case (x, y)           => g(x.toNUM.x, y.toNUM.x)
 
 object ANY:
+
+  val wholes: LazyList[NUM] = LazyList.iterate(0: Real)(_ + 1).map(NUM(_))
 
   /** Pattern for `SEQ`-like. */
   object Itr:
