@@ -219,11 +219,11 @@ enum ANY:
   def get(i: ANY): ANY =
     val oi = i.optI
     this match
+      case OBS(x) if oi != None => x.drop(oi.get).headOrElseL(UN).toTASK
       case Its(x) if oi != None =>
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         this match
-          case OBS(x) => x.drop(i2).headOrElseL(UN).toTASK
           case Lsy(x) => x.applyOrElse(i2, _ => UN)
           case ARR(x) => x.applyOrElse(i2, _ => UN)
           case Sty(x) =>
@@ -241,12 +241,14 @@ enum ANY:
   def set(i: ANY, t: ANY): ANY =
     val oi = i.optI
     this match
+      case OBS(x) if oi != None =>
+        val i1 = oi.get
+        x.take(i1).:+(t).++(x.drop(i1 + 1)).toOBS
       case Its(x) if oi != None =>
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         try
           this match
-            case OBS(x) => x.take(i2).:+(t).++(x.drop(i2 + 1)).toOBS
             case Lsy(x) => x.updated(i2, t).mSEQ(this)
             case ARR(x) => x.updated(i2, t).toARR
             case _      => toARR.set(NUM(i2), t).matchType(this)
@@ -508,6 +510,9 @@ enum ANY:
   def modTASK(f: Task[ANY] => Task[ANY]): TASK =
     toTASK.x.pipe(f).toTASK
 
+  def modOBS(f: Observable[ANY] => Observable[ANY]): OBS =
+    toOBS.x.pipe(f).toOBS
+
   def toFUT: FUT = this match
     case x: FUT  => x
     case TASK(x) => x.runToFuture.toFUT
@@ -569,7 +574,7 @@ enum ANY:
   def map(f: (ANY, ANY) => (ANY, ANY), g: ANY => ANY): ANY = this match
     case MAP(x) => x.map(f.tupled).toMAP
     case _      => map(g)
-  def mapEval(f: ANY => ANY): Observable[ANY] = toOBS.x.mapEval(f(_).toTASK.x)
+  def mapEval(f: ANY => ANY): OBS = modOBS(_.mapEval(f(_).toTASK.x))
 
   def flatMap(f: ANY => ANY): ANY = this match
     case OBS(x)  => x.flatMap(f(_).toOBS.x).toOBS
@@ -604,16 +609,15 @@ enum ANY:
       case _: MAP =>
         mod$$(n)
           .map:
-            _ match
-              case MAP(x) =>
-                x.keys.++(x.values).pipe(f) match
-                  case (k, v) => Vector(k, v).toARR
-              case _ => ???
+            case MAP(x) =>
+              x.keys.++(x.values).pipe(f) match
+                case (k, v) => Vector(k, v).toARR
+            case _ => ???
           .toMAP
       case _ => winMap(n, g)
-  def mergeMap(f: ANY => ANY): Observable[ANY] = toOBS.x.mergeMap(f(_).toOBS.x)
-  def flat: ANY                                = flatMap(x => x)
-  def merge: Observable[ANY]                   = mergeMap(x => x)
+  def mergeMap(f: ANY => ANY): OBS = modOBS(_.mergeMap(f(_).toOBS.x))
+  def flat: ANY                    = flatMap(x => x)
+  def merge: OBS                   = mergeMap(x => x)
   def rflat: ANY = this match
     case Itr(_) => flatMap(_.rflat)
     case x      => x
@@ -629,8 +633,8 @@ enum ANY:
     case (_, Lsy(_))  => toSEQ.zip(t)(f).mSEQ(t)
     case _            => toARR.x.lazyZip(t.toARR.x).map(f).toARR
 
-  def combine(t: ANY, f: (ANY, ANY) => ANY): Observable[ANY] =
-    toOBS.x.combineLatestMap(t.toOBS.x)(f)
+  def combine(t: ANY, f: (ANY, ANY) => ANY): OBS = modOBS:
+    _.combineLatestMap(t.toOBS.x)(f)
 
   def zipAll(t: ANY, d1: ANY, d2: ANY, f: (ANY, ANY) => ANY): ANY =
     (this, t) match
@@ -756,8 +760,8 @@ enum ANY:
   )(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY = this match
     case MAP(x) => x.scanLeft(a)(f).toARR
     case _      => scanLeft(a)(g)
-  def scanEval(a: ANY)(f: (ANY, ANY) => ANY): Observable[ANY] =
-    toOBS.x.scanEval0(a.toTASK.x)(f(_, _).toTASK.x)
+  def scanEval(a: ANY)(f: (ANY, ANY) => ANY): OBS = modOBS:
+    _.scanEval0(a.toTASK.x)(f(_, _).toTASK.x)
 
   def scanRight(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
     case Lsy(x) => x.scanRight(a)(f).mSEQ(this)
@@ -778,8 +782,8 @@ enum ANY:
   def filter(f: (ANY, ANY) => Boolean, g: ANY => Boolean): ANY = this match
     case MAP(x) => x.filter(f.tupled).toMAP
     case _      => filter(g)
-  def filterEval(f: ANY => ANY): Observable[ANY] =
-    toOBS.x.filterEval(f(_).toTASK.x.map(_.toBool))
+  def filterEval(f: ANY => ANY): OBS = modOBS:
+    _.filterEval(f(_).toTASK.x.map(_.toBool))
 
   def any(f: ANY => Boolean): Boolean = this match
     case Lsy(x) => x.exists(f)
@@ -905,8 +909,8 @@ enum ANY:
     case MAP(x) =>
       x.groupBy(f.tupled).view.mapValues(_.toMAP).toMap
     case _ => groupBy(g)
-  def ogroupBy(f: ANY => ANY): Observable[ANY] =
-    toOBS.x.groupBy(f).map(a => Vector(a.key, a.toOBS).toARR)
+  def ogroupBy(f: ANY => ANY): OBS = modOBS:
+    _.groupBy(f).map(a => Vector(a.key, a.toOBS).toARR)
 
   def span(f: ANY => Boolean): (ANY, ANY) = this match
     case Lsy(x) =>

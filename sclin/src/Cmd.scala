@@ -110,7 +110,7 @@ extension (env: ENV)
     @s a -> OBS
     Converts `a` to `OBS`.
      */
-    case ">~*" => env.envOBS
+    case ">~`" => env.envOBS
     /*
     @s a -> TRY
     Converts `a` to `TRY`.
@@ -666,7 +666,7 @@ extension (env: ENV)
     case "!Q" => env.evalTRY
     /*
     @s f' -> TASK'
-    #{Q}s `f` asynchronously, returning a future.
+    Wraps `f` in a delayed, potentially asynchronous computation.
      */
     case "~Q" => env.evalTASK
     /*
@@ -802,22 +802,22 @@ extension (env: ENV)
      */
     case "+`" => env.add$$
     /*
-    @s a (b _[_*]) -> _[a, b*]
+    @s a b[_*] -> [a, b*]
     Prepends `a` to `b`.
      */
     case "<+" => env.cons
     /*
-    @s (a _[_*]) b -> _[a*, b]
+    @s a[_*] b -> [a*, b]
     Appends `b` to `a`.
      */
     case "+>" => env.snoc
     /*
-    @s _[a, b*] -> a _[b*]
+    @s [a, b*] -> a [b*]
     Uncons; push first item and rest of `a`.
      */
     case "+<" => env.uncons
     /*
-    @s a -> _[_*] _
+    @s a -> [_*] _
     Unsnoc; push last item and rest of `a`.
      */
     case ">+" => env.unsnoc
@@ -1306,13 +1306,13 @@ extension (env: ENV)
      */
     case "~len" => env.olen
     /*
-    @s a -> ARR[NUM]
+    @s a -> ARR[NUM*]
     Shape of `a`, i.e. #{len} of each dimension of `a`.
     Determined by first element of each dimension.
      */
     case "shape" => env.shape
     /*
-    @s a -> ARR[NUM]
+    @s a -> ARR[NUM*]
     #{shape} but recursively maximizes lengths and depth
     instead of just using the first element.
      */
@@ -1468,8 +1468,8 @@ extension (env: ENV)
      */
     case "fold_" => env.unfold
     /*
-    @s a -> (SEQ | ARR)[ARR[k v]*]
-    `SEQ` of key/value pairs in `a`.
+    @s a -> [ARR[k v]*]
+    Key-value pairs of `a`.
     ```sclin
     ["a" "b" "c" "d"] >kv >A
     ```
@@ -1593,7 +1593,7 @@ extension (env: ENV)
      */
     case "Q*" => env.cProd
     /*
-    @s a[_*] -> _[_*]
+    @s a[_*] -> [_*]
     Transposes a collection of collections matrix-style.
     Safe for infinite lists.
     ```sclin
@@ -2179,7 +2179,10 @@ extension (env: ENV)
     ```
      */
     case "group" => env.group
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> _) -> OBS[ARR[_ _]*]
+    `OBS`-specific #{group}.
+     */
     case "~group" => env.ogroup
     /*
     @s a f' -> ARR[_ _]'
@@ -2246,22 +2249,22 @@ extension (env: ENV)
      */
     case "~$" => env.cancelFUT
     /*
-    @s a[>TASK*] -> TASK[_[_*]]
+    @s a[>TASK*] -> TASK[[_*]]
     Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
      */
     case "~|>" => env.seqTASK
     /*
-    @s a[>TASK*] -> TASK[_[_*]]
+    @s a[>TASK*] -> TASK[[_*]]
     Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
      */
     case "~||" => env.parTASK
     /*
-    @s a[>TASK*] (n >NUM) -> TASK[_[_*]]
+    @s a[>TASK*] (n >NUM) -> TASK[[_*]]
     #{~||} but with at most `n` concurrently running `TASK`s.
      */
     case "~||>" => env.parTASK
     /*
-    @s a[>TASK*] -> TASK[_[_*]]
+    @s a[>TASK*] -> TASK[[_*]]
     #{~||} but results are also unordered.
      */
     case "~//" => env.parunTASK
@@ -2276,8 +2279,9 @@ extension (env: ENV)
      */
     case "~<" => env.forkTASK
     /*
+    @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
-    Ensures that `a` is memoized such that subsequent runs of the task return the same value.
+    Ensures that `a` is memoized such that subsequent runs return the same value.
      */
     case "~:" => env.memoTASK
     /*
@@ -2286,6 +2290,12 @@ extension (env: ENV)
      */
     case "~:&" => env.memoTASK$
     /*
+    @s (a >OBS) (n >NUM)' -> OBS'
+    Caches results of `a` with maximum cache capacity `n`.
+     */
+    case "~:`" => env.cacheOBS
+    /*
+    @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
     Ensures that `a` is uncancellable.
      */

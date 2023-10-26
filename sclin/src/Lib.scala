@@ -167,6 +167,8 @@ extension (env: ENV)
   def envERR: ENV  = env.mod2((x, y) => ERR(LinERR(env, y.toString, x.toString)))
   def envTF: ENV   = env.mod1(_.toTF)
   def otoTF: ENV   = env.mod1(_.toOBS.x.nonEmptyL.map(_.boolTF).toTASK)
+  def envFUT: ENV  = env.mod1(_.toFUT)
+  def envOBS: ENV  = env.mod1(_.toOBS)
   def toNUMD: ENV =
     env.mod2((x, y) => y.vec1(_.toInt.pipe(x.toNUM.x.getString).sSTR))
   def matchType: ENV = env.mod2(_.matchType(_))
@@ -816,20 +818,24 @@ extension (env: ENV)
     env.mod3((x, y, z) => z.vec1(f => x.differWith(y, SIG_2fb(f))))
 
   def evalTASK: ENV = env.arg1: (x, env) =>
-    env.push(x.vec1(f => TASK(Task.eval(env.push(f).quar.getStack(0)))))
+    env.push(x.vec1(f => Task(env.push(f).quar.getStack(0)).toTASK))
   def await: ENV =
     env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
   def awaitTRY: ENV =
     env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
-  def envFUT: ENV = env.mod1(_.toFUT)
-  def envOBS: ENV = env.mod1(_.toOBS)
   def cancelFUT: ENV = env.arg1: (x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
-  def forkTASK: ENV     = env.vec1(_.modTASK(_.executeAsync))
-  def memoTASK: ENV     = env.vec1(_.modTASK(_.memoize))
-  def memoTASK$ : ENV   = env.vec1(_.modTASK(_.memoizeOnSuccess))
-  def uncancelTASK: ENV = env.vec1(_.modTASK(_.uncancelable))
+  def forkTASK: ENV = env.vec1(_.modTASK(_.executeAsync))
+  def memoTASK: ENV = env.mod1:
+    case OBS(x) => x.cache.toOBS
+    case x      => x.vec1(_.modTASK(_.memoize))
+  def memoTASK$ : ENV = env.vec1(_.modTASK(_.memoizeOnSuccess))
+  def cacheOBS: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
+  def uncancelTASK: ENV = env.mod1:
+    case OBS(x) => x.uncancelable.toOBS
+    case x      => x.vec1(_.modTASK(_.uncancelable))
   def timeoutTASK: ENV = env.vec2: (x, n) =>
     val n1 = n.toNUM.x.toLong
     x.modTASK:
