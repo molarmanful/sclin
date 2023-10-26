@@ -2302,6 +2302,8 @@ extension (env: ENV)
     case "~%" => env.timeoutTASK
     // TODO: docs
     case "~%Q" => env.timeTASK
+    // TODO: docs
+    case "~!>" => env.redeemTASK
     /*
     @s (n >NUM)' -> TASK[n]'
     Creates an asynchronous `TASK` that completes after `n` milliseconds.
@@ -2321,6 +2323,8 @@ extension (env: ENV)
     case "~/%/" => env.obufferTN
     // TODO: docs
     case "~|_|" => env.odebounce
+    // TODO: docs
+    case "~!" => env.oerrHandle
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
 

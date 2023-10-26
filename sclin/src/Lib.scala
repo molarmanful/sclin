@@ -864,6 +864,9 @@ extension (env: ENV)
     _.modTASK:
       _.timed.map:
         case (t, a) => Vector(t.toMillis.toNUM, a).toARR
+  def redeemTASK: ENV = env.vec3: (x, f, g) =>
+    x.modTASK:
+      _.redeemWith(e => SIG_1f1(f)(ERR(e)).toTASK.x, SIG_1f1(g)(_).toTASK.x)
 
   def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def obufferN: ENV = env.mod2: (x, y) =>
@@ -875,6 +878,14 @@ extension (env: ENV)
       x.modOBS(_.bufferTimedAndCounted(t.toMs, n.toInt).map(_.toARR))
   def odebounce: ENV = env.mod2: (x, y) =>
     y.vec1(n => x.modOBS(_.debounce(n.toMs)))
+  def oerrHandle: ENV = env.mod2: (x, y) =>
+    x match
+      case _: OBS =>
+        y.vec1: f =>
+          x.modOBS(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toOBS.x))
+      case _ =>
+        x.vec2(y): (t, f) =>
+          t.modTASK(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toTASK.x))
 
   def sleep: ENV = env.vec1: n =>
     val n1 = n.toNUM.x.toLong
