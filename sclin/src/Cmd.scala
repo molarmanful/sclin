@@ -2290,11 +2290,6 @@ extension (env: ENV)
      */
     case "~:&" => env.memoTASK$
     /*
-    @s (a >OBS) (n >NUM)' -> OBS'
-    Caches results of `a` with maximum cache capacity `n`.
-     */
-    case "~:`" => env.cacheOBS
-    /*
     @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
     Ensures that `a` is uncancellable.
@@ -2305,11 +2300,27 @@ extension (env: ENV)
     Ensures that `a` will error if not completed within `n` milliseconds.
      */
     case "~%" => env.timeoutTASK
+    // TODO: docs
+    case "~%Q" => env.timeTASK
     /*
     @s (n >NUM)' -> TASK[n]'
-    Creates an asynchronous `TASK` that will complete after `n` milliseconds.
+    Creates an asynchronous `TASK` that completes after `n` milliseconds.
      */
     case "sleep" => env.sleep
+
+    /*
+    @s (a >OBS) (n >NUM)' -> OBS'
+    Caches results of `a` with maximum cache capacity `n`.
+     */
+    case "~:`" => env.ocache
+    // TODO: docs
+    case "~/*" => env.obufferN
+    // TODO: docs
+    case "~/%" => env.obufferT
+    // TODO: docs
+    case "~/%/" => env.obufferTN
+    // TODO: docs
+    case "~|_|" => env.odebounce
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
 

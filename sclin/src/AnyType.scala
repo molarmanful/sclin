@@ -162,6 +162,8 @@ enum ANY:
     case UN     => null
     case _      => toString
 
+  def toMs: FiniteDuration = toNUM.x.toLong.millisecond
+
   def length: Int = this match
     case UN     => 0
     case Lsy(x) => x.length
@@ -952,21 +954,21 @@ enum ANY:
     case Itr(_) => map(_.vec1(f))
     case _      => f(this)
 
-  def vec2(t: ANY, f: (ANY, ANY) => ANY): ANY = (this, t) match
-    case (Itr(_), Itr(_)) => zip(t)(_.vec2(_, f))
+  def vec2(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
+    case (Itr(_), Itr(_)) => zip(t)(_.vec2(_)(f))
     case (Itr(_), _)      => vec1(f(_, t))
     case (_, Itr(_))      => t.vec1(f(this, _))
     case _                => f(this, t)
 
-  def vec3(t: ANY, s: ANY, f: (ANY, ANY, ANY) => ANY): ANY = (this, t, s) match
+  def vec3(t: ANY, s: ANY)(f: (ANY, ANY, ANY) => ANY): ANY = (this, t, s) match
     case (Itr(_), Itr(_), Itr(_)) =>
       zip(t)(Vector(_, _).toARR).zip(s): (x, c) =>
         x.toARR.x match
-          case Vector(a, b) => a.vec3(b, c, f)
+          case Vector(a, b) => a.vec3(b, c)(f)
           case _            => ???
-    case (Itr(_), Itr(_), _) => vec2(t, f(_, _, s))
-    case (Itr(_), _, Itr(_)) => vec2(t, f(_, t, _))
-    case (_, Itr(_), Itr(_)) => t.vec2(s, f(this, _, _))
+    case (Itr(_), Itr(_), _) => vec2(t)(f(_, _, s))
+    case (Itr(_), _, Itr(_)) => vec2(t)(f(_, t, _))
+    case (_, Itr(_), Itr(_)) => t.vec2(s)(f(this, _, _))
     case (Itr(_), _, _)      => vec1(f(_, t, s))
     case (_, Itr(_), _)      => t.vec1(f(this, _, s))
     case (_, _, Itr(_))      => s.vec1(f(this, t, _))
@@ -987,7 +989,7 @@ enum ANY:
       f: (Double, Double) => Double,
       g: (NUMF, NUMF) => NUMF
   ): ANY =
-    vec2(t, _.fNum2(_, f(_, _).toDBL, g(_, _).toNUM))
+    vec2(t)(_.fNum2(_, f(_, _).toDBL, g(_, _).toNUM))
   def num2(
       t: ANY,
       f: (Double, Double) => Double,
@@ -998,10 +1000,10 @@ enum ANY:
     catch case _: ArithmeticException => throw LinEx("MATH", e)
 
   def num2q(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
-    vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toSEQ)
+    vec2(t)((x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toSEQ)
 
   def num2a(t: ANY, f: (NUMF, NUMF) => Iterable[NUMF]): ANY =
-    vec2(t, (x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
+    vec2(t)((x, y) => f(x.toNUM.x, y.toNUM.x).map(NUM(_)).toARR)
 
   def str1(f: String => String): ANY = vec1(_.toString.pipe(f).sSTR)
 
@@ -1009,22 +1011,22 @@ enum ANY:
     _.toString.pipe(f).map(STR(_)).toARR
 
   def str2(t: ANY, f: (String, String) => String): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toString).sSTR)
+    vec2(t)((x, y) => f(x.toString, y.toString).sSTR)
 
   def str2q(t: ANY, f: (String, String) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toString).map(_.sSTR).toSEQ)
+    vec2(t)((x, y) => f(x.toString, y.toString).map(_.sSTR).toSEQ)
 
   def str2a(t: ANY, f: (String, String) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toString).map(_.sSTR).toARR)
+    vec2(t)((x, y) => f(x.toString, y.toString).map(_.sSTR).toARR)
 
   def strnum(t: ANY, f: (String, NUMF) => String): ANY =
-    vec2(t, (x, y) => STR(f(x.toString, y.toNUM.x)))
+    vec2(t)((x, y) => STR(f(x.toString, y.toNUM.x)))
 
   def strnumq(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toSEQ)
+    vec2(t)((x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toSEQ)
 
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
-    vec2(t, (x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toARR)
+    vec2(t)((x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toARR)
 
   def fNum1(f: Double => ANY, g: NUMF => ANY) = this match
     case DBL(x) => f(x.toDouble)

@@ -549,7 +549,7 @@ extension (env: ENV)
   def mod$ : ENV  = env.strnumq((x, y) => x.sliding(y.intValue).to(LazyList))
   def mod$$ : ENV = env.mod2((x, y) => y.vec1(x mod$$ _.toInt))
   def mod2$$ : ENV =
-    env.mod3((x, y, z) => y.vec2(z, (n, k) => x.mod$$(n.toInt, k.toInt)))
+    env.mod3((x, y, z) => y.vec2(z)((n, k) => x.mod$$(n.toInt, k.toInt)))
 
   def pow: ENV = env.num2(
     _.fpow(_),
@@ -685,13 +685,13 @@ extension (env: ENV)
   def mergeMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.mergeMap(SIG_1f1(f)).toOBS))
   def winMap: ENV = env.mod3: (x, y, z) =>
-    y.vec2(z, (f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
+    y.vec2(z)((f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
   def flat: ENV  = env.mod1(_.flat)
   def merge: ENV = env.mod1(_.merge.toOBS)
   def rflat: ENV = env.mod1(_.rflat)
   def rmap: ENV  = env.mod2((x, y) => y.vec1(f => x.rmap(SIG_1f1(f))))
   def dmap: ENV =
-    env.mod3((x, y, z) => y.vec2(z, (f, d) => x.dmap(d.toInt, SIG_1f1(f))))
+    env.mod3((x, y, z) => y.vec2(z)((f, d) => x.dmap(d.toInt, SIG_1f1(f))))
 
   def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y)(SIG_2f1(f))))
   def zip$ : ENV = env.modx(5):
@@ -831,8 +831,6 @@ extension (env: ENV)
     case OBS(x) => x.cache.toOBS
     case x      => x.vec1(_.modTASK(_.memoize))
   def memoTASK$ : ENV = env.vec1(_.modTASK(_.memoizeOnSuccess))
-  def cacheOBS: ENV =
-    env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def uncancelTASK: ENV = env.mod1:
     case OBS(x) => x.uncancelable.toOBS
     case x      => x.vec1(_.modTASK(_.uncancelable))
@@ -862,6 +860,21 @@ extension (env: ENV)
   def parunTASK: ENV = env.mod1(itrTASKW(_, Task.parSequenceUnordered))
   def raceTASK: ENV =
     env.mod1(_.toSEQ.x.map(_.toTASK.x).pipe(Task.raceMany).toTASK)
+  def timeTASK: ENV = env.vec1:
+    _.modTASK:
+      _.timed.map:
+        case (t, a) => Vector(t.toMillis.toNUM, a).toARR
+
+  def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
+  def obufferN: ENV = env.mod2: (x, y) =>
+    y.vec1(n => x.modOBS(_.bufferIntrospective(n.toInt).map(_.toARR)))
+  def obufferT: ENV = env.mod2: (x, y) =>
+    y.vec1(n => x.modOBS(_.bufferTimed(n.toMs).map(_.toARR)))
+  def obufferTN: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z): (t, n) =>
+      x.modOBS(_.bufferTimedAndCounted(t.toMs, n.toInt).map(_.toARR))
+  def odebounce: ENV = env.mod2: (x, y) =>
+    y.vec1(n => x.modOBS(_.debounce(n.toMs)))
 
   def sleep: ENV = env.vec1: n =>
     val n1 = n.toNUM.x.toLong
