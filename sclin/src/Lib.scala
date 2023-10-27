@@ -917,6 +917,13 @@ extension (env: ENV)
   def obufferTN: ENV = env.mod3: (x, y, z) =>
     y.vec2(z): (t, n) =>
       x.modOBS(_.bufferTimedAndCounted(t.toMs, n.toInt).map(_.toARR))
+  def obufferTB: ENV = env.modx(4):
+    case Vector(x, y, v, w) =>
+      y.vec3(v, w): (t, n, f) =>
+        x.modOBS:
+          _.bufferTimedWithPressure(t.toMs, n.toInt, SIG_1f1(f)(_).toInt)
+            .map(_.toARR)
+    case _ => ???
   def odebounce: ENV = env.mod2: (x, y) =>
     y.vec1(n => x.modOBS(_.debounce(n.toMs)))
   def oasyncBound: ENV =

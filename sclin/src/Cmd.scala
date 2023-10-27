@@ -2340,6 +2340,7 @@ extension (env: ENV)
     case "~/%" => env.obufferT
     // TODO: docs
     case "~/%n" => env.obufferTN
+    case "~/%<" => env.obufferTB
     // TODO: docs
     case "~|_" => env.odebounce
 
