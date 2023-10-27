@@ -2239,11 +2239,6 @@ extension (env: ENV)
      */
     case "~_" => env.await
     /*
-    @s (a >FUT[x])' -> TRY[x]'
-    #{~_} with result wrapped in a `TRY`.
-     */
-    case "~_!" => env.awaitTRY
-    /*
     @s (a >FUT)' ->
     Cancels `a`.
      */
@@ -2262,7 +2257,7 @@ extension (env: ENV)
     @s a[>TASK*] (n >NUM) -> TASK[[_*]]
     #{~||} but with at most `n` concurrently running `TASK`s.
      */
-    case "~||>" => env.parTASK
+    case "~||>" => env.parnTASK
     /*
     @s a[>TASK*] -> TASK[[_*]]
     #{~||} but results are also unordered.
@@ -2283,12 +2278,12 @@ extension (env: ENV)
     @s (a >TASK)' -> TASK'
     Ensures that `a` is memoized such that subsequent runs return the same value.
      */
-    case "~:" => env.memoTASK
+    case "~memo" => env.memoTASK
     /*
     @s (a >TASK)' -> TASK'
-    #{~:} but only if `a` completes successfully.
+    #{~memo} but only if `a` completes successfully.
      */
-    case "~:&" => env.memoTASK$
+    case "~memo&" => env.memoTASK$
     /*
     @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
@@ -2303,28 +2298,42 @@ extension (env: ENV)
     // TODO: docs
     case "~%Q" => env.timeTASK
     // TODO: docs
-    case "~!>" => env.redeemTASK
+    case "~?" => env.redeemTASK
+    // TODO: docs
+    case "~@" => env.restartwTASK
+    /*
+    @s (a >TASK[x])' -> TASK[TRY[x]]'
+    Wraps the contents of `a` in a `TRY`.
+     */
+    case "~!?" => env.wrapTRYTASK
+    /*
+    @s (a >TASK[TRY[x]])' -> TASK[x]'
+    Unwraps a `TRY` inside `a`.
+     */
+    case "~!?_" => env.unwrapTRYTASK
+    // TODO: docs
+    case "~?done" => env.onDoneTASK
+    // TODO: docs
+    case "~?err" => env.onErrTASK
     /*
     @s (n >NUM)' -> TASK[n]'
     Creates an asynchronous `TASK` that completes after `n` milliseconds.
      */
-    case "sleep" => env.sleep
+    case "~sleep" => env.sleep
 
     /*
     @s (a >OBS) (n >NUM)' -> OBS'
-    Caches results of `a` with maximum cache capacity `n`.
+    Caches emissions of `a` with maximum cache capacity `n`.
      */
-    case "~:`" => env.ocache
+    case "~memo`" => env.ocache
     // TODO: docs
-    case "~/*" => env.obufferN
+    case "~/n" => env.obufferN
     // TODO: docs
     case "~/%" => env.obufferT
     // TODO: docs
-    case "~/%/" => env.obufferTN
+    case "~/%n" => env.obufferTN
     // TODO: docs
-    case "~|_|" => env.odebounce
-    // TODO: docs
-    case "~!" => env.oerrHandle
+    case "~|_" => env.odebounce
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
 

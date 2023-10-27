@@ -4,7 +4,7 @@
 
 #loop.
   ( show prop next )#.
-  (.)~ 50sleep , ~|| ~_ 0: \clr dip @
+  (.)~ 50~sleep , ~|| ~_ 0: \clr dip @
     show prop next
 
 #prop dup.

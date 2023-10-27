@@ -821,8 +821,6 @@ extension (env: ENV)
     env.push(x.vec1(f => Task(env.push(f).quar.getStack(0)).toTASK))
   def await: ENV =
     env.vec1(x => Await.result(x.toFUT.x, Duration.Inf))
-  def awaitTRY: ENV =
-    env.vec1(x => Await.ready(x.toFUT.x, Duration.Inf).value.get.toTRY)
   def cancelFUT: ENV = env.arg1: (x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
@@ -867,6 +865,26 @@ extension (env: ENV)
   def redeemTASK: ENV = env.vec3: (x, f, g) =>
     x.modTASK:
       _.redeemWith(e => SIG_1f1(f)(ERR(e)).toTASK.x, SIG_1f1(g)(_).toTASK.x)
+  def restartwTASK: ENV = env.mod2: (x, y) =>
+    x match
+      case _: OBS => y.vec1(f => x.modTASK(_.restartUntil(SIG_1fb(f))))
+      case _ =>
+        x.vec2(y): (t, f) =>
+          t.modTASK(_.restartUntil(SIG_1fb(f)))
+  def wrapTRYTASK: ENV   = env.vec1(_.modTASK(_.materialize.map(_.toTRY)))
+  def unwrapTRYTASK: ENV = env.vec1(_.modTASK(_.map(_.toTRY.x).dematerialize))
+  def onDoneTASK: ENV = env.vec2: (t, f) =>
+    t.modTASK:
+      _.doOnFinish: e =>
+        SIG_1f1(f)(e.map(ERR(_)).getOrElse(UN)).toTASK.x.map(_ => ())
+  def onErrTASK: ENV = env.mod2: (x, y) =>
+    x match
+      case _: OBS =>
+        y.vec1: f =>
+          x.modOBS(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toOBS.x))
+      case _ =>
+        x.vec2(y): (t, f) =>
+          t.modTASK(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toTASK.x))
 
   def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def obufferN: ENV = env.mod2: (x, y) =>
@@ -878,14 +896,6 @@ extension (env: ENV)
       x.modOBS(_.bufferTimedAndCounted(t.toMs, n.toInt).map(_.toARR))
   def odebounce: ENV = env.mod2: (x, y) =>
     y.vec1(n => x.modOBS(_.debounce(n.toMs)))
-  def oerrHandle: ENV = env.mod2: (x, y) =>
-    x match
-      case _: OBS =>
-        y.vec1: f =>
-          x.modOBS(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toOBS.x))
-      case _ =>
-        x.vec2(y): (t, f) =>
-          t.modTASK(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toTASK.x))
 
   def sleep: ENV = env.vec1: n =>
     val n1 = n.toNUM.x.toLong
