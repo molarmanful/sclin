@@ -626,9 +626,10 @@ enum ANY:
             case _ => ???
           .toMAP
       case _ => winMap(n, g)
-  def mergeMap(f: ANY => ANY): OBS = modOBS(_.mergeMap(f(_).toOBS.x))
-  def flat: ANY                    = flatMap(x => x)
-  def merge: OBS                   = mergeMap(x => x)
+  def mergeMap(f: ANY => ANY): OBS  = modOBS(_.mergeMap(f(_).toOBS.x))
+  def switchMap(f: ANY => ANY): OBS = modOBS(_.switchMap(f(_).toOBS.x))
+  def flat: ANY                     = flatMap(x => x)
+  def merge: OBS                    = mergeMap(x => x)
   def rflat: ANY = this match
     case Itr(_) => flatMap(_.rflat)
     case x      => x

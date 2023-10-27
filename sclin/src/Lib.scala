@@ -679,12 +679,20 @@ extension (env: ENV)
     env.mod2((x, y) => y.vec1(f => x.map(SIG_2f2(f), SIG_1f1(f))))
   def mapEval: ENV =
     env.mod2((x, y) => y.vec1(f => x.mapEval(SIG_1f1(f)).toOBS))
+  def mapPar: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z): (f, n) =>
+      x.modOBS(_.mapParallelUnordered(n.toInt)(SIG_1f1(f)(_).toTASK.x))
+  def mapParOrd: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z): (f, n) =>
+      x.modOBS(_.mapParallelOrdered(n.toInt)(SIG_1f1(f)(_).toTASK.x))
   def tapMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.map(SIG_2f_(f), SIG_1f_(f))))
   def flatMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.flatMap(SIG_2f1(f), SIG_1f1(f))))
   def mergeMap: ENV =
     env.mod2((x, y) => y.vec1(f => x.mergeMap(SIG_1f1(f)).toOBS))
+  def switchMap: ENV =
+    env.mod2((x, y) => y.vec1(f => x.switchMap(SIG_1f1(f)).toOBS))
   def winMap: ENV = env.mod3: (x, y, z) =>
     y.vec2(z)((f, n) => x.winMapM(n.toInt, env.evalA2(_, f), env.evalA1(_, f)))
   def flat: ENV  = env.mod1(_.flat)
@@ -924,8 +932,14 @@ extension (env: ENV)
           _.bufferTimedWithPressure(t.toMs, n.toInt, SIG_1f1(f)(_).toInt)
             .map(_.toARR)
     case _ => ???
-  def odebounce: ENV = env.mod2: (x, y) =>
-    y.vec1(n => x.modOBS(_.debounce(n.toMs)))
+  def othrottle: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z)((t, n) => x.modOBS(_.throttle(t.toMs, n.toInt).map(_.toARR)))
+  def othrottleFirst: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.throttleFirst(n.toMs))))
+  def othrottleLast: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.throttleLast(n.toMs))))
+  def odebounce: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.debounce(n.toMs))))
   def oasyncBound: ENV =
     env.mod2((x, y) => x.modOBS(_.asyncBoundary(y.toOSTRAT.x)))
   def odelay: ENV =

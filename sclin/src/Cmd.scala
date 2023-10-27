@@ -1820,6 +1820,10 @@ extension (env: ENV)
     `OBS`-specific #{map}.
      */
     case "~map" => env.mapEval
+    // TODO: docs
+    case "~map||" => env.mapPar
+    // TODO: docs
+    case "~map||>" => env.mapParOrd
     /*
     @s a f' -> a
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
@@ -1843,6 +1847,8 @@ extension (env: ENV)
     See #{mapf} for the signature of `f`.
      */
     case "~mapf" => env.mergeMap
+    // TODO: docs
+    case "~mapf~" => env.switchMap
     /*
     @s a f' (n >NUM)' -> _'
     `n`-wise reduction of `f` over `a`.
@@ -2340,9 +2346,16 @@ extension (env: ENV)
     case "~/%" => env.obufferT
     // TODO: docs
     case "~/%n" => env.obufferTN
+    // TODO: docs
     case "~/%<" => env.obufferTB
     // TODO: docs
-    case "~|_" => env.odebounce
+    case "~>-<" => env.othrottle
+    // TODO: docs
+    case "~>-^" => env.othrottleFirst
+    // TODO: docs
+    case "~>-$" => env.othrottleLast
+    // TODO: docs
+    case "~>~-" => env.odebounce
 
     // TODO: docs
     case "~^UN" => env.ostratUn
