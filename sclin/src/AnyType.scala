@@ -40,6 +40,7 @@ enum ANY:
   case FUT(x: FUTW[ANY])
   case TRY(x: Try[ANY])
   case OBS(x: Observable[ANY])
+  case OSTRAT(x: OverflowStrategy[ANY])
   case UN
 
   def getType: String = getClass.getSimpleName
@@ -61,6 +62,7 @@ enum ANY:
     case TRY(Success(x)) => x.toString
     case TRY(Failure(e)) => e.toString
     case UN              => ""
+    case OSTRAT(x)       => x.toString
     case _               => join("")
 
   def toForm: String = this match
@@ -128,21 +130,22 @@ enum ANY:
   def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
 
   def toBool: Boolean = this match
-    case TF(x)            => x
-    case SEQ(x)           => !x.isEmpty
-    case ARR(x)           => !x.isEmpty
-    case MAP(x)           => !x.isEmpty
-    case STR(x)           => !x.isEmpty
-    case NUM(x)           => !eql(NUM(0))
-    case DBL(x)           => !eql(DBL(0))
-    case CMD(x)           => !x.isEmpty
-    case FN(_, x)         => !x.isEmpty
-    case _: ERR           => false
-    case TRY(Success(_))  => true
-    case TRY(Failure(_))  => false
-    case _: TASK | _: OBS => true
-    case FUT(x)           => x.isCompleted && x.value.get.isSuccess
-    case UN               => false
+    case TF(x)                              => x
+    case SEQ(x)                             => !x.isEmpty
+    case ARR(x)                             => !x.isEmpty
+    case MAP(x)                             => !x.isEmpty
+    case STR(x)                             => !x.isEmpty
+    case NUM(x)                             => !eql(NUM(0))
+    case DBL(x)                             => !eql(DBL(0))
+    case CMD(x)                             => !x.isEmpty
+    case FN(_, x)                           => !x.isEmpty
+    case _: ERR                             => false
+    case TRY(Success(_))                    => true
+    case TRY(Failure(_))                    => false
+    case FUT(x)                             => x.isCompleted && x.value.get.isSuccess
+    case UN                                 => false
+    case OSTRAT(OverflowStrategy.Unbounded) => false
+    case _                                  => true
 
   def toTF: TF = this match
     case x: TF => x
@@ -532,22 +535,28 @@ enum ANY:
     case UN              => Observable.empty.toOBS
     case x               => Observable.pure(x).toOBS
 
+  def toOSTRAT: OSTRAT = this match
+    case x: OSTRAT => x
+    case Nmy(x)    => OSTRAT(OverflowStrategy.BackPressure(x.toInt))
+    case _         => OSTRAT(OverflowStrategy.Unbounded)
+
   def matchType(a: ANY): ANY = a match
-    case FN(p, _) => pFN(p)
-    case _: SEQ   => toSEQ
-    case _: ARR   => toARR
-    case _: MAP   => toMAP
-    case _: STR   => toSTR
-    case _: NUM   => toNUM
-    case _: DBL   => toDBL
-    case _: TF    => toTF
-    case _: CMD   => toString.pipe(CMD(_))
-    case _: FUT   => toFUT
-    case _: TASK  => toTASK
-    case _: OBS   => toOBS
-    case _: TRY   => toTRY
-    case _: ERR   => toERR
-    case UN       => UN
+    case FN(p, _)  => pFN(p)
+    case _: SEQ    => toSEQ
+    case _: ARR    => toARR
+    case _: MAP    => toMAP
+    case _: STR    => toSTR
+    case _: NUM    => toNUM
+    case _: DBL    => toDBL
+    case _: TF     => toTF
+    case _: CMD    => toString.pipe(CMD(_))
+    case _: FUT    => toFUT
+    case _: TASK   => toTASK
+    case _: OBS    => toOBS
+    case _: OSTRAT => toOSTRAT
+    case _: TRY    => toTRY
+    case _: ERR    => toERR
+    case UN        => UN
 
   def toItr: ANY = this match
     case Lsy(_) | Itr(_) => this

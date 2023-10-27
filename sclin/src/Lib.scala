@@ -8,6 +8,7 @@ import monix.execution.Scheduler.Implicits.global
 import monix.nio.file.*
 import monix.nio.text.*
 import monix.reactive.Observable
+import monix.reactive.OverflowStrategy
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
@@ -824,6 +825,9 @@ extension (env: ENV)
   def cancelFUT: ENV = env.arg1: (x, env) =>
     x.vec1(_.toFUT.x.cancel().pipe(_ => UN))
     env
+  def asyncBound: ENV = env.mod1:
+    case x: OBS => x.modOBS(_.asyncBoundary(OverflowStrategy.Unbounded))
+    case x      => x.vec1(_.modTASK(_.asyncBoundary))
   def forkTASK: ENV = env.vec1(_.modTASK(_.executeAsync))
   def memoTASK: ENV = env.mod1:
     case OBS(x) => x.cache.toOBS
@@ -885,6 +889,25 @@ extension (env: ENV)
       case _ =>
         x.vec2(y): (t, f) =>
           t.modTASK(_.onErrorHandleWith(e => SIG_1f1(f)(ERR(e)).toTASK.x))
+  def sleepTASK: ENV = env.vec1: n =>
+    val n1 = n.toNUM.x.toLong
+    n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).toTASK
+  def delayTASK: ENV = env.mod2: (x, y) =>
+    x match
+      case _: OBS => y.vec1(n => x.modOBS(_.delayExecution(n.toMs)))
+      case _      => x.vec2(y)((t, n) => t.modTASK(_.delayExecution(n.toMs)))
+
+  def ostratUn: ENV = env.push(OSTRAT(OverflowStrategy.Unbounded))
+  def ostratFail: ENV =
+    env.vec1(_.toInt.pipe(OverflowStrategy.Fail(_)).pipe(OSTRAT(_)))
+  def ostratBack: ENV =
+    env.vec1(_.toInt.pipe(OverflowStrategy.BackPressure(_)).pipe(OSTRAT(_)))
+  def ostratNew: ENV =
+    env.vec1(_.toInt.pipe(OverflowStrategy.DropNew(_)).pipe(OSTRAT(_)))
+  def ostratOld: ENV =
+    env.vec1(_.toInt.pipe(OverflowStrategy.DropOld(_)).pipe(OSTRAT(_)))
+  def ostratClr: ENV =
+    env.vec1(_.toInt.pipe(OverflowStrategy.DropOld(_)).pipe(OSTRAT(_)))
 
   def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def obufferN: ENV = env.mod2: (x, y) =>
@@ -896,10 +919,10 @@ extension (env: ENV)
       x.modOBS(_.bufferTimedAndCounted(t.toMs, n.toInt).map(_.toARR))
   def odebounce: ENV = env.mod2: (x, y) =>
     y.vec1(n => x.modOBS(_.debounce(n.toMs)))
-
-  def sleep: ENV = env.vec1: n =>
-    val n1 = n.toNUM.x.toLong
-    n1.milliseconds.pipe(Task.sleep).map(_ => NUM(n1)).toTASK
+  def oasyncBound: ENV =
+    env.mod2((x, y) => x.modOBS(_.asyncBoundary(y.toOSTRAT.x)))
+  def odelay: ENV =
+    env.mod2((x, y) => x.modOBS(_.delayExecutionWith(y.toOBS.x)))
 
   def dot: ENV = env.code.x match
     case c #:: cs =>

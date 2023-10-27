@@ -2243,6 +2243,10 @@ extension (env: ENV)
     Cancels `a`.
      */
     case "~$" => env.cancelFUT
+    // TODO: docs
+    case "~^" => env.asyncBound
+    // TODO: docs
+    case "~^`" => env.oasyncBound
     /*
     @s a[>TASK*] -> TASK[[_*]]
     Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
@@ -2285,6 +2289,11 @@ extension (env: ENV)
      */
     case "~memo&" => env.memoTASK$
     /*
+    @s (a >OBS) (n >NUM)' -> OBS'
+    Caches emissions of `a` with maximum cache capacity `n`.
+     */
+    case "~memo`" => env.ocache
+    /*
     @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
     Ensures that `a` is uncancellable.
@@ -2319,13 +2328,12 @@ extension (env: ENV)
     @s (n >NUM)' -> TASK[n]'
     Creates an asynchronous `TASK` that completes after `n` milliseconds.
      */
-    case "~sleep" => env.sleep
+    case "~sleep" => env.sleepTASK
+    // TODO: docs
+    case "~delay" => env.delayTASK
+    // TODO: docs
+    case "~delay`" => env.odelay
 
-    /*
-    @s (a >OBS) (n >NUM)' -> OBS'
-    Caches emissions of `a` with maximum cache capacity `n`.
-     */
-    case "~memo`" => env.ocache
     // TODO: docs
     case "~/n" => env.obufferN
     // TODO: docs
@@ -2334,6 +2342,19 @@ extension (env: ENV)
     case "~/%n" => env.obufferTN
     // TODO: docs
     case "~|_" => env.odebounce
+
+    // TODO: docs
+    case "~^UN" => env.ostratUn
+    // TODO: docs
+    case "~^ERR" => env.ostratFail
+    // TODO: docs
+    case "~^BAK" => env.ostratBack
+    // TODO: docs
+    case "~^NEW" => env.ostratNew
+    // TODO: docs
+    case "~^OLD" => env.ostratOld
+    // TODO: docs
+    case "~^CLR" => env.ostratClr
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
 
