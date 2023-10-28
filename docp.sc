@@ -3,7 +3,7 @@ import scala.util.matching.Regex
 
 case class DocCmd(
     name: String = "",
-    stack: Vector[String] = Vector(""),
+    stack: Vector[String] = Vector(),
     body: Vector[String] = Vector()
 ) {
 
@@ -13,9 +13,7 @@ case class DocCmd(
 # CMD: [``` $name ```](#${cs(name)})
 
 Stack:
-```
-${stack.mkString("\n")}
-```
+${stack.map(x => s"```$x```").mkString("\n")}
 
 ${body.map(
         r.replaceAllIn(
@@ -69,7 +67,6 @@ case class DocParser(
     s"""
 ${xs.map { case DocCmd(name, _, _) => s"[``` $name ```](#${cs1(name)})" }
         .mkString("\n")}
-
 
 ${xs.map(_.md(cs1).tap(println)).mkString("\n")}
 """
