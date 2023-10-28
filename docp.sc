@@ -13,7 +13,9 @@ case class DocCmd(
 # CMD: [``` $name ```](#${cs(name)})
 
 Stack:
-``` ${stack.mkString("\n")} ```
+```
+${stack.mkString("\n")}
+```
 
 ${body.map(
         r.replaceAllIn(
