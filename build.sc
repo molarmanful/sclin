@@ -38,7 +38,7 @@ object sclin extends ScoverageModule with PublishModule with ScalafmtModule {
 
   def cmdoc() = T.command {
     os.read
-      .lines(millSourcePath / "src" / "Lib.scala")
+      .lines(millSourcePath / "src" / "Cmd.scala")
       .dropWhile(_.trim != "// CMDOC START")
       .takeWhile(_.trim != "// CMDOC END")
       .tail

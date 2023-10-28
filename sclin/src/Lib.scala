@@ -348,18 +348,31 @@ extension (env: ENV)
     env.mod2(_.toShape(_))
 
   def itr: ENV = env.mod2: (x, y) =>
-    y.vec1(f => LazyList.iterate(x)(s => env.evalA1(Vector(s), f)).toSEQ)
+    y.vec1(f => LazyList.iterate(x)(SIG_1f1(f)(_)).toSEQ)
+  def oitr: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
+      Observable
+        .unfoldEval(x)(s => SIG_1f1(f)(s).toTASK.x.map(Some(s, _)))
+        .toOBS
   def unfold: ENV = env.mod2: (x, y) =>
     y.vec1: f =>
       LazyList
         .unfold(x): s =>
           env.evalS(Vector(s), f) match
-            case st :+ n =>
-              st match
-                case _ :+ m => Some(m, n)
-                case _      => throw LinEx("ST_LEN", "stack length = 1")
-            case _ => None
+            case Vector()     => None
+            case st :+ m :+ n => Some(m, n)
+            case _            => throw LinEx("ST_LEN", "stack length = 1")
         .toSEQ
+  def ounfold: ENV = env.mod2: (x, y) =>
+    y.vec1: f =>
+      Observable
+        .unfoldEval(x):
+          SIG_1f1(f)(_).toTASK.x.map: a =>
+            a.toARR.x match
+              case Vector()     => None
+              case st :+ m :+ n => Some(m, n)
+              case _            => throw LinEx("ST_LEN", "stack length = 1")
+        .toOBS
 
   def enumL: ENV = env.mod1:
     case x: MAP => x.toARR
@@ -932,6 +945,8 @@ extension (env: ENV)
           _.bufferTimedWithPressure(t.toMs, n.toInt, SIG_1f1(f)(_).toInt)
             .map(_.toARR)
     case _ => ???
+  def obufferON: ENV = env.mod3: (x, y, z) =>
+    z.vec1(n => x.modOBS(_.bufferWithSelector(y.toOBS.x, n.toInt).map(_.toARR)))
   def othrottle: ENV = env.mod3: (x, y, z) =>
     y.vec2(z)((t, n) => x.modOBS(_.throttle(t.toMs, n.toInt).map(_.toARR)))
   def othrottleFirst: ENV =
@@ -944,6 +959,10 @@ extension (env: ENV)
     env.mod2((x, y) => x.modOBS(_.asyncBoundary(y.toOSTRAT.x)))
   def odelay: ENV =
     env.mod2((x, y) => x.modOBS(_.delayExecutionWith(y.toOBS.x)))
+  def ointervald: ENV =
+    env.vec1(n => Observable.interval(n.toMs).map(NUM(_)).toOBS)
+  def ointervalr: ENV =
+    env.vec1(n => Observable.intervalAtFixedRate(n.toMs).map(NUM(_)).toOBS)
 
   def dot: ENV = env.code.x match
     case c #:: cs =>

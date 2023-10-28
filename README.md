@@ -4,14 +4,23 @@
 [![build](https://img.shields.io/github/actions/workflow/status/molarmanful/sclin/release.yml?style=flat-square)](https://github.com/molarmanful/sclin/actions)
 [![license](https://img.shields.io/github/license/molarmanful/sclin?style=flat-square)](./LICENSE)
 
-Scala implementation and rework of [lin](https://github.com/molarmanful/lin).
-
 ```
 100I-a \; tap
   "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o
 ```
 
 [Try it on scline!](https://scline.fly.dev/##H4sIAAY3AWUCAzM0MPS0S1SIsVYoSSzgUlBQcsusqlJScioFkjoK.WWpRQrGCqY6CqoKigpaCQoppQUKMQX5BQo1ygp5dvkAKdsWfD4AAAA#)
+
+> A concatenative cyborg chimera.
+
+**sclin** is a programming language that leans heavily into its weirdness. Some of its features include:
+
+- **Postfix notation** - sclin reads left-to-right with no precedence rules. *Composition is concatenation!*
+- **The Stack** - sclin's FIFO stack serves not only as storage, but also as a "staging ground" for function arguments. This - in tandem with stack manipulation commands - enables an intuitive point-free style that mirrors those found in functional languages.
+- **Line-jumping** - sclin treats each line as a separate function, enabling "GOTO"-style line execution commands to create recursion and other control flow structures.
+- **Vectorization** - Many of sclin's commands are vectorized, which allows those commands to operate on arbitrarily nested data structures.
+- **Concise symbols** - sclin's commands follow a pictographic language to convey and distinguish properties.
+- **Type fluidity** - Each of sclin's base types implement extensive interconversion. Many commands auto-convert types as necessary, eschewing type safety for flexibility and expressiveness.
 
 ## Installation
 

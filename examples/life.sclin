@@ -1,10 +1,10 @@
-30=$n "Grid"@# "loop"@#
+30=$n "Grid"@# "loop"@# >A
 
 #Grid $F $n *` dup ( \! $rng |~ *# ) tbl
 
 #loop.
   ( show prop next )#.
-  (.)~ 50~sleep , ~|| ~_ 0: \clr dip @
+  \;.~Q ~itr 50~%@ 1~/n`
     show prop next
 
 #prop dup.

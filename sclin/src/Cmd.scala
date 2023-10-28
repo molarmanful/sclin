@@ -1457,6 +1457,8 @@ extension (env: ENV)
     ```
      */
     case "itr" => env.itr
+    // TODO: docs
+    case "~itr" => env.oitr
     /*
     @s a (f: b -> _ _ | ) -> SEQ
     `SEQ` generated from `f` successively #{Q}ed to `a`,
@@ -1467,6 +1469,8 @@ extension (env: ENV)
     ```
      */
     case "fold_" => env.unfold
+    // TODO: docs
+    case "~fold_" => env.ounfold
     /*
     @s a -> [ARR[k v]*]
     Key-value pairs of `a`.
@@ -2316,6 +2320,10 @@ extension (env: ENV)
     case "~?" => env.redeemTASK
     // TODO: docs
     case "~@" => env.restartwTASK
+    // TODO: docs
+    case "~%@" => env.ointervalr
+    // TODO: docs
+    case "~+%@" => env.ointervald
     /*
     @s (a >TASK[x])' -> TASK[TRY[x]]'
     Wraps the contents of `a` in a `TRY`.
@@ -2348,6 +2356,8 @@ extension (env: ENV)
     case "~/%n" => env.obufferTN
     // TODO: docs
     case "~/%<" => env.obufferTB
+    // TODO: docs
+    case "~/n`" => env.obufferON
     // TODO: docs
     case "~>-<" => env.othrottle
     // TODO: docs
