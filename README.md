@@ -15,7 +15,7 @@
 
 **sclin** is a programming language that leans heavily into its weirdness. Some of its features include:
 
-- **Postfix notation** - sclin reads left-to-right with no precedence rules. *Composition is concatenation!*
+- **Postfix notation** - sclin reads left-to-right with no precedence rules. *Concatenation is composition!*
 - **The Stack** - sclin's FIFO stack serves not only as storage, but also as a "staging ground" for function arguments. This - in tandem with stack manipulation commands - enables an intuitive point-free style that mirrors those found in functional languages.
 - **Line-jumping** - sclin treats each line as a separate function, enabling "GOTO"-style line execution commands to create recursion and other control flow structures.
 - **Vectorization** - Many of sclin's commands are vectorized, which allows those commands to operate on arbitrarily nested data structures.
