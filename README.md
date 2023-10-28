@@ -22,6 +22,8 @@
 - **Concise symbols** - sclin's commands follow a pictographic language to convey and distinguish properties.
 - **Type fluidity** - Each of sclin's base types implement extensive interconversion. Many commands auto-convert types as necessary, eschewing type safety for flexibility and expressiveness.
 
+For more info, visit the [wiki](https://github.com/molarmanful/sclin/wiki).
+
 ## Installation
 
 ### Browser Interface
