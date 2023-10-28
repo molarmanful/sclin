@@ -20,7 +20,7 @@
 - **Line-jumping** - sclin treats each line as a separate function, enabling "GOTO"-style line execution commands to create recursion and other control flow structures.
 - **Vectorization** - Many of sclin's commands are vectorized, which allows those commands to operate on arbitrarily nested data structures.
 - **Concise symbols** - sclin's commands follow a pictographic language to convey and distinguish properties.
-- **Type fluidity** - Each of sclin's base types implement extensive interconversion. Many commands auto-convert types as necessary, eschewing type safety for flexibility and expressiveness.
+- **Type fluidity** - Most (if not all) sclin commands auto-convert types as necessary, eschewing type safety for flexibility and expressiveness.
 
 For more info, visit the [wiki](https://github.com/molarmanful/sclin/wiki).
 

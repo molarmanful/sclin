@@ -308,6 +308,11 @@ extension (env: ENV)
     Number of milliseconds since UNIX epoch (January 1, 1970 00:00:00 UTC).
      */
     case "$NOW" => env.push(NUM(global.clockRealTime(MILLISECONDS)))
+    /*
+    @s -> STR
+    Name of current thread.
+     */
+    case "$THREAD" => env.push(STR(Thread.currentThread.getName))
 
     /*
     @s (a >FN)' ->
@@ -1447,7 +1452,7 @@ extension (env: ENV)
      */
     case "mold" => env.toShape
     /*
-    @s a (f: b -> _) -> SEQ
+    @s a (f: b -> _)' -> SEQ'
     Infinite `SEQ` of `f` successively #{Q}ed to `a`.
     ```sclin
     1 1.+ itr 10tk >A
@@ -1457,7 +1462,10 @@ extension (env: ENV)
     ```
      */
     case "itr" => env.itr
-    // TODO: docs
+    /*
+    @s a (f: x -> >TASK)' -> OBS'
+    `OBS`-specific #{itr}.
+     */
     case "~itr" => env.oitr
     /*
     @s a (f: b -> _ _ | ) -> SEQ
@@ -1805,12 +1813,9 @@ extension (env: ENV)
     case "/#^" => env.rsubFirst
 
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> _)' -> _'
+    @s a (f: x -> _)' -> _'
     #{Q}s `f` on each element of `a`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> _`,
-    where `k=>v` env.is the key-value pair.
-    Otherwise, the signature of `f` is `x -> _`,
-    where `x` is the element.
     ```sclin
     [1 2 3 4] 1.+ map
     ```
@@ -1820,16 +1825,23 @@ extension (env: ENV)
      */
     case "map" => env.map
     /*
-    @s (a >OBS) (f: x -> >TASK) -> OBS
+    @s (a >OBS) (f: x -> >TASK)' -> OBS'
     `OBS`-specific #{map}.
      */
     case "~map" => env.mapEval
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK)' (n >NUM)' -> OBS[ARR]'
+    #{~map} that executes `n` tasks in parallel; both effects and results are unordered.
+     */
     case "~map||" => env.mapPar
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >TASK)' (n >NUM)' -> OBS[ARR]'
+    #{~map||} but results are ordered.
+     */
     case "~map||>" => env.mapParOrd
     /*
-    @s a f' -> a
+    @s a (f: k v -> _*)' -> a'
+    @s a (f: x -> _*)' -> a'
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
     ```sclin
     [1 2 3 4] ( 1+ n>o ) tap
@@ -1837,21 +1849,24 @@ extension (env: ENV)
      */
     case "tap" => env.tapMap
     /*
-    @s a f' -> _'
-    #{map} and #{flat}.
+    @s (a MAP) (f: k v -> >A)' -> _'
+    @s a (f: x -> _)' -> _'
+    #{map} and flatten results based on `a`'s type.
     ```sclin
     1224P/ \*` mapf
     ```
      */
     case "mapf" => env.flatMap
     /*
-    @s (a >OBS) f -> OBS
+    @s (a >OBS) (f: x -> >OBS)' -> OBS
     `OBS`-specific #{mapf}. Unlike #{mapf}, #{~mapf} is non-deterministic;
-    order is obtained on a first-come, first-serve basis.
-    See #{mapf} for the signature of `f`.
+    execution occurs concurrently, and results are unordered.
      */
     case "~mapf" => env.mergeMap
-    // TODO: docs
+    /*
+    @s (a >OBS) (f: x -> >OBS)' -> OBS
+    #{~mapf} that only keeps the first result.
+     */
     case "~mapf~" => env.switchMap
     /*
     @s a f' (n >NUM)' -> _'
@@ -1905,22 +1920,32 @@ extension (env: ENV)
      */
     case "tblf" => env.tblf
     /*
-    @s a f' -> _'
+    @s a (f: x -> _)' -> _'
     Atomic/recursive #{map}.
     ```sclin
-    [[1 2] 3 4 [5 [6 7]]] ( dup n>o ) rmap
+    [[1 2] 3 4 [5 [6 7]]] ( dup f>o ) rmap
     ```
      */
     case "rmap" => env.rmap
-    // TODO: docs
+    /*
+    @s a (f: x -> _)' (n >NUM)' -> _'
+    #{map} at depth `n`.
+
+    - If `n > 0`, then depth is calculated outer-to-inner.
+    - If `n = 0`, then behavior is identical to #{rmap}.
+    - If `n < 0`, then depth is calculated inner-to-outer.
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] ( dup f>o ) 2dmap
+    ```
+    ```sclin
+    [[1 2] 3 4 [5 [6 7]]] ( dup f>o ) 1_ dmap
+    ```
+     */
     case "dmap" => env.dmap
     /*
-    @s a b f' -> _'
-    #{Q}s `f` to combine each accumulator and element starting from initial accumulator `b`.
-    If `a` is `MAP`, then the signature of `f` is `k x v -> _`,
-    where `k=>v` is the key-value pair and `x` is the accumulator.
-    Otherwise, the signature of `f` is `x y -> _`,
-    where `x` is the accumulator and `y` is the value.
+    @s (a MAP) b (f: k x v -> _)' -> _'
+    @s a b (f: x y -> _)' -> _'
+    #{Q}s `f` to combine accumulator and each element starting from initial accumulator `b`.
     ```sclin
     [1 2 3 4] 0 \+ fold
     ```
@@ -1935,12 +1960,13 @@ extension (env: ENV)
      */
     case "~fold" => env.ofold
     /*
-    @s a b f' -> _'
+    @s (a MAP) b (f: k v x -> _)' -> _'
+    @s a b (f: y x -> _)' -> _'
     #{fold} from the right.
      */
     case "foldr" => env.foldR
     /*
-    @s a b f' -> _'
+    @s a b (f: x y -> _)' -> _'
     Atomic/recursive #{fold}.
     ```sclin
     [[1 2] 3 4 [5 [6 7]]] 0 \+ rfold
@@ -1951,12 +1977,13 @@ extension (env: ENV)
      */
     case "rfold" => env.rfold
     /*
-    @s a b f' -> _'
+    @s a b (f: y x -> _)' -> _'
     #{rfold} from the right.
      */
     case "rfoldr" => env.rfoldR
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k x v -> _)' -> _'
+    @s a (f: x y -> _)' -> _'
     #{fold} without initial accumulator, instead using the first element of `a`.
     If `a` is empty, then an error is thrown.
     ```sclin
@@ -1968,12 +1995,14 @@ extension (env: ENV)
      */
     case "fold~" => env.reduce
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v x -> _)' -> _'
+    @s a (f: y x -> _)' -> _'
     #{fold~} from the right.
      */
     case "foldr~" => env.reduceR
     /*
-    @s a b f' -> _'
+    @s (a MAP) (f: k x v -> _)' -> _'
+    @s a b (f: x y -> _)' -> _'
     #{fold} with intermediate values.
     ```sclin
     [1 2 3 4] 0 \+ scan
@@ -1986,6 +2015,7 @@ extension (env: ENV)
      */
     case "~scan" => env.scanEval
     /*
+    @s (a MAP) (f: k v x -> _)' -> _'
     @s a b f' -> _'
     #{scan} from the right.
      */
@@ -2023,12 +2053,9 @@ extension (env: ENV)
      */
     case "walk" => env.walk
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> >TF)' -> _'
+    @s a (f: x -> >TF)' -> _'
     Keeps elements of `a` that satisfy predicate `f`.
-    If `a` is `MAP`, then the signature of `f` is `k v -> >TF`,
-    where `k=>v` is the key-value pair.
-    Otherwise, the signature of `f` is `x -> >TF`,
-    where `x` is the element.
     ```sclin
     [5 1 2 4 3] 2.> fltr
     ```
@@ -2040,9 +2067,9 @@ extension (env: ENV)
      */
     case "~fltr" => env.ofltr
     /*
-    @s a f' -> TF'
+    @s (a MAP) (f: k v -> >TF)' -> TF'
+    @s a (f: x -> >TF)' -> TF'
     Whether any elements of `a` satisfy predicate `f`.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> any
     ```
@@ -2054,9 +2081,9 @@ extension (env: ENV)
      */
     case "~any" => env.oany
     /*
-    @s a f' -> TF'
+    @s (a MAP) (f: k v -> >TF)' -> TF'
+    @s a (f: x -> >TF)' -> TF'
     Whether all elements of `a` satisfy predicate `f`.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> all
     ```
@@ -2068,27 +2095,27 @@ extension (env: ENV)
      */
     case "~all" => env.all
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> >TF)' -> _'
+    @s a (f: x -> >TF)' -> _'
     Takes elements of `a` until #{Q}ing `f` is falsy.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 4.!= tk*
     ```
      */
     case "tk*" => env.tkwl
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> >TF)' -> _'
+    @s a (f: x -> >TF)' -> _'
     Drops elements of `a` while predicate `f` is truthy.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 4.!= dp*
     ```
      */
     case "dp*" => env.dpwl
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> >TF)' -> _'
+    @s a (f: x -> >TF)' -> _'
     Finds first element of `a` where predicate `f` is truthy.
-    See #{fltr} for the signature of `f`.
     Returns `UN` if not found.
     ```sclin
     [5 1 2 4 3] ( 2% ! ) find
@@ -2101,9 +2128,9 @@ extension (env: ENV)
      */
     case "~find" => env.ofind
     /*
-    @s a f' -> NUM'
+    @s (a MAP) (f: k v -> >TF)' -> NUM'
+    @s a (f: x -> >TF)' -> NUM'
     Finds index of first element of `a` where predicate `f` is truthy.
-    See #{fltr} for the signature of `f`.
     Returns `-1` if not found.
     ```sclin
     [5 1 2 4 3] ( 2% ! ) find:
@@ -2111,18 +2138,18 @@ extension (env: ENV)
      */
     case "find:" => env.findi
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> >TF)' -> _'
+    @s a (f: x -> >TF)' -> _'
     Deletes first element of `a` where predicate `f` is truthy.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] ( 2% ! ) del
     ```
      */
     case "del" => env.del
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> _)' -> _'
+    @s a (f: x -> _)' -> _'
     Uniquifies elements of `a` with mapper `f`.
-    See #{map} for the signature of `f`.
     ```sclin
     [2 4 3 3 5 4 1] () uniq
     ```
@@ -2132,9 +2159,9 @@ extension (env: ENV)
      */
     case "uniq" => env.uniq
     /*
-    @s a f' -> _'
-    Uniquifies elements of `a` with comparator `f`.
-    See #{sort~} for the signature of `f`.
+    @s (a MAP) (f: ARR[k v] ARR[j w] -> >TF)' -> _'
+    @s a (f: x y -> >TF)' -> _'
+    Uniquifies elements of `a` with equality predicate `f`.
     ```sclin
     [2 4 3 3 5 4 1] \=` uniq~
     ```
@@ -2144,9 +2171,9 @@ extension (env: ENV)
      */
     case "uniq~" => env.uniq$
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: k v -> _)' -> _'
+    @s a (f: x -> _)' -> _'
     Sorts elements of `a` with mapper `f`.
-    See #{map} for the signature of `f`.
     ```sclin
     ["a" "" "abc" "ab"] \len sort
     ```
@@ -2156,12 +2183,9 @@ extension (env: ENV)
      */
     case "sort" => env.sort
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: ARR[k v] ARR[j w] -> >NUM)' -> _'
+    @s a (f: x y -> >NUM)' -> _'
     Sorts elements of `a` with comparator `f`.
-    If `a` is `MAP`, then the signature of `f` is `ARR[k v] ARR[j w] -> >TF`,
-    where `k=>v` and `j=>w` are key-value pairs to compare.
-    Otherwise, the signature of `f` is `x y -> >TF`,
-    where `x` and `y` are elements to compare.
     ```sclin
     [1 5 2 3 4] \< sort~
     ```
@@ -2171,42 +2195,42 @@ extension (env: ENV)
      */
     case "sort~" => env.sort$
     /*
-    @s a f' -> ARR[_ _]'
+    @s (a MAP) (f: k v -> >TF)' -> ARR[_ _]'
+    @s a (f: x -> >TF)' -> ARR[_ _]'
     Separates `a` into 2 parts based on predicate `f`.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.> part
     ```
      */
     case "part" => env.part
     /*
-    @s a f' -> MAP'
+    @s (a MAP) (f: k v -> _)' -> MAP'
+    @s a (f: x -> _)' -> MAP'
     Separates `a` groups based on `f`.
     Each result of `f` becomes a key in the resulting `MAP`.
-    See #{map} for the signature of `f`.
     ```sclin
     "abc"^set >A \len group
     ```
      */
     case "group" => env.group
     /*
-    @s (a >OBS) (f: x -> _) -> OBS[ARR[_ _]*]
+    @s (a >OBS) (f: x -> _)' -> OBS[ARR[_ _]*]'
     `OBS`-specific #{group}.
      */
     case "~group" => env.ogroup
     /*
-    @s a f' -> ARR[_ _]'
+    @s (a MAP) (f: k v -> >TF)' -> ARR[_ _]'
+    @s a (f: x -> >TF)' -> ARR[_ _]'
     Equivalent to a combination of #{tk*} and #{dp*}.
-    See #{fltr} for the signature of `f`.
     ```sclin
     [5 1 2 4 3] 2.% span
     ```
      */
     case "span" => env.span
     /*
-    @s a f' -> _'
+    @s (a MAP) (f: ARR[k v] ARR[j w] -> >TF)' -> _'
+    @s a (f: x y -> >TF)' -> _'
     Groups consecutive duplicate runs of `a` based on predicate `f`.
-    See #{sort~} for the signature of `f`.
     ```sclin
     [1 1 2 3 3 4 6 4 4] \=` pack
     ```
@@ -2214,17 +2238,16 @@ extension (env: ENV)
     case "pack" => env.pack
 
     /*
-    @s a b f' -> _'
-    Gets the union of `a` and `b` with comparator `f`.
-    See #{sort~} for the signature of `f`.
+    @s a b (f: x y -> >TF)' -> _'
+    Gets the union of `a` and `b` with equality predicate `f`.
     ```sclin
     [1 2 3 4] [2 4 6 8] \=` union
     ```
      */
     case "union" => env.union
     /*
-    @s a b f' -> _'
-    Gets the intersection between `a` and `b` with comparator `f`.
+    @s a b (f: x y -> >TF)' -> _'
+    Gets the intersection between `a` and `b` with equality predicate `f`.
     May hang if `a` or `b` are infinite.
     See #{sort~} for the signature of `f`.
     ```sclin
@@ -2233,8 +2256,8 @@ extension (env: ENV)
      */
     case "intxn" => env.intersect
     /*
-    @s a b f' -> _'
-    Gets the difference between `a` and `b` with comparator `f`.
+    @s a b (f: x y -> >TF)' -> _'
+    Gets the difference between `a` and `b` with equality predicate `f`.
     Will hang if `b` is infinite.
     See #{sort~} for the signature of `f`.
     ```sclin
@@ -2253,9 +2276,16 @@ extension (env: ENV)
     Cancels `a`.
      */
     case "~$" => env.cancelFUT
-    // TODO: docs
+    /*
+    @s (a OBS) -> OBS
+    @s (a >TASK)' -> TASK
+    Inserts an asynchronous boundary.
+     */
     case "~^" => env.asyncBound
-    // TODO: docs
+    /*
+    @s (a >OBS) (b >OSTRAT)' -> OBS'
+    `OBS`-specific #{~^} that uses `b` to determine overflow strategy.
+     */
     case "~^`" => env.oasyncBound
     /*
     @s a[>TASK*] -> TASK[[_*]]
@@ -2288,6 +2318,11 @@ extension (env: ENV)
      */
     case "~<" => env.forkTASK
     /*
+    @s (a >TASK)' -> TASK'
+    Ensures that `a` runs on a thread-pool for blocking I/O.
+     */
+    case "~io" => env.forkIOTASK
+    /*
     @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
     Ensures that `a` is memoized such that subsequent runs return the same value.
@@ -2314,15 +2349,32 @@ extension (env: ENV)
     Ensures that `a` will error if not completed within `n` milliseconds.
      */
     case "~%" => env.timeoutTASK
-    // TODO: docs
+    /*
+    @s (a >TASK)' -> TASK[ARR[NUM _]]'
+    Times the execution of `a`, yielding the execution time (in ms) and the result.
+     */
     case "~%Q" => env.timeTASK
-    // TODO: docs
+    /*
+    @s (a >TASK)' (f: ERR -> >TASK)' (g: x -> >TASK)' -> TASK'
+    If `a` errors, then `f` is called with the error, providing an opportunity to recover.
+    Otherwise, `g` is called with the result.
+     */
     case "~?" => env.redeemTASK
-    // TODO: docs
+    /*
+    @s (a OBS) (f: x -> >TF)' -> OBS'
+    @s (a >TASK)' (f: x -> >TF)' -> TASK'
+    Continually retries `a` until `f` is truthy.
+     */
     case "~@" => env.restartwTASK
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OBS'
+    Creates an `OBS` that emits whole numbers at a fixed rate of `n` milliseconds.
+     */
     case "~%@" => env.ointervalr
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OBS'
+    Creates an `OBS` that emits whole numbers with delays of `n` milliseconds.
+     */
     case "~+%@" => env.ointervald
     /*
     @s (a >TASK[x])' -> TASK[TRY[x]]'
@@ -2334,18 +2386,32 @@ extension (env: ENV)
     Unwraps a `TRY` inside `a`.
      */
     case "~!?_" => env.unwrapTRYTASK
-    // TODO: docs
-    case "~?done" => env.onDoneTASK
-    // TODO: docs
-    case "~?err" => env.onErrTASK
+    /*
+    @s (a >TASK) (f: (e (ERR | UN)) -> >TASK)' -> TASK'
+    Schedules `f` to run when `a` completes.
+     */
+    case "~?end" => env.onEndTASK
+    /*
+    @s (a OBS) (f: (e ERR) -> >TASK)' -> OBS'
+    @s (a >TASK) (f: (e ERR) -> >TASK)' -> TASK'
+    Applies `f` - yielding the result - when `a` errors.
+     */
+    case "~?!" => env.onErrTASK
     /*
     @s (n >NUM)' -> TASK[n]'
     Creates an asynchronous `TASK` that completes after `n` milliseconds.
      */
     case "~sleep" => env.sleepTASK
-    // TODO: docs
+    /*
+    @s (a OBS) (n >NUM)' -> OBS'
+    @s (a >TASK) (n >NUM)' -> TASK'
+    Delays the `TASK` for `n` milliseconds.
+     */
     case "~delay" => env.delayTASK
-    // TODO: docs
+    /*
+    @s (a >OBS) (b >OBS) -> OBS
+    Delays `a` until `b` either emits or completes.
+     */
     case "~delay`" => env.odelay
 
     // TODO: docs

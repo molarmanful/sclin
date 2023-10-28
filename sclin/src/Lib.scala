@@ -849,7 +849,8 @@ extension (env: ENV)
   def asyncBound: ENV = env.mod1:
     case x: OBS => x.modOBS(_.asyncBoundary(OverflowStrategy.Unbounded))
     case x      => x.vec1(_.modTASK(_.asyncBoundary))
-  def forkTASK: ENV = env.vec1(_.modTASK(_.executeAsync))
+  def forkTASK: ENV   = env.vec1(_.modTASK(_.executeAsync))
+  def forkIOTASK: ENV = env.vec1(_.modTASK(_.executeOn(env.ioSched)))
   def memoTASK: ENV = env.mod1:
     case OBS(x) => x.cache.toOBS
     case x      => x.vec1(_.modTASK(_.memoize))
@@ -893,12 +894,10 @@ extension (env: ENV)
   def restartwTASK: ENV = env.mod2: (x, y) =>
     x match
       case _: OBS => y.vec1(f => x.modTASK(_.restartUntil(SIG_1fb(f))))
-      case _ =>
-        x.vec2(y): (t, f) =>
-          t.modTASK(_.restartUntil(SIG_1fb(f)))
+      case _      => x.vec2(y)((t, f) => t.modTASK(_.restartUntil(SIG_1fb(f))))
   def wrapTRYTASK: ENV   = env.vec1(_.modTASK(_.materialize.map(_.toTRY)))
   def unwrapTRYTASK: ENV = env.vec1(_.modTASK(_.map(_.toTRY.x).dematerialize))
-  def onDoneTASK: ENV = env.vec2: (t, f) =>
+  def onEndTASK: ENV = env.vec2: (t, f) =>
     t.modTASK:
       _.doOnFinish: e =>
         SIG_1f1(f)(e.map(ERR(_)).getOrElse(UN)).toTASK.x.map(_ => ())

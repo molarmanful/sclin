@@ -1,5 +1,6 @@
 package sclin
 
+import monix.execution.Scheduler
 import scala.annotation.*
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
@@ -7,6 +8,8 @@ import scala.util.chaining.*
 import scala.util.Failure
 import scala.util.Success
 import ANY.*
+
+lazy val ioSched = Scheduler.io("io")
 
 /** A single step in the execution of a lin program.
   *
@@ -47,7 +50,8 @@ case class ENV(
     gids: GIDS = TrieMap(),
     arr: List[ARRW[ANY]] = List(),
     flags: Flags = Flags(),
-    cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
+    cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs(),
+    ioSched: Scheduler = ioSched
 ):
 
   def trace1: ENV =

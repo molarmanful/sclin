@@ -4,7 +4,7 @@
 
 #loop.
   ( show prop next )#.
-  \;.~Q ~itr 50~%@ 1~/n`
+  \;.~Q ~itr 50~%@ () zip
     show prop next
 
 #prop dup.
