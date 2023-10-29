@@ -32,7 +32,7 @@ For more info, visit the [wiki](https://github.com/molarmanful/sclin/wiki).
 
 ### Requirements
 
-- JRE/JDK 11+
+- JRE/JDK 21+
 
 ### Installation with [Coursier](https://get-coursier.io)
 
