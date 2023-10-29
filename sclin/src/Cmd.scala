@@ -1850,14 +1850,24 @@ extension (env: ENV)
      */
     case "~map||>" => env.mapParOrd
     /*
-    @s a (f: k v -> _*)' -> a'
-    @s a (f: x -> _*)' -> a'
+    @s a (f: k v -> )' -> a'
+    @s a (f: x -> )' -> a'
     #{map} but `a` is preserved (i.e. leaving only side effects of `f`).
     ```sclin
     [1 2 3 4] ( 1+ n>o ) tap
     ```
      */
     case "tap" => env.tapMap
+    /*
+    @s (a MAP) (f: k v -> )' -> UN'
+    @s (a OBS) (f: x -> )' -> FUT[UN]'
+    @s a (f: x -> )' -> UN'
+    #{tap} that forces computation of `a` (e.g. with `SEQ` or `OBS`).
+    ```sclin
+    [1 2 3 4] ( 1+ n>o ) tap
+    ```
+     */
+    case "each" => env.foreach
     /*
     @s (a MAP) (f: k v -> >A)' -> _'
     @s a (f: x -> _)' -> _'

@@ -715,6 +715,9 @@ extension (env: ENV)
   def dmap: ENV =
     env.mod3((x, y, z) => y.vec2(z)((f, d) => x.dmap(d.toInt, SIG_1f1(f))))
 
+  def foreach: ENV =
+    env.mod2((x, y) => y.vec1(f => x.foreach(SIG_2f_(f), SIG_1f_(f))))
+
   def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y)(SIG_2f1(f))))
   def zip$ : ENV = env.modx(5):
     case Vector(x, y, v, w, z) => z.vec1(f => x.zipAll(y, v, w, SIG_2f1(f)))

@@ -635,6 +635,21 @@ enum ANY:
     case Itr(_) => flatMap(_.rflat)
     case x      => x
 
+  def foreach(f: ANY => Unit): ANY = this match
+    case OBS(x) => x.foreach(f).map(_ => UN).toFUT
+    case _ =>
+      this match
+        case TASK(x) => x.foreach(f)
+        case Lsy(x)  => x.foreach(f)
+        case ARR(x)  => x.foreach(f)
+        case _       => toARR.foreach(f)
+      UN
+  def foreach(f: (ANY, ANY) => Unit, g: ANY => Unit): ANY = this match
+    case MAP(x) =>
+      x.foreach(f.tupled)
+      UN
+    case _ => foreach(g)
+
   def zip(t: ANY)(f: (ANY, ANY) => ANY): ANY = (this, t) match
     case (OBS(x), _)  => x.zipMap(t.toOBS.x)(f).toOBS
     case (_, _: OBS)  => toOBS.zip(t)(f).toOBS
