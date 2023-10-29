@@ -1940,7 +1940,6 @@ extension (env: ENV)
     /*
     @s a (f: x -> _)' (n >NUM)' -> _'
     #{map} at depth `n`.
-
     - If `n > 0`, then depth is calculated outer-to-inner.
     - If `n = 0`, then behavior is identical to #{rmap}.
     - If `n < 0`, then depth is calculated inner-to-outer.
@@ -2450,7 +2449,7 @@ extension (env: ENV)
     case "~/%n" => env.obufferTN
     /*
     @s (a >OBS) (ms >NUM)' (n >NUM)' (f: x -> >NUM)' -> OBS'
-    #{~/%<} but with back-pressure instead of force-emitting.
+    #{~/%n} but with back-pressure instead of force-emitting.
     Also uses `f` to determine weight of each element.
      */
     case "~/%<" => env.obufferTB

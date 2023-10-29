@@ -4,13 +4,13 @@
 
 #loop.
   ( show prop next )#.
-  \;.~Q ~itr 50~%@ () zip
+  \;.~Q ~itr 50~%@ 1~/n`
     show prop next
 
 #prop dup.
   \; 2*#
     [ 1_.roll_.' () 1_.roll.' ].
-    map \+ fold~ paxes
+    map \+ fold~ raxes
 
 #next.
   dup , 3 4, = ,_ rot && ||.
