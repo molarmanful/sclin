@@ -420,8 +420,8 @@ extension (env: ENV)
       .pipe(Util.transpose)
       .map(g(_, x))
       .pipe(g(_, x1.headOption.getOrElse(UN.toARR)))
-  def paxes: ENV   = env.mod1(_.paxes)
-  def paxes$ : ENV = env.mod2(_ paxes$ _.toARR.x.map(_.toInt))
+  def raxes: ENV = env.mod1(_.raxes)
+  def paxes: ENV = env.mod2(_ paxes _.toARR.x.map(_.toInt))
 
   def padH(f: (String, Int, String) => String): ENV = env.vec3: (x, y, z) =>
     val x1 = x.toString
@@ -897,10 +897,18 @@ extension (env: ENV)
       case _      => x.vec2(y)((t, f) => t.modTASK(_.restartUntil(SIG_1fb(f))))
   def wrapTRYTASK: ENV   = env.vec1(_.modTASK(_.materialize.map(_.toTRY)))
   def unwrapTRYTASK: ENV = env.vec1(_.modTASK(_.map(_.toTRY.x).dematerialize))
-  def onEndTASK: ENV = env.vec2: (t, f) =>
-    t.modTASK:
-      _.doOnFinish: e =>
-        SIG_1f1(f)(e.map(ERR(_)).getOrElse(UN)).toTASK.x.map(_ => ())
+  def bracketTASK: ENV = env.mod3: (x, y, z) =>
+    x match
+      case _: OBS =>
+        y.vec2(z): (f, g) =>
+          x.modOBS:
+            _.bracketCase(SIG_1f1(f)(_).toOBS.x): (a, e) =>
+              SIG_2f1(g)(a, ANY.exitCase(e)).toTASK.x.map(_ => ())
+      case _ =>
+        x.vec3(y, z): (t, f, g) =>
+          x.modTASK:
+            _.bracketCase(SIG_1f1(f)(_).toTASK.x): (a, e) =>
+              SIG_2f1(g)(a, ANY.exitCase(e)).toTASK.x.map(_ => ())
   def onErrTASK: ENV = env.mod2: (x, y) =>
     x match
       case _: OBS =>
@@ -927,7 +935,7 @@ extension (env: ENV)
   def ostratOld: ENV =
     env.vec1(_.toInt.pipe(OverflowStrategy.DropOld(_)).pipe(OSTRAT(_)))
   def ostratClr: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.DropOld(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.ClearBuffer(_)).pipe(OSTRAT(_)))
 
   def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def obufferN: ENV = env.mod2: (x, y) =>

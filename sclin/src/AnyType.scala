@@ -1,6 +1,7 @@
 package sclin
 
 import better.files.*
+import cats.effect.ExitCase
 import cats.kernel.Eq
 import geny.Generator
 import monix.eval.Task
@@ -204,9 +205,9 @@ enum ANY:
         loop(xs)(a1.take(t.product).mItr(this))
       case _ => this
 
-  def paxes: ANY = paxes$(shape.indices.reverse.toVector)
+  def raxes: ANY = paxes(shape.indices.reverse.toVector)
 
-  def paxes$(p: Vector[Int]): ANY =
+  def paxes(p: Vector[Int]): ANY =
     val s  = shape
     val pg = p.indices.sortBy(p).to(LazyList) #::: LazyList.continually(-1)
     val p1 = s.indices
@@ -1051,6 +1052,11 @@ enum ANY:
 object ANY:
 
   val wholes: LazyList[NUM] = LazyList.iterate(0: Real)(_ + 1).map(NUM(_))
+
+  def exitCase(e: ExitCase[Throwable]): ANY = e match
+    case ExitCase.Completed => TF(true)
+    case ExitCase.Canceled  => TF(false)
+    case ExitCase.Error(e)  => ERR(e)
 
   /** Pattern for `SEQ`-like. */
   object Itr:

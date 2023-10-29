@@ -9,8 +9,6 @@ import scala.util.Failure
 import scala.util.Success
 import ANY.*
 
-lazy val ioSched = Scheduler.io("io")
-
 /** A single step in the execution of a lin program.
   *
   * @param lines
@@ -310,3 +308,5 @@ object ENV:
   def docRun(l: String): Unit =
     val s = ENV.run(l).stack.map(_.toForm).mkString(" ")
     println("-> " + s)
+
+  lazy val ioSched = Scheduler.io("io")

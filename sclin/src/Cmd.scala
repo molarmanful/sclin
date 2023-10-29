@@ -1477,7 +1477,11 @@ extension (env: ENV)
     ```
      */
     case "fold_" => env.unfold
-    // TODO: docs
+    /*
+    @s a (f: b -> >TASK[ARR[_ _ | ]] ) -> OBS
+    `OBS`-specific #{fold_}.
+    Note that unlike in #{fold_}, `f` should return an `ARR` which acts in place of the "stack".
+     */
     case "~fold_" => env.ounfold
     /*
     @s a -> [ARR[k v]*]
@@ -1616,10 +1620,16 @@ extension (env: ENV)
     ```
      */
     case "tpose" => env.transpose
-    // TODO: docs
+    /*
+    @s a[_*] -> [_*]
+    Reverses axes of an N-dimensional collection.
+     */
+    case "raxes" => env.raxes
+    /*
+    @s a[_*] (b >ARR[NUM*]) -> [_*]
+    Permute axes of an N-dimensional collection using `b`.
+     */
     case "paxes" => env.paxes
-    // TODO: docs
-    case "paxes~" => env.paxes$
     /*
     @s (a >STR)' (b >NUM)' (c >STR)' -> STR'
     Atomic #{pad`}.
@@ -1766,7 +1776,7 @@ extension (env: ENV)
     - ``` & ```: Matched `STR`.
     - ``` ` ```: `STR` before the match.
     - ``` ' ```: `STR` after the match.
-    - ``` * ```: `ARR[MAP]` of each capturing group matched.
+    - ``` * ```: `ARR[MAP*]` of each capturing group matched.
     - ``` ^ ```: `NUM` index of the match's start.
     - ``` $ ```: `NUM` index of the match's end.
      */
@@ -1787,7 +1797,7 @@ extension (env: ENV)
      */
     case "/?'" => env.rmatchAfter
     /*
-    @s (a >STR)' (r >STR)' -> SEQ[ARR[MAP]]'
+    @s (a >STR)' (r >STR)' -> SEQ[ARR[MAP*]]'
     #{/?} with only `*` keys.
      */
     case "/?*" => env.rmatchGroups
@@ -2345,8 +2355,8 @@ extension (env: ENV)
      */
     case "~$_" => env.uncancelTASK
     /*
-    @s (a >TASK)' (n >NUM)' -> TASK'
-    Ensures that `a` will error if not completed within `n` milliseconds.
+    @s (a >TASK)' (ms >NUM)' -> TASK'
+    Ensures that `a` will error if not completed within `ms` milliseconds.
      */
     case "~%" => env.timeoutTASK
     /*
@@ -2367,13 +2377,13 @@ extension (env: ENV)
      */
     case "~@" => env.restartwTASK
     /*
-    @s (n >NUM)' -> OBS'
-    Creates an `OBS` that emits whole numbers at a fixed rate of `n` milliseconds.
+    @s (ms >NUM)' -> OBS'
+    Creates an `OBS` that emits whole numbers at a fixed rate of `ms` milliseconds.
      */
     case "~%@" => env.ointervalr
     /*
-    @s (n >NUM)' -> OBS'
-    Creates an `OBS` that emits whole numbers with delays of `n` milliseconds.
+    @s (ms >NUM)' -> OBS'
+    Creates an `OBS` that emits whole numbers with delays of `ms` milliseconds.
      */
     case "~+%@" => env.ointervald
     /*
@@ -2387,25 +2397,32 @@ extension (env: ENV)
      */
     case "~!?_" => env.unwrapTRYTASK
     /*
-    @s (a >TASK) (f: (e (ERR | UN)) -> >TASK)' -> TASK'
-    Schedules `f` to run when `a` completes.
+    @s (a OBS) (f: x -> >OBS)' (g: y (e (TF | ERR)) -> >TASK)' -> OBS'
+    @s (a >TASK) (f: x -> >TASK)' (g: y (e (TF | ERR)) -> >TASK)' -> TASK'
+    Defines usage handler `f` and finalizer `g` for `a`.
+    Suited for safely using and cleaning up resources.
+
+    `e` is:
+    - `$T` on completion.
+    - `ERR` on error.
+    - `$F` on cancellation.
      */
-    case "~?end" => env.onEndTASK
+    case "~?[]" => env.bracketTASK
     /*
     @s (a OBS) (f: (e ERR) -> >TASK)' -> OBS'
     @s (a >TASK) (f: (e ERR) -> >TASK)' -> TASK'
-    Applies `f` - yielding the result - when `a` errors.
+    Transforms `f` when `a` errors.
      */
-    case "~?!" => env.onErrTASK
+    case "~?!>" => env.onErrTASK
     /*
-    @s (n >NUM)' -> TASK[n]'
-    Creates an asynchronous `TASK` that completes after `n` milliseconds.
+    @s (ms >NUM)' -> TASK[ms]'
+    Creates an asynchronous `TASK` that completes after `ms` milliseconds.
      */
     case "~sleep" => env.sleepTASK
     /*
-    @s (a OBS) (n >NUM)' -> OBS'
+    @s (a OBS) (ms >NUM)' -> OBS'
     @s (a >TASK) (n >NUM)' -> TASK'
-    Delays the `TASK` for `n` milliseconds.
+    Delays the `TASK` for `ms` milliseconds.
      */
     case "~delay" => env.delayTASK
     /*
@@ -2414,36 +2431,85 @@ extension (env: ENV)
      */
     case "~delay`" => env.odelay
 
-    // TODO: docs
+    /*
+    @s (a >OBS) (n >NUM)' -> OBS'
+    Buffers up to `n` elements when downstream is busy.
+    Back-pressures when buffer reaches `n`.
+     */
     case "~/n" => env.obufferN
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' -> OBS'
+    Buffers elements within `ms`-millisecond timespans.
+     */
     case "~/%" => env.obufferT
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' (n >NUM)' -> OBS'
+    Combines #{~/%} and #{~/n}.
+    Force-emits instead of back-pressuring when buffer reaches `n`.
+     */
     case "~/%n" => env.obufferTN
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' (n >NUM)' (f: x -> >NUM)' -> OBS'
+    #{~/%<} but with back-pressure instead of force-emitting.
+    Also uses `f` to determine weight of each element.
+     */
     case "~/%<" => env.obufferTB
-    // TODO: docs
+    /*
+    @s (a >OBS) (b >OBS) (n >NUM)' -> OBS'
+    Buffers `a` until `b` emits.
+    Back-pressures when buffer reaches `n`.
+     */
     case "~/n`" => env.obufferON
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' (n >NUM)' -> OBS[ARR]'
+    Limits `a` to `n` emissions every `ms` milliseconds.
+     */
     case "~>-<" => env.othrottle
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' -> OBS[ARR]'
+    Keeps the first emission of `a` per `ms`-millisecond timespan.
+     */
     case "~>-^" => env.othrottleFirst
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' -> OBS[ARR]'
+    Keeps the last emission of `a` per `ms`-millisecond timespan.
+     */
     case "~>-$" => env.othrottleLast
-    // TODO: docs
+    /*
+    @s (a >OBS) (ms >NUM)' -> OBS'
+    Debounces `a` such that emissions only occur after `ms` milliseconds without emission.
+     */
     case "~>~-" => env.odebounce
 
-    // TODO: docs
+    /*
+    @s -> OSTRAT
+    Specifies that the buffer is unbounded. May exhaust system memory with fast data sources.
+     */
     case "~^UN" => env.ostratUn
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OSTRAT
+    Specifies that when the buffer reaches `n`, subscription is canceled with an error.
+     */
     case "~^ERR" => env.ostratFail
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OSTRAT
+    Specifies that when the buffer reaches `n`, back-pressure is applied.
+     */
     case "~^BAK" => env.ostratBack
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OSTRAT
+    Specifies that when the buffer reaches `n`, new elements are dropped.
+     */
     case "~^NEW" => env.ostratNew
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OSTRAT
+    Specifies that when the buffer reaches `n`, old elements are dropped.
+     */
     case "~^OLD" => env.ostratOld
-    // TODO: docs
+    /*
+    @s (n >NUM)' -> OSTRAT
+    Specifies that when the buffer reaches `n`, buffer is cleared.
+     */
     case "~^CLR" => env.ostratClr
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
