@@ -3,7 +3,11 @@ package sclin
 import better.files.*
 import cats.effect.ExitCase
 import java.io.File as JFile
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
+import monix.nio.file.*
 import monix.nio.text.*
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
@@ -251,6 +255,27 @@ extension (env: ENV)
         .pipe(Observable.fromLinesReader)
         .map(_.sSTR)
         .toOBS
+
+  def fswH(f: Path => AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+    x.toOBS.x
+      .map(_.toString)
+      .pipeThrough(UTF8Codec.utf8Encode)
+      .consumeWith(f(y.toFile.path))
+      .map(NUM(_))
+      .toTASK
+  def fswbH(f: Path => AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+    x.toOBS.x
+      .map(_.toString.pipe(Util.bstoab))
+      .consumeWith(f(y.toFile.path))
+      .map(NUM(_))
+      .toTASK
+
+  def fswrite: ENV  = env.mod2(fswH(writeAsync(_)))
+  def fswriteb: ENV = env.mod2(fswbH(writeAsync(_)))
+  def fswriteat: ENV =
+    env.mod3((x, y, z) => z.vec1(n => fswH(appendAsync(_, n.toInt))(x, y)))
+  def fswriteatb: ENV =
+    env.mod3((x, y, z) => z.vec1(n => fswbH(appendAsync(_, n.toInt))(x, y)))
 
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))

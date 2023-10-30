@@ -430,6 +430,14 @@ extension (env: ENV)
     // TODO: docs
     // decently fast, requires encoding param
     case "fs>n" => env.fsreadn
+    // TODO: docs
+    case ">fs" => env.fswrite
+    // TODO: docs
+    case "b>fs" => env.fswriteb
+    // TODO: docs
+    case "^>fs" => env.fswriteat
+    // TODO: docs
+    case "b^>fs" => env.fswriteatb
 
     // TODO: docs
     case "b>S" => env.btou
