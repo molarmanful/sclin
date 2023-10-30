@@ -4,12 +4,10 @@ import better.files.*
 import cats.effect.ExitCase
 import java.io.File as JFile
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import java.nio.file.StandardWatchEventKinds
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import monix.nio.file.*
-import monix.nio.text.*
+import monix.nio.*
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
 import scala.annotation.tailrec
@@ -242,7 +240,7 @@ extension (env: ENV)
   def fsread: ENV = env.mod1: x =>
     Task(x.toFile.newInputStream)
       .pipe(Observable.fromInputStream(_))
-      .pipeThrough(UTF8Codec.utf8Decode)
+      .pipeThrough(text.UTF8Codec.utf8Decode)
       .map(_.sSTR)
       .toOBS
   def fsreadb: ENV = env.mod1: x =>
@@ -257,30 +255,33 @@ extension (env: ENV)
         .map(_.sSTR)
         .toOBS
 
-  def fswH(f: Path => AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+  def fswH(f: Path => file.AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
     x.toOBS.x
       .map(_.toString)
-      .pipeThrough(UTF8Codec.utf8Encode)
+      .pipeThrough(text.UTF8Codec.utf8Encode)
       .consumeWith(f(y.toFile.path))
       .map(NUM(_))
       .toTASK
-  def fswbH(f: Path => AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+  def fswbH(f: Path => file.AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
     x.toOBS.x
       .map(_.toString.pipe(Util.bstoab))
       .consumeWith(f(y.toFile.path))
       .map(NUM(_))
       .toTASK
 
-  def fswrite: ENV  = env.mod2(fswH(writeAsync(_)))
-  def fswriteb: ENV = env.mod2(fswbH(writeAsync(_)))
+  def fswrite: ENV  = env.mod2(fswH(file.writeAsync(_)))
+  def fswriteb: ENV = env.mod2(fswbH(file.writeAsync(_)))
   def fswriteat: ENV =
-    env.mod3((x, y, z) => z.vec1(n => fswH(appendAsync(_, n.toInt))(x, y)))
+    env.mod3((x, y, z) => z.vec1(n => fswH(file.appendAsync(_, n.toInt))(x, y)))
   def fswriteatb: ENV =
-    env.mod3((x, y, z) => z.vec1(n => fswbH(appendAsync(_, n.toInt))(x, y)))
+    env.mod3((x, y, z) =>
+      z.vec1(n => fswbH(file.appendAsync(_, n.toInt))(x, y))
+    )
 
   def fswatch: ENV = env.mod1:
     _.toFile.path.pipe(
-      watchAsync(_)
+      file
+        .watchAsync(_)
         .map:
           _.map: ev =>
             VectorMap(
@@ -303,13 +304,13 @@ extension (env: ENV)
   def oBtoU: ENV = env.mod1: x =>
     x.toOBS.x
       .map(_.toString.pipe(Util.bstoab))
-      .pipeThrough(UTF8Codec.utf8Decode)
+      .pipeThrough(text.UTF8Codec.utf8Decode)
       .map(_.sSTR)
       .toOBS
   def oUtoB: ENV = env.mod1: x =>
     x.toOBS.x
       .map(_.toString)
-      .pipeThrough(UTF8Codec.utf8Encode)
+      .pipeThrough(text.UTF8Codec.utf8Encode)
       .map(Util.abtobs(_).sSTR)
       .toOBS
 
