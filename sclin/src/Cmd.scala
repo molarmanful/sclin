@@ -139,7 +139,8 @@ extension (env: ENV)
     /*
     @s (a >STR)' -> MAP
     #{>M} using a multiline string.
-    Each line of `a` is #{#}ed, and the resulting top 2 stack items form each key-value pair.
+    Each line of `a` is #{#}ed, and the resulting top 2 stack items form each
+    key-value pair.
     ```sclin
     `` >>M
     "a" 1
@@ -650,8 +651,8 @@ extension (env: ENV)
     /*
     @s a* (b >MAP) -> _*
     Iterates through each key-value pair of `b`.
-    For each pair: if the #{Q} of the key is truthy,
-    then #{#}s the value and short-circuits.
+    For each pair: if the #{Q} of the key is truthy, then #{#}s the value and
+    short-circuits.
      */
     case "??#" => env.evalIf$
     /*
@@ -861,7 +862,8 @@ extension (env: ENV)
     /*
     @s a b -> _
     `a` replicated according to `b`.
-    If `b` is iterable, then `a` and `b` are recursively zipped together and replicated.
+    If `b` is iterable, then `a` and `b` are recursively zipped together and
+    replicated.
     ```sclin
     [1 2 3 4] [0 2 0 3] *` >A
     ```
@@ -1040,7 +1042,8 @@ extension (env: ENV)
     case "logX" => env.log10
     /*
     @s (a >NUM)' -> NUM'
-    Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12 chance of being wrong.
+    Whether `a` is prime. Uses a strong pseudo-primality test with a 1/1e12
+    chance of being wrong.
      */
     case "P?" => env.isPrime
     /*
@@ -1109,7 +1112,8 @@ extension (env: ENV)
     case "<=>" => env.cmp
     /*
     @s a b -> -1 | 0 | 1
-    Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or greater than `b`).
+    Comparison (-1, 0, or 1 depending on whether `a` is less than, equal to, or
+    greater than `b`).
      */
     case "<=>`" => env.cmp$$
     /*
@@ -1318,8 +1322,8 @@ extension (env: ENV)
     case "shape" => env.shape
     /*
     @s a -> ARR[NUM*]
-    #{shape} but recursively maximizes lengths and depth
-    instead of just using the first element.
+    #{shape} but recursively maximizes lengths and depth instead of just using
+    the first element.
      */
     case "shape^" => env.dshape
     case "shape=" => env.reshape
@@ -1469,8 +1473,8 @@ extension (env: ENV)
     case "~itr" => env.oitr
     /*
     @s a (f: b -> _ _ | ) -> SEQ
-    `SEQ` generated from `f` successively #{Q}ed to `a`,
-    where `x` is the new current item and `y` is the next `b` to be subsequently #{Q}ed to `f`.
+    `SEQ` generated from `f` successively #{Q}ed to `a`, where `x` is the new
+    current item and `y` is the next `b` to be subsequently #{Q}ed to `f`.
     Generation stops if `f` #{Q}ed to `a` results in an empty stack.
     ```sclin
     0 1, ( ,_ tuck + dups \swap dip ) fold_ 10tk >A
@@ -1480,7 +1484,8 @@ extension (env: ENV)
     /*
     @s a (f: b -> >TASK[ARR[_ _ | ]] ) -> OBS
     `OBS`-specific #{fold_}.
-    Note that unlike in #{fold_}, `f` should return an `ARR` which acts in place of the "stack".
+    Note that unlike in #{fold_}, `f` should return an `ARR` which acts in place
+    of the "stack".
      */
     case "~fold_" => env.ounfold
     /*
@@ -1841,7 +1846,8 @@ extension (env: ENV)
     case "~map" => env.mapEval
     /*
     @s (a >OBS) (f: x -> >TASK)' (n >NUM)' -> OBS[ARR]'
-    #{~map} that executes `n` tasks in parallel; both effects and results are unordered.
+    #{~map} that executes `n` tasks in parallel; both effects and results are
+    unordered.
      */
     case "~map||" => env.mapPar
     /*
@@ -2062,7 +2068,8 @@ extension (env: ENV)
     // TODO: this doc sucks
     /*
     @s a f' -> _'
-    A multi-purpose function for creating, modifying, and traversing nested structures.
+    A multi-purpose function for creating, modifying, and traversing nested
+    structures.
     ```sclin
     [[1 2] 3 4 [ "a" 5, "b" [6 7] , ]: ] ( dups f>o ) walk
     ```
@@ -2308,12 +2315,14 @@ extension (env: ENV)
     case "~^`" => env.oasyncBound
     /*
     @s a[>TASK*] -> TASK[[_*]]
-    Executes each `TASK` in `a` sequentially such that both effects and results are ordered.
+    Executes each `TASK` in `a` sequentially such that both effects and results
+    are ordered.
      */
     case "~|>" => env.seqTASK
     /*
     @s a[>TASK*] -> TASK[[_*]]
-    Executes each `TASK` in `a` in parallel such that effects are unordered but results are ordered.
+    Executes each `TASK` in `a` in parallel such that effects are unordered but
+    results are ordered.
      */
     case "~||" => env.parTASK
     /*
@@ -2344,7 +2353,8 @@ extension (env: ENV)
     /*
     @s (a OBS) -> OBS
     @s (a >TASK)' -> TASK'
-    Ensures that `a` is memoized such that subsequent runs return the same value.
+    Ensures that `a` is memoized such that subsequent runs return the same
+    value.
      */
     case "~memo" => env.memoTASK
     /*
@@ -2370,12 +2380,14 @@ extension (env: ENV)
     case "~%" => env.timeoutTASK
     /*
     @s (a >TASK)' -> TASK[ARR[NUM _]]'
-    Times the execution of `a`, yielding the execution time (in ms) and the result.
+    Times the execution of `a`, yielding the execution time (in ms) and the
+    result.
      */
     case "~%Q" => env.timeTASK
     /*
     @s (a >TASK)' (f: ERR -> >TASK)' (g: x -> >TASK)' -> TASK'
-    If `a` errors, then `f` is called with the error, providing an opportunity to recover.
+    If `a` errors, then `f` is called with the error, providing an opportunity
+    to recover.
     Otherwise, `g` is called with the result.
      */
     case "~?" => env.redeemTASK
@@ -2387,7 +2399,8 @@ extension (env: ENV)
     case "~@" => env.restartwTASK
     /*
     @s (ms >NUM)' -> OBS'
-    Creates an `OBS` that emits whole numbers at a fixed rate of `ms` milliseconds.
+    Creates an `OBS` that emits whole numbers at a fixed rate of `ms`
+    milliseconds.
      */
     case "~%@" => env.ointervalr
     /*
@@ -2486,18 +2499,21 @@ extension (env: ENV)
     case "~>-$" => env.othrottleLast
     /*
     @s (a >OBS) (ms >NUM)' -> OBS'
-    Debounces `a` such that emissions only occur after `ms` milliseconds without emission.
+    Debounces `a` such that emissions only occur after `ms` milliseconds without
+    emission.
      */
     case "~>~-" => env.odebounce
 
     /*
     @s -> OSTRAT
-    Specifies that the buffer is unbounded. May exhaust system memory with fast data sources.
+    Specifies that the buffer is unbounded. May exhaust system memory with fast
+    data sources.
      */
     case "~^UN" => env.ostratUn
     /*
     @s (n >NUM)' -> OSTRAT
-    Specifies that when the buffer reaches `n`, subscription is canceled with an error.
+    Specifies that when the buffer reaches `n`, subscription is canceled with an
+    error.
      */
     case "~^ERR" => env.ostratFail
     /*
