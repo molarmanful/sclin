@@ -2,6 +2,7 @@ package sclin
 
 import better.files.*
 import java.nio.charset.Charset
+import scala.annotation.tailrec
 import spire.implicits.*
 import spire.math.*
 
@@ -27,7 +28,7 @@ object Util:
       else loop(n / b, b, n % b +: res)
     loop(n)
 
-  def toDec(ns: ARRW[SafeLong], b: SafeLong): SafeLong =
+  @tailrec def toDec(ns: ARRW[SafeLong], b: SafeLong): SafeLong =
     if b == 0 then 0
     else if b < 0 then toDec(ns.reverse, -b)
     else if b == 1 then ns.length
@@ -56,4 +57,4 @@ object Util:
     case _  => s
 
   def abtobs(s: Array[Byte]): String = s.map(_.&(0xff).toChar).mkString
-  def bstoab(s: String): Array[Byte] = s.toString.getBytes("ISO-8859-1")
+  def bstoab(s: String): Array[Byte] = s.getBytes("ISO-8859-1")

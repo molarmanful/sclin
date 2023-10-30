@@ -7,6 +7,7 @@ import scala.collection.immutable.HashMap
 import scala.util.chaining.*
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 import ANY.*
 
 /** A single step in the execution of a lin program.
@@ -17,10 +18,8 @@ import ANY.*
   *   queue of data to evaluate
   * @param stack
   *   current data stack
-  * @param curP
-  *   current PATH
-  * @param curC
-  *   currently executing cmd
+  * @param curPC
+  *   current PATH and executing CMD
   * @param calls
   *   current call stack
   * @param scope
@@ -29,12 +28,12 @@ import ANY.*
   *   global scope
   * @param arr
   *   queue of strucures being constructed
-  * @param eS
-  *   step mode
-  * @param eV
-  *   verbose mode
-  * @param eI
-  *   implicit mode
+  * @param flags
+  *   CLI flags
+  * @param cflag
+  *   function for (de)coloring output
+  * @param ioSched
+  *   IO-specific thread-pool
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
@@ -135,9 +134,7 @@ case class ENV(
     case Some(p, _) => p
     case _          => throw LinEx("ID", s"unknown id \"$c\"")
 
-  def optId(c: String): Option[PATH] =
-    try Some(getId(c))
-    catch e => None
+  def optId(c: String): Option[PATH] = Try(getId(c)).toOption
 
   def addLocId(c: String): ENV =
     copy(ids = ids + (c -> getId(c)), scope = scope - c)
@@ -163,14 +160,14 @@ case class ENV(
     else if gids.contains(k) then gids.get(k).map(_.l.pipe(getLineS))
     else None
 
-  def addCall(f: FN): ENV = copy(calls = curPC #:: calls)
+  def addCall(): ENV = copy(calls = curPC #:: calls)
 
   def setCur(c: ANY): ENV = copy(curPC = (code.p, c))
 
   def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
 
-  def arg(n: Int)(f: (ARRW[ANY], ENV) => ENV) =
+  def arg(n: Int)(f: (ARRW[ANY], ENV) => ENV): ENV =
     if stack.length < n then throw LinEx("ST_LEN", s"stack length < $n")
     else
       val (xs, ys) = stack.splitAt(stack.length - n)
@@ -184,41 +181,32 @@ case class ENV(
   def arg1(f: (ANY, ENV) => ENV): ENV =
     arg(1):
       case (Vector(x), env) => f(x, env)
-      case _                => ???
   def arg2(f: (ANY, ANY, ENV) => ENV): ENV =
     arg(2):
       case (Vector(x, y), env) => f(x, y, env)
-      case _                   => ???
   def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
     arg(3):
       case (Vector(x, y, z), env) => f(x, y, z, env)
-      case _                      => ???
 
   def mods1(f: ANY => ARRW[ANY]): ENV =
     mods(1):
       case Vector(x) => f(x)
-      case _         => ???
   def mods2(f: (ANY, ANY) => ARRW[ANY]): ENV =
     mods(2):
       case Vector(x, y) => f(x, y)
-      case _            => ???
   def mods3(f: (ANY, ANY, ANY) => ARRW[ANY]): ENV =
     mods(3):
       case Vector(x, y, z) => f(x, y, z)
-      case _               => ???
 
   def mod1(f: ANY => ANY): ENV =
     modx(1):
       case Vector(x) => f(x)
-      case _         => ???
   def mod2(f: (ANY, ANY) => ANY): ENV =
     modx(2):
       case Vector(x, y) => f(x, y)
-      case _            => ???
   def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
     modx(3):
       case Vector(x, y, z) => f(x, y, z)
-      case _               => ???
 
   def vec1(f: ANY => ANY): ENV             = mod1(_.vec1(f))
   def vec2(f: (ANY, ANY) => ANY): ENV      = mod2(_.vec2(_)(f))
@@ -265,23 +253,23 @@ case class ENV(
       if flags.s then print("\u001b[2J\u001b[;H")
       if flags.s || flags.v then trace1
       val env = setCur(c).modCode(_ => cs)
-      try
-        return env
-          .execA(c)
-          .tap(e => if flags.s || flags.v then e.trace2)
-          .pipe: e =>
-            if flags.s then
-              print(cflag(fansi.Color.DarkGray)("———? "))
-              io.StdIn.readLine match
-                case "v" => e.copy(flags = flags.copy(s = false, v = true))
-                case _   => e
-            else e
-          .tap(_ => if flags.s then print("\u001b[2J\u001b[;H"))
-          .exec
-      catch
-        case e: LinEx => throw e.toLinERR(env)
-        case e: java.lang.StackOverflowError =>
-          throw LinEx("REC", "stack overflow").toLinERR(env)
+      val env1 =
+        try env.execA(c)
+        catch
+          case e: LinEx => throw e.toLinERR(env)
+          case _: java.lang.StackOverflowError =>
+            throw LinEx("REC", "stack overflow").toLinERR(env)
+      env1
+        .tap(e => if flags.s || flags.v then e.trace2)
+        .pipe: e =>
+          if flags.s then
+            print(cflag(fansi.Color.DarkGray)("———? "))
+            io.StdIn.readLine match
+              case "v" => e.copy(flags = flags.copy(s = false, v = true))
+              case _   => e
+          else e
+        .tap(_ => if flags.s then print("\u001b[2J\u001b[;H"))
+        .exec
 
 /** Frontend for `ENV`. */
 object ENV:
@@ -309,4 +297,4 @@ object ENV:
     val s = ENV.run(l).stack.map(_.toForm).mkString(" ")
     println("-> " + s)
 
-  lazy val ioSched = Scheduler.io("io")
+  lazy val ioSched: Scheduler = Scheduler.io("io")

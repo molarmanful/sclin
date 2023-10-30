@@ -14,7 +14,7 @@ case class Lambda(
     else
       xs match
         case LazyList() => this
-        case (c #:: cs) =>
+        case c #:: cs =>
           val d = c match
             case CMD(x) if x.contains('(') => 1
             case CMD(x) if x.contains(')') => -1

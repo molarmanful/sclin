@@ -9,6 +9,7 @@ import monix.execution.*
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.*
+import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
@@ -84,7 +85,7 @@ enum ANY:
             case '\\' => "\\\\"
             case c    => c
           .mkString}\""
-    case FN(PATH(_, l), x) =>
+    case FN(PATH(_, l), _) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(…)$n"
     case ERR(x)          => s"ERR(${x.getMessage})"
@@ -107,7 +108,7 @@ enum ANY:
     case (_, UN)                  => 1
     case (TF(x), TF(y)) if x == y => 0
     case (TF(x), _)               => if x then 1 else -1
-    case (_, TF(x))               => -t.cmp(this)
+    case (_, _: TF)               => -t.cmp(this)
     case (Itr(x), _) if !x.toBool => NUM(0).cmp(t)
     case (_, Itr(x)) if !x.toBool => cmp(NUM(0))
     case (Itr(x), _) =>
@@ -119,7 +120,7 @@ enum ANY:
         .getOrElse(x1.sizeCompare(t1))
     case (_, Itr(_))      => -t.cmp(this)
     case (DBL(x), Nmy(y)) => x.compare(y.toDBL.x)
-    case (Nmy(x), DBL(y)) => -t.cmp(this)
+    case (Nmy(_), _: DBL) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
       x.compare(t.toSTR.x.map(_.toInt).applyOrElse(0, _ => 0))
@@ -132,14 +133,14 @@ enum ANY:
 
   def toBool: Boolean = this match
     case TF(x)                              => x
-    case SEQ(x)                             => !x.isEmpty
-    case ARR(x)                             => !x.isEmpty
-    case MAP(x)                             => !x.isEmpty
-    case STR(x)                             => !x.isEmpty
-    case NUM(x)                             => !eql(NUM(0))
-    case DBL(x)                             => !eql(DBL(0))
-    case CMD(x)                             => !x.isEmpty
-    case FN(_, x)                           => !x.isEmpty
+    case SEQ(x)                             => x.nonEmpty
+    case ARR(x)                             => x.nonEmpty
+    case MAP(x)                             => x.nonEmpty
+    case STR(x)                             => x.nonEmpty
+    case _: NUM                             => !eql(NUM(0))
+    case _: DBL                             => !eql(DBL(0))
+    case CMD(x)                             => x.nonEmpty
+    case FN(_, x)                           => x.nonEmpty
     case _: ERR                             => false
     case TRY(Success(_))                    => true
     case TRY(Failure(_))                    => false
@@ -225,8 +226,8 @@ enum ANY:
   def get(i: ANY): ANY =
     val oi = i.optI
     this match
-      case OBS(x) if oi != None => x.drop(oi.get).headOrElseL(UN).toTASK
-      case Its(x) if oi != None =>
+      case OBS(x) if oi.isDefined => x.drop(oi.get).headOrElseL(UN).toTASK
+      case Its(_) if oi.isDefined =>
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         this match
@@ -247,10 +248,10 @@ enum ANY:
   def set(i: ANY, t: ANY): ANY =
     val oi = i.optI
     this match
-      case OBS(x) if oi != None =>
+      case OBS(x) if oi.isDefined =>
         val i1 = oi.get
         x.take(i1).:+(t).++(x.drop(i1 + 1)).toOBS
-      case Its(x) if oi != None =>
+      case Its(_) if oi.isDefined =>
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         try
@@ -274,7 +275,7 @@ enum ANY:
 
   def setmod(i: ANY, f: ANY => ANY): ANY = set(i, f(get(i)))
 
-  def setmods(is: Map[ANY, ANY => ANY]) = is.foldLeft(this):
+  def setmods(is: Map[ANY, ANY => ANY]): ANY = is.foldLeft(this):
     case (a, (i, f)) => a.setmod(i, f)
 
   def setmodn(is: SEQW[ANY], f: ANY => ANY): ANY = is match
@@ -285,7 +286,7 @@ enum ANY:
   def remove(i: ANY): ANY =
     val oi = i.optI
     this match
-      case Its(x) if oi != None =>
+      case Its(_) if oi.isDefined =>
         val i1 = oi.get
         val i2 = if i1 < 0 then i1 + length else i1
         if i2 >= 0 then
@@ -470,7 +471,7 @@ enum ANY:
         case Sty(x) => x.toNUM
         case _      => toSTR.x.toNUM
     catch
-      case e: java.lang.NumberFormatException =>
+      case _: java.lang.NumberFormatException =>
         throw LinEx("CAST", "bad NUM cast " + toForm)
       case e => throw e
 
@@ -487,9 +488,7 @@ enum ANY:
     case x: TRY => x
     case _      => toTry.toTRY
 
-  def optNUM: Option[NUM] =
-    try Some(toNUM)
-    catch _ => None
+  def optNUM: Option[NUM] = Try(toNUM).toOption
 
   def toInt: Int = toNUM.x.intValue
 
@@ -624,7 +623,6 @@ enum ANY:
             case MAP(x) =>
               x.keys.++(x.values).pipe(f) match
                 case (k, v) => Vector(k, v).toARR
-            case _ => ???
           .toMAP
       case _ => winMap(n, g)
   def mergeMap(f: ANY => ANY): OBS  = modOBS(_.mergeMap(f(_).toOBS.x))
@@ -742,40 +740,34 @@ enum ANY:
         )
       case x => f(a, x)
 
-  def reduceLeft(f: (ANY, ANY) => ANY): ANY =
-    try
-      this match
-        case Lsy(x) => x.reduceLeft(f).matchType(this)
-        case ARR(x) => x.reduceLeft(f)
-        case _      => toARR.reduceLeft(f)
-    catch
-      case e: java.lang.UnsupportedOperationException =>
-        throw LinEx("ITR", s"unable to reduce empty $getType")
-      case e => throw e
+  def reduceH(f: => ANY): ANY = try f
+  catch
+    case _: java.lang.UnsupportedOperationException =>
+      throw LinEx("ITR", s"unable to reduce empty $getType")
+  def reduceMH(f: (ANY, (ANY, ANY)) => ANY)(t: ANY, s: ANY): ANY = s match
+    case ARR(k +: v +: _) => f(t, (k, v))
+
+  def reduceLeft(f: (ANY, ANY) => ANY): ANY = reduceH:
+    this match
+      case Lsy(x) => x.reduceLeft(f).matchType(this)
+      case ARR(x) => x.reduceLeft(f)
+      case _      => toARR.reduceLeft(f)
   def reduceLeft(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
-        toARR.reduceLeft:
-          case (a, ARR(k +: v +: _)) => f(a, (k, v))
-          case _                     => ???
+        toARR.reduceLeft(reduceMH(f))
       case _ => reduceLeft(g)
 
   def reduceRight(f: (ANY, ANY) => ANY): ANY =
-    try
+    reduceH:
       this match
         case Lsy(x) => x.reduceRight(f).matchType(this)
         case ARR(x) => x.reduceRight(f)
         case _      => toARR.reduceRight(f)
-    catch
-      case e: java.lang.UnsupportedOperationException =>
-        throw LinEx("ITR", s"unable to reduce empty $getType")
-      case e => throw e
   def reduceRight(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =
     this match
       case _: MAP =>
-        toARR.reduceRight:
-          case (a, ARR(k +: v +: _)) => f(a, (k, v))
-          case _                     => ???
+        toARR.reduceRight(reduceMH(f))
       case _ => reduceRight(g)
 
   def scanLeft(a: ANY)(f: (ANY, ANY) => ANY): ANY = this match
@@ -991,7 +983,6 @@ enum ANY:
       zip(t)(Vector(_, _).toARR).zip(s): (x, c) =>
         x.toARR.x match
           case Vector(a, b) => a.vec3(b, c)(f)
-          case _            => ???
     case (Itr(_), Itr(_), _) => vec2(t)(f(_, _, s))
     case (Itr(_), _, Itr(_)) => vec2(t)(f(_, t, _))
     case (_, Itr(_), Itr(_)) => t.vec2(s)(f(this, _, _))
@@ -1054,11 +1045,11 @@ enum ANY:
   def strnuma(t: ANY, f: (String, NUMF) => Iterable[String]): ANY =
     vec2(t)((x, y) => f(x.toString, y.toNUM.x).map(_.sSTR).toARR)
 
-  def fNum1(f: Double => ANY, g: NUMF => ANY) = this match
-    case DBL(x) => f(x.toDouble)
+  def fNum1(f: Double => ANY, g: NUMF => ANY): ANY = this match
+    case DBL(x) => f(x)
     case _      => g(toNUM.x)
 
-  def fNum2(t: ANY, f: (Double, Double) => ANY, g: (NUMF, NUMF) => ANY) =
+  def fNum2(t: ANY, f: (Double, Double) => ANY, g: (NUMF, NUMF) => ANY): ANY =
     (this, t) match
       case (DBL(x), Nmy(y)) => f(x, y.toDBL.x)
       case (Nmy(x), DBL(y)) => f(x.toDBL.x, y)
@@ -1123,7 +1114,7 @@ object ANY:
   extension [T](xs: Iterable[T])
 
     def packWith(f: (T, T) => Boolean): Iterable[Iterable[T]] =
-      def loop(
+      @tailrec def loop(
           xs: Iterable[T],
           res: Iterable[Iterable[T]] = Iterable()
       ): Iterable[Iterable[T]] =

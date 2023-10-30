@@ -1,6 +1,7 @@
 package sclin
 
 import better.files.*
+import cats.effect.ExitCase
 import java.io.File as JFile
 import java.nio.charset.Charset
 import monix.eval.Task
@@ -9,6 +10,7 @@ import monix.nio.file.*
 import monix.nio.text.*
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
+import scala.annotation.tailrec
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
@@ -32,12 +34,12 @@ extension (env: ENV)
     case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
 
     case s"`$k" if k != "" =>
-      def loop(
+      @tailrec def loop(
           n: Int = env.code.p.l + 1,
           res: ARRW[String] = Vector()
       ): (ARRW[String], Int) =
         env.lines.get(PATH(env.code.p.f, n)) match
-          case Some(STR(s), f) if !s.trim.startsWith(k) =>
+          case Some(STR(s), _) if !s.trim.startsWith(k) =>
             loop(n + 1, res :+ s)
           case _ => (res, n)
       val (x, i) = loop()
@@ -69,11 +71,11 @@ extension (env: ENV)
           env.copy(code = f)
         env.code.x match
           case LazyList() => env1
-          case _          => env.modStack(_ => env1.addCall(f).exec.stack)
+          case _          => env.modStack(_ => env1.addCall().exec.stack)
       case _ => env.push(x).envFN.eval
   def evale: ENV = env.arg1: (x, env) =>
     x match
-      case f: FN => env.modStack(_ => env.copy(code = f).addCall(f).exec.stack)
+      case f: FN => env.modStack(_ => env.copy(code = f).addCall().exec.stack)
       case _     => env.push(x).envFN.evale
   def evalS(x: ARRW[ANY], f: ANY): ARRW[ANY] =
     env.modStack(_ => x :+ f).evale.stack
@@ -132,7 +134,7 @@ extension (env: ENV)
         case _          => env
   def evalTimes: ENV =
     env.arg2: (f, n, env) =>
-      def loop(env: ENV, n: Int): ENV =
+      @tailrec def loop(env: ENV, n: Int): ENV =
         if n > 0 then loop(env.push(f).evale, n - 1)
         else env
       loop(env, n.toInt)
@@ -141,7 +143,7 @@ extension (env: ENV)
     catch case e => env.pushs(Vector(e.toERRW(env), g)).quar.pop
   def evalTRY: ENV = env.arg1: (x, env) =>
     env.push(x.vec1(f => Try(env.push(f).quar.getStack(0)).toTRY))
-  def throwERR: ENV = env.arg1((x, env) => throw x.toERR.x)
+  def throwERR: ENV = env.arg1((x, _) => throw x.toERR.x)
   def evalArrSt: ENV = env.arg2: (x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
   def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
@@ -216,7 +218,7 @@ extension (env: ENV)
         .foldLeft(env):
           case (env, (k, v)) => env.addLoc(k.toString, v)
 
-  def getSc =
+  def getSc: ENV =
     env.push(MAP(env.scope.map { case (k, v) => (k.sSTR, v) }.to(VectorMap)))
 
   def in: ENV   = env.push(STR(readLine))
@@ -307,7 +309,7 @@ extension (env: ENV)
 
   def dip: ENV = env.arg2((x, f, env) => env.push(f).evale.push(x))
 
-  def get: ENV    = env.mod2((x, y) => y.vec1(x.get(_)))
+  def get: ENV    = env.mod2((x, y) => y.vec1(x.get))
   def get$$ : ENV = env.mod2(_.get(_))
   def gets: ENV   = env.mod2(_.gets(_))
   def getn: ENV   = env.mod2(_.getn(_))
@@ -359,9 +361,9 @@ extension (env: ENV)
       LazyList
         .unfold(x): s =>
           env.evalS(Vector(s), f) match
-            case Vector()     => None
-            case st :+ m :+ n => Some(m, n)
-            case _            => throw LinEx("ST_LEN", "stack length = 1")
+            case Vector()    => None
+            case _ :+ m :+ n => Some(m, n)
+            case _           => throw LinEx("ST_LEN", "stack length = 1")
         .toSEQ
   def ounfold: ENV = env.mod2: (x, y) =>
     y.vec1: f =>
@@ -369,9 +371,9 @@ extension (env: ENV)
         .unfoldEval(x):
           SIG_1f1(f)(_).toTASK.x.map: a =>
             a.toARR.x match
-              case Vector()     => None
-              case st :+ m :+ n => Some(m, n)
-              case _            => throw LinEx("ST_LEN", "stack length = 1")
+              case Vector()    => None
+              case _ :+ m :+ n => Some(m, n)
+              case _           => throw LinEx("ST_LEN", "stack length = 1")
         .toOBS
 
   def enumL: ENV = env.mod1:
@@ -435,7 +437,7 @@ extension (env: ENV)
   def padc: ENV = padH: (x, y, z) =>
     val q  = y / 2
     val y1 = y - q
-    padH1(z, q) + x.toString + padH1(z, y1)
+    padH1(z, q) + x + padH1(z, y1)
 
   def pad$H(f: (ANY, Int, ANY) => ANY): ENV = env.mod3: (x, y, z) =>
     y.vec1: y =>
@@ -620,8 +622,8 @@ extension (env: ENV)
       .toMAP
       .sortBy((a, _) => a, a => a)
 
-  def not: ENV    = env.vec1(_.toBool.unary_!.boolTF)
-  def not$$ : ENV = env.mod1(_.toBool.unary_!.boolTF)
+  def not: ENV    = env.vec1(_.toBool.pipe(!_).boolTF)
+  def not$$ : ENV = env.mod1(_.toBool.pipe(!_).boolTF)
   def min: ENV    = env.vec2((x, y) => if x.cmp(y) < 0 then x else y)
   def and: ENV    = env.vec2((x, y) => (x.toBool && y.toBool).boolTF)
   def min$$ : ENV = env.mod2((x, y) => if x.cmp(y) < 0 then x else y)
@@ -721,7 +723,6 @@ extension (env: ENV)
   def zip: ENV = env.mod3((x, y, z) => z.vec1(f => x.zip(y)(SIG_2f1(f))))
   def zip$ : ENV = env.modx(5):
     case Vector(x, y, v, w, z) => z.vec1(f => x.zipAll(y, v, w, SIG_2f1(f)))
-    case _                     => ???
   def tbl: ENV  = env.mod3((x, y, z) => z.vec1(f => x.table(y, SIG_2f1(f))))
   def tblf: ENV = env.mod3((x, y, z) => z.vec1(f => x.flatTable(y, SIG_2f1(f))))
 
@@ -901,17 +902,15 @@ extension (env: ENV)
   def wrapTRYTASK: ENV   = env.vec1(_.modTASK(_.materialize.map(_.toTRY)))
   def unwrapTRYTASK: ENV = env.vec1(_.modTASK(_.map(_.toTRY.x).dematerialize))
   def bracketTASK: ENV = env.mod3: (x, y, z) =>
+    def go(f: ANY)(a: ANY, e: ExitCase[Throwable]) =
+      SIG_2f1(f)(a, ANY.exitCase(e)).toTASK.x.map(_ => ())
     x match
       case _: OBS =>
         y.vec2(z): (f, g) =>
-          x.modOBS:
-            _.bracketCase(SIG_1f1(f)(_).toOBS.x): (a, e) =>
-              SIG_2f1(g)(a, ANY.exitCase(e)).toTASK.x.map(_ => ())
+          x.modOBS(_.bracketCase(SIG_1f1(f)(_).toOBS.x)(go(g)))
       case _ =>
         x.vec3(y, z): (t, f, g) =>
-          x.modTASK:
-            _.bracketCase(SIG_1f1(f)(_).toTASK.x): (a, e) =>
-              SIG_2f1(g)(a, ANY.exitCase(e)).toTASK.x.map(_ => ())
+          t.modTASK(_.bracketCase(SIG_1f1(f)(_).toTASK.x)(go(g)))
   def onErrTASK: ENV = env.mod2: (x, y) =>
     x match
       case _: OBS =>
@@ -954,7 +953,6 @@ extension (env: ENV)
         x.modOBS:
           _.bufferTimedWithPressure(t.toMs, n.toInt, SIG_1f1(f)(_).toInt)
             .map(_.toARR)
-    case _ => ???
   def obufferON: ENV = env.mod3: (x, y, z) =>
     z.vec1(n => x.modOBS(_.bufferWithSelector(y.toOBS.x, n.toInt).map(_.toARR)))
   def othrottle: ENV = env.mod3: (x, y, z) =>

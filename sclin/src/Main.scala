@@ -17,8 +17,8 @@ object Main:
       @arg(short = 'v', doc = "Verbose mode.") verb: Flag,
       @arg(short = 'i', doc = "Implicit mode.") impl: Flag,
       @arg(doc = "Enable/disable ANSI in debug messages.") nocolor: Flag
-  ) =
-    def err(e: String) = println(cflag(fansi.Color.Red)(e))
+  ): Unit =
+    def err(e: String): Unit = println(cflag(fansi.Color.Red)(e))
     def cflag(x: fansi.Attrs) =
       if nocolor.value then fansi.Attrs() else x
     try
@@ -39,7 +39,7 @@ object Main:
                 case _       => ()
     catch
       case e: java.nio.file.NoSuchFileException =>
-        err(s"no file ${e.getFile()}")
+        err(s"no file ${e.getFile}")
       case e: LinERR => err(e.toString)
       case e =>
         err:
@@ -47,5 +47,5 @@ object Main:
 
   given TokensReader.Simple[File] with
 
-    def shortName               = "path"
-    def read(strs: Seq[String]) = Right(File(strs.head))
+    def shortName                                     = "path"
+    def read(strs: Seq[String]): Right[Nothing, File] = Right(File(strs.head))
