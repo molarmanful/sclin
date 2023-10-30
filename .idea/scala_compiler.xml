@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="bsp 1" modules="mill-build_">
+      <option name="deprecationWarnings" value="true" />
+      <parameters>
+        <parameter value="-Xplugin-require:mill-linenumber-plugin" />
+      </parameters>
+      <plugins>
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/scalac-mill-moduledefs-plugin_2.13.12/0.10.9/scalac-mill-moduledefs-plugin_2.13.12-0.10.9.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.11.5/mill-runner-linenumbers_2.13-0.11.5.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.12/scala-compiler-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.12/scala-library-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.10.9/mill-moduledefs_2.13-0.10.9.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.12/scala-reflect-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.22.0/jline-3.22.0.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar" />
+      </plugins>
+    </profile>
+    <profile name="bsp 2" modules="benji.sclin,benji.sclin.test,sclin,sclin.scoverage (shared),sclin.test">
+      <option name="deprecationWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Wunused:all" />
+      </parameters>
+    </profile>
+    <profile name="bsp 3" modules="benji.sclin.scoverage,sclin.scoverage">
+      <option name="deprecationWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Wunused:all" />
+        <parameter value="-coverage-out:/home/benji/sclin/out/sclin/scoverage/data.dest" />
+      </parameters>
+    </profile>
+    <profile name="mill 1" modules="">
+      <parameters>
+        <parameter value="-Xplugin:/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/scalac-mill-moduledefs-plugin_2.13.12/0.10.9/scalac-mill-moduledefs-plugin_2.13.12-0.10.9.jar" />
+        <parameter value="-Xplugin:/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.11.5/mill-runner-linenumbers_2.13-0.11.5.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.12/scala-compiler-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.12/scala-library-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.10.9/mill-moduledefs_2.13-0.10.9.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.12/scala-reflect-2.13.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.22.0/jline-3.22.0.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar,/home/benji/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar" />
+        <parameter value="-deprecation" />
+        <parameter value="-Xplugin-require:mill-linenumber-plugin" />
+      </parameters>
+      <plugins>
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/scalac-mill-moduledefs-plugin_2.13.12/0.10.9/scalac-mill-moduledefs-plugin_2.13.12-0.10.9.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.12/scala-compiler-2.13.12.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.12/scala-library-2.13.12.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.10.9/mill-moduledefs_2.13-0.10.9.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.12/scala-reflect-2.13.12.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.22.0/jline-3.22.0.jar" />
+        <plugin path="$PROJECT_DIR$/../.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar" />
+      </plugins>
+    </profile>
+    <profile name="mill 2" modules="">
+      <parameters>
+        <parameter value="-deprecation" />
+        <parameter value="-feature" />
+        <parameter value="-Wunused:all" />
+      </parameters>
+    </profile>
+    <profile name="mill 3" modules="">
+      <parameters>
+        <parameter value="-deprecation" />
+        <parameter value="-feature" />
+        <parameter value="-Wunused:all" />
+        <parameter value="-coverage-out:/home/benji/sclin/out/sclin/scoverage/data.dest" />
+      </parameters>
+    </profile>
+  </component>
+</project>
