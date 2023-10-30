@@ -3,10 +3,7 @@ package sclin
 import better.files.*
 import cats.effect.ExitCase
 import java.io.File as JFile
-import java.nio.charset.Charset
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
-import monix.nio.file.*
 import monix.nio.text.*
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
@@ -16,10 +13,7 @@ import scala.concurrent.*
 import scala.concurrent.duration.*
 import scala.io.StdIn.*
 import scala.util.chaining.*
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
-import spire.algebra.*
 import spire.implicits.*
 import spire.math.*
 import upickle.default.*
@@ -929,15 +923,15 @@ extension (env: ENV)
 
   def ostratUn: ENV = env.push(OSTRAT(OverflowStrategy.Unbounded))
   def ostratFail: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.Fail(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.Fail.apply).pipe(OSTRAT(_)))
   def ostratBack: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.BackPressure(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.BackPressure.apply).pipe(OSTRAT(_)))
   def ostratNew: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.DropNew(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.DropNew.apply).pipe(OSTRAT(_)))
   def ostratOld: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.DropOld(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.DropOld.apply).pipe(OSTRAT(_)))
   def ostratClr: ENV =
-    env.vec1(_.toInt.pipe(OverflowStrategy.ClearBuffer(_)).pipe(OSTRAT(_)))
+    env.vec1(_.toInt.pipe(OverflowStrategy.ClearBuffer.apply).pipe(OSTRAT(_)))
 
   def ocache: ENV = env.mod2((x, y) => y.vec1(n => x.modOBS(_.cache(n.toInt))))
   def obufferN: ENV = env.mod2: (x, y) =>

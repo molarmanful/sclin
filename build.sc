@@ -11,9 +11,9 @@ import scalalib.scalafmt._
 
 object sclin extends ScoverageModule with PublishModule with ScalafmtModule {
 
-  def scalaVersion                       = "3.3.1"
-  def scoverageVersion                   = "2.0.11"
-  override def publishVersion: T[String] = VcsVersion.vcsState().format()
+  def scalaVersion              = "3.3.1"
+  def scoverageVersion          = "2.0.11"
+  def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
     description = "Scala implementation of lin",
     organization = "io.github.molarmanful",

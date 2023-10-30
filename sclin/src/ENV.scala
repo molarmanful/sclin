@@ -1,7 +1,7 @@
 package sclin
 
 import monix.execution.Scheduler
-import scala.annotation.*
+import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
 import scala.util.chaining.*
@@ -178,35 +178,26 @@ case class ENV(
 
   def modx(n: Int)(f: ARRW[ANY] => ANY): ENV = mods(n)(xs => Vector(f(xs)))
 
-  def arg1(f: (ANY, ENV) => ENV): ENV =
-    arg(1):
-      case (Vector(x), env) => f(x, env)
-  def arg2(f: (ANY, ANY, ENV) => ENV): ENV =
-    arg(2):
-      case (Vector(x, y), env) => f(x, y, env)
-  def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV =
-    arg(3):
-      case (Vector(x, y, z), env) => f(x, y, z, env)
+  def arg1(f: (ANY, ENV) => ENV): ENV = arg(1):
+    case (Vector(x), env) => f(x, env)
+  def arg2(f: (ANY, ANY, ENV) => ENV): ENV = arg(2):
+    case (Vector(x, y), env) => f(x, y, env)
+  def arg3(f: (ANY, ANY, ANY, ENV) => ENV): ENV = arg(3):
+    case (Vector(x, y, z), env) => f(x, y, z, env)
 
-  def mods1(f: ANY => ARRW[ANY]): ENV =
-    mods(1):
-      case Vector(x) => f(x)
-  def mods2(f: (ANY, ANY) => ARRW[ANY]): ENV =
-    mods(2):
-      case Vector(x, y) => f(x, y)
-  def mods3(f: (ANY, ANY, ANY) => ARRW[ANY]): ENV =
-    mods(3):
-      case Vector(x, y, z) => f(x, y, z)
+  def mods1(f: ANY => ARRW[ANY]): ENV = mods(1):
+    case Vector(x) => f(x)
+  def mods2(f: (ANY, ANY) => ARRW[ANY]): ENV = mods(2):
+    case Vector(x, y) => f(x, y)
+  def mods3(f: (ANY, ANY, ANY) => ARRW[ANY]): ENV = mods(3):
+    case Vector(x, y, z) => f(x, y, z)
 
-  def mod1(f: ANY => ANY): ENV =
-    modx(1):
-      case Vector(x) => f(x)
-  def mod2(f: (ANY, ANY) => ANY): ENV =
-    modx(2):
-      case Vector(x, y) => f(x, y)
-  def mod3(f: (ANY, ANY, ANY) => ANY): ENV =
-    modx(3):
-      case Vector(x, y, z) => f(x, y, z)
+  def mod1(f: ANY => ANY): ENV = modx(1):
+    case Vector(x) => f(x)
+  def mod2(f: (ANY, ANY) => ANY): ENV = modx(2):
+    case Vector(x, y) => f(x, y)
+  def mod3(f: (ANY, ANY, ANY) => ANY): ENV = modx(3):
+    case Vector(x, y, z) => f(x, y, z)
 
   def vec1(f: ANY => ANY): ENV             = mod1(_.vec1(f))
   def vec2(f: (ANY, ANY) => ANY): ENV      = mod2(_.vec2(_)(f))

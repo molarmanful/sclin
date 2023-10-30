@@ -3,18 +3,14 @@ package sclin
 import better.files.*
 import cats.effect.ExitCase
 import cats.kernel.Eq
-import geny.Generator
 import monix.eval.Task
 import monix.execution.*
-import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.*
 import scala.annotation.tailrec
-import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
-import scala.quoted.*
 import scala.util.matching.Regex.Match
 import scala.util.Failure
 import scala.util.Random
@@ -331,7 +327,7 @@ enum ANY:
     case (UN, y) => y
     case (x, UN) => x
     case (OBS(x), OBS(y)) =>
-      x.filterEval(a => y.findL(_ == a).map(_ != None)).toOBS
+      x.filterEval(a => y.findL(_ == a).map(_.isDefined)).toOBS
     case (OBS(x), y)      => x.filterNot(y.has).toOBS
     case (Lsy(x), Itr(y)) => x.filterNot(y.has).mSEQ(this)
     case (ARR(x), Itr(y)) => x.filterNot(y.has).toARR
@@ -620,9 +616,9 @@ enum ANY:
       case _: MAP =>
         mod$$(n)
           .map:
-            case MAP(x) =>
-              x.keys.++(x.values).pipe(f) match
-                case (k, v) => Vector(k, v).toARR
+              case MAP(x) =>
+                x.keys.++(x.values).pipe(f) match
+                  case (k, v) => Vector(k, v).toARR
           .toMAP
       case _ => winMap(n, g)
   def mergeMap(f: ANY => ANY): OBS  = modOBS(_.mergeMap(f(_).toOBS.x))
@@ -1057,7 +1053,7 @@ enum ANY:
 
 object ANY:
 
-  val wholes: LazyList[NUM] = LazyList.iterate(0: Real)(_ + 1).map(NUM(_))
+  val wholes: LazyList[NUM] = LazyList.iterate(0: Real)(_ + 1).map(NUM.apply)
 
   def exitCase(e: ExitCase[Throwable]): ANY = e match
     case ExitCase.Completed => TF(true)
