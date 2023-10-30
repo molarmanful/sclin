@@ -616,9 +616,9 @@ enum ANY:
       case _: MAP =>
         mod$$(n)
           .map:
-              case MAP(x) =>
-                x.keys.++(x.values).pipe(f) match
-                  case (k, v) => Vector(k, v).toARR
+            case MAP(x) =>
+              x.keys.++(x.values).pipe(f) match
+                case (k, v) => Vector(k, v).toARR
           .toMAP
       case _ => winMap(n, g)
   def mergeMap(f: ANY => ANY): OBS  = modOBS(_.mergeMap(f(_).toOBS.x))

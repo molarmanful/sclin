@@ -24,7 +24,7 @@ object sclin extends ScoverageModule with PublishModule with ScalafmtModule {
       Developer("molarmanful", "Ben Pang", "https://github.com/molarmanful")
     )
   )
-  def scalacOptions = Seq("-deprecation", "-feature")
+  def scalacOptions = Seq("-deprecation", "-feature", "-Wunused:all")
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.5.4",
