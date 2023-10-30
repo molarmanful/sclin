@@ -438,6 +438,8 @@ extension (env: ENV)
     case "^>fs" => env.fswriteat
     // TODO: docs
     case "b^>fs" => env.fswriteatb
+    // TODO: docs
+    case "fs@" => env.fswatch
 
     // TODO: docs
     case "b>S" => env.btou

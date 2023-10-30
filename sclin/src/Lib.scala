@@ -5,6 +5,7 @@ import cats.effect.ExitCase
 import java.io.File as JFile
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.nio.file.StandardWatchEventKinds
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.nio.file.*
@@ -276,6 +277,25 @@ extension (env: ENV)
     env.mod3((x, y, z) => z.vec1(n => fswH(appendAsync(_, n.toInt))(x, y)))
   def fswriteatb: ENV =
     env.mod3((x, y, z) => z.vec1(n => fswbH(appendAsync(_, n.toInt))(x, y)))
+
+  def fswatch: ENV = env.mod1:
+    _.toFile.path.pipe(
+      watchAsync(_)
+        .map:
+          _.map: ev =>
+            VectorMap(
+              STR("t") -> NUM:
+                ev.kind match
+                  case StandardWatchEventKinds.ENTRY_CREATE => 1
+                  case StandardWatchEventKinds.ENTRY_MODIFY => 2
+                  case StandardWatchEventKinds.ENTRY_DELETE => 0
+              ,
+              STR("n") -> ev.count.pipe(NUM(_)),
+              STR("f") -> ev.context.toString.sSTR
+            ).toMAP
+          .toARR
+        .toOBS
+    )
 
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))
