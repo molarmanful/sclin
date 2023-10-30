@@ -279,7 +279,7 @@ extension (env: ENV)
     )
 
   def fswatch: ENV = env.mod1:
-    _.toFile.path.pipe(
+    _.toFile.path.pipe:
       file
         .watchAsync(_)
         .map:
@@ -296,7 +296,6 @@ extension (env: ENV)
             ).toMAP
           .toARR
         .toOBS
-    )
 
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))
