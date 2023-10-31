@@ -3,11 +3,11 @@ package sclin
 import better.files.*
 import cats.effect.ExitCase
 import java.io.File as JFile
-import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.nio.*
+import monix.reactive.Consumer
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
 import scala.annotation.tailrec
@@ -255,28 +255,26 @@ extension (env: ENV)
         .map(_.sSTR)
         .toOBS
 
-  def fswH(f: Path => file.AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+  def fswH(f: ANY => Consumer[Array[Byte], Long])(x: ANY, y: ANY): ANY =
     x.toOBS.x
       .map(_.toString)
       .pipeThrough(text.UTF8Codec.utf8Encode)
-      .consumeWith(f(y.toFile.path))
+      .consumeWith(f(y))
       .map(NUM(_))
       .toTASK
-  def fswbH(f: Path => file.AsyncFileChannelConsumer)(x: ANY, y: ANY): ANY =
+  def fswbH(f: ANY => Consumer[Array[Byte], Long])(x: ANY, y: ANY): ANY =
     x.toOBS.x
       .map(_.toString.pipe(Util.bstoab))
-      .consumeWith(f(y.toFile.path))
+      .consumeWith(f(y))
       .map(NUM(_))
       .toTASK
 
-  def fswrite: ENV  = env.mod2(fswH(file.writeAsync(_)))
-  def fswriteb: ENV = env.mod2(fswbH(file.writeAsync(_)))
-  def fswriteat: ENV =
-    env.mod3((x, y, z) => z.vec1(n => fswH(file.appendAsync(_, n.toInt))(x, y)))
-  def fswriteatb: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(n => fswbH(file.appendAsync(_, n.toInt))(x, y))
-    )
+  def fswrite: ENV  = env.mod2(fswH(f => file.writeAsync(f.toFile.path)))
+  def fswriteb: ENV = env.mod2(fswbH(f => file.writeAsync(f.toFile.path)))
+  def fswriteat: ENV = env.mod3: (x, y, z) =>
+    z.vec1(n => fswH(f => file.appendAsync(f.toFile.path, n.toInt))(x, y))
+  def fswriteatb: ENV = env.mod3: (x, y, z) =>
+    z.vec1(n => fswbH(f => file.appendAsync(f.toFile.path, n.toInt))(x, y))
 
   def fswatch: ENV = env.mod1:
     _.toFile.path.pipe:
@@ -296,6 +294,20 @@ extension (env: ENV)
             ).toMAP
           .toARR
         .toOBS
+
+  def tcpread: ENV = env.vec2: (x, y) =>
+    tcp
+      .readAsync(x.toString, y.toInt)
+      .pipeThrough(text.UTF8Codec.utf8Decode)
+      .map(_.sSTR)
+      .toOBS
+  def tcpreadb: ENV = env.vec2: (x, y) =>
+    tcp.readAsync(x.toString, y.toInt).map(Util.abtobs(_).sSTR).toOBS
+
+  def tcpwrite: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z)((s, n) => fswH(_ => tcp.writeAsync(s.toString, n.toInt))(x, UN))
+  def tcpwriteb: ENV = env.mod3: (x, y, z) =>
+    y.vec2(z)((s, n) => fswbH(_ => tcp.writeAsync(s.toString, n.toInt))(x, UN))
 
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))

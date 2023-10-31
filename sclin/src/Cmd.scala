@@ -422,6 +422,15 @@ extension (env: ENV)
     case "_/_x" => env.pathext
 
     // TODO: docs
+    case "b>S" => env.btou
+    // TODO: docs
+    case "S>b" => env.utob
+    // TODO: docs
+    case "~b>S" => env.oBtoU
+    // TODO: docs
+    case "~S>b" => env.oUtoB
+
+    // TODO: docs
     // slowest but works for everything
     case "fs>" => env.fsread
     // TODO: docs
@@ -442,13 +451,14 @@ extension (env: ENV)
     case "fs@" => env.fswatch
 
     // TODO: docs
-    case "b>S" => env.btou
+    case "tcp>" => env.tcpread
     // TODO: docs
-    case "S>b" => env.utob
+    case "tcp>b" => env.tcpreadb
+
     // TODO: docs
-    case "~b>S" => env.oBtoU
+    case ">tcp" => env.tcpwrite
     // TODO: docs
-    case "~S>b" => env.oUtoB
+    case "b>tcp" => env.tcpwriteb
 
     /*
     @s a -> a a
