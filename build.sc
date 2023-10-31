@@ -1,6 +1,8 @@
 import $file.docp
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
+import $ivy.`com.goyeau::mill-scalafix::0.3.1`
+import com.goyeau.mill.scalafix.ScalafixModule
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import mill.contrib.scoverage.ScoverageModule
@@ -9,7 +11,7 @@ import scalalib._
 import scalalib.publish._
 import scalalib.scalafmt._
 
-object sclin extends ScoverageModule with PublishModule with ScalafmtModule {
+object sclin extends ScoverageModule with PublishModule with ScalafmtModule with ScalafixModule {
 
   def scalaVersion              = "3.3.1"
   def scoverageVersion          = "2.0.11"

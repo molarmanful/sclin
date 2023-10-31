@@ -13,7 +13,6 @@
       <excludeFolder url="file://$MODULE_DIR$/../../project/project/project/target" />
       <excludeFolder url="file://$MODULE_DIR$/../../project/project/target" />
       <excludeFolder url="file://$MODULE_DIR$/../../project/target" />
-      <excludeFolder url="file://$MODULE_DIR$/../../sclin-docs-gen" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

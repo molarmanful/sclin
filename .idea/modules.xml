@@ -2,12 +2,14 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/benji.sclin.iml" filepath="$PROJECT_DIR$/.idea/modules/benji.sclin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/benji.sclin.test.iml" filepath="$PROJECT_DIR$/.idea/modules/benji.sclin.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/mill-build_.iml" filepath="$PROJECT_DIR$/.idea/modules/mill-build_.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sclin.iml" filepath="$PROJECT_DIR$/.idea/modules/sclin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/mill_modules/sclin.iml" filepath="$PROJECT_DIR$/.idea/mill_modules/sclin.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/sclin-root.iml" filepath="$PROJECT_DIR$/.idea/modules/sclin-root.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/sclin.scoverage.iml" filepath="$PROJECT_DIR$/.idea/modules/sclin.scoverage.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/sclin.scoverage (shared).iml" filepath="$PROJECT_DIR$/.idea/modules/sclin.scoverage (shared).iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sclin.test.iml" filepath="$PROJECT_DIR$/.idea/modules/sclin.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/mill_modules/sclin.test.iml" filepath="$PROJECT_DIR$/.idea/mill_modules/sclin.test.iml" />
     </modules>
   </component>
 </project>
