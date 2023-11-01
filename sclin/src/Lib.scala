@@ -553,7 +553,7 @@ extension (env: ENV)
   def otk: ENV =
     env.mod2((x, y) => y.vec1(n => x.modOBS(_.takeByTimespan(n.toMs))))
   def otko: ENV = env.mod2((x, y) => x.modOBS(_.takeUntil(y.toOBS.x)))
-  def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
+  def dp: ENV   = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
   def odp: ENV =
     env.mod2((x, y) => y.vec1(n => x.modOBS(_.dropByTimespan(n.toMs))))
   def odpo: ENV = env.mod2((x, y) => x.modOBS(_.dropUntil(y.toOBS.x)))
