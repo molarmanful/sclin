@@ -309,6 +309,16 @@ extension (env: ENV)
   def tcpwriteb: ENV = env.mod3: (x, y, z) =>
     y.vec2(z)((s, n) => fswbH(_ => tcp.writeAsync(s.toString, n.toInt))(x, UN))
 
+  // def tcpsrv: ENV = env.vec2: (x, y) =>
+  //   for
+  //     srv <- tcp.asyncServer(x.toString, y.toInt)
+  //     sock <- srv.accept()
+  //     conn <- Task.pure(tcp.readWriteAsync(sock))
+  //     rd <- conn.tcpObservable
+  //     wr <- conn.tcpConsumer
+  //     n <- rd.guarantee(Task(conn.stopWriting())).consumeWith(wr)
+  //   yield (rd., wr.map(NUM(_)))
+
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))
 
@@ -540,7 +550,13 @@ extension (env: ENV)
   def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
 
   def tk: ENV = env.mod2((x, y) => y.vec1(n => x.take(n.toInt)))
+  def otk: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.takeByTimespan(n.toMs))))
+  def otko: ENV = env.mod2((x, y) => x.modOBS(_.takeUntil(y.toOBS.x)))
   def dp: ENV = env.mod2((x, y) => y.vec1(n => x.drop(n.toInt)))
+  def odp: ENV =
+    env.mod2((x, y) => y.vec1(n => x.modOBS(_.dropByTimespan(n.toMs))))
+  def odpo: ENV = env.mod2((x, y) => x.modOBS(_.dropUntil(y.toOBS.x)))
   def splitAt: ENV = env.mod2: (x, y) =>
     y.vec1: n =>
       val i = n.toInt

@@ -234,7 +234,7 @@ enum ANY:
           case _ => toARR.get(NUM(i2))
       case MAP(x)          => x.applyOrElse(i, _ => UN)
       case TRY(Success(x)) => x
-      case TRY(Failure(e)) => throw e
+      case TRY(Failure(e)) => if i.toBool then ERR(e) else throw e
       case _               => UN
 
   def gets(is: ANY): ANY = is.map(get)
