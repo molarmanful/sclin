@@ -1,0 +1,7 @@
+mill
+mill.bat
+!*.sclin
+!.gitignore
+!.ignore
+!.scalafix.conf
+!.scalafmt.conf
