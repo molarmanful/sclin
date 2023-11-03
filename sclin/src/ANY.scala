@@ -119,7 +119,7 @@ enum ANY:
     case (Nmy(_), _: DBL) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
-      x.compare(t.toSTR.x.map(_.toInt).applyOrElse(0, _ => 0))
+      x.compare(t.toString.map(_.toInt).applyOrElse(0, _ => 0))
     case (_, _: NUM)      => -t.cmp(this)
     case (Sty(x), Sty(y)) => x.compare(y).sign
     case _                => toSTR.cmp(t.toSTR)
@@ -465,7 +465,7 @@ enum ANY:
         case UN     => NUM(0)
         case TF(x)  => x.boolNUM
         case Sty(x) => x.toNUM
-        case _      => toSTR.x.toNUM
+        case _      => toString.toNUM
     catch
       case _: java.lang.NumberFormatException =>
         throw LinEx("CAST", "bad NUM cast " + toForm)

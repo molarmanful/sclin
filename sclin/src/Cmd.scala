@@ -421,14 +421,26 @@ extension (env: ENV)
      */
     case "_/_x" => env.pathext
 
-    // TODO: docs
-    case "b>S" => env.btou
-    // TODO: docs
+    /*
+    @s (a >STR) -> STR
+    Converts `a` from UTF-8 to ISO-5589-1.
+     */
     case "S>b" => env.utob
-    // TODO: docs
-    case "~b>S" => env.oBtoU
-    // TODO: docs
+    /*
+    @s (a >STR) -> STR
+    Converts `a` from ISO-5589-1 to UTF-8.
+     */
+    case "b>S" => env.btou
+    /*
+    @s (a >STR) -> STR
+    `OBS`-friendly #{S>b}.
+     */
     case "~S>b" => env.oUtoB
+    /*
+    @s (a >STR) -> STR
+    `OBS`-friendly #{b>S}.
+     */
+    case "~b>S" => env.oBtoU
 
     // TODO: docs
     // slowest but works for everything
@@ -447,8 +459,17 @@ extension (env: ENV)
     case "^>fs" => env.fswriteat
     // TODO: docs
     case "b^>fs" => env.fswriteatb
+
     // TODO: docs
     case "fs@" => env.fswatch
+    // TODO: docs
+    case "fs:" => env.fsls
+    // TODO: docs
+    case "fs::" => env.fslsr
+    // TODO: docs
+    case "fs*" => env.fsglob
+    // TODO: docs
+    case "fs*?" => env.fsglobR
 
     // TODO: docs
     case "tcp>" => env.tcpread
