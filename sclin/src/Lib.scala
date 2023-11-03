@@ -26,10 +26,8 @@ import Lambda.*
 extension (env: ENV)
 
   def cmd(x: String): ENV = x match
-
     case s"#$k" if k != "" => env
     case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
-
     case s"`$k" if k != "" =>
       @tailrec def loop(
           n: Int = env.code.p.l + 1,
@@ -41,8 +39,7 @@ extension (env: ENV)
           case _ => (res, n)
       val (x, i) = loop()
       env.push(STR(x.mkString("\n"))).push(NUM(i)).evalLine
-    case "`" => env
-
+    case "`"                   => env
     case s"=$$$$$k" if k != "" => env.arg1((v, env) => env.addGlob(k, v))
     case s"=$$$k" if k != ""   => env.arg1((v, env) => env.addLoc(k, v))
     case s"$$$$$k" if k != "" =>
@@ -53,7 +50,6 @@ extension (env: ENV)
       env.getLoc(k) match
         case None    => env.cmd1(x)
         case Some(v) => env.push(v)
-
     case _ =>
       if env.scope.contains(x) then env.push(env.scope(x)).eval
       else if env.ids.contains(x) then env.push(NUM(env.ids(x).l)).evalLine
@@ -215,8 +211,12 @@ extension (env: ENV)
         .foldLeft(env):
           case (env, (k, v)) => env.addLoc(k.toString, v)
 
-  def getSc: ENV =
-    env.push(MAP(env.scope.map { case (k, v) => (k.sSTR, v) }.to(VectorMap)))
+  def getSc: ENV = env.push:
+    MAP:
+      env.scope
+        .map:
+          case (k, v) => (k.sSTR, v)
+        .to(VectorMap)
 
   def in: ENV   = env.push(STR(readLine))
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
@@ -308,16 +308,6 @@ extension (env: ENV)
     y.vec2(z)((s, n) => fswH(_ => tcp.writeAsync(s.toString, n.toInt))(x, UN))
   def tcpwriteb: ENV = env.mod3: (x, y, z) =>
     y.vec2(z)((s, n) => fswbH(_ => tcp.writeAsync(s.toString, n.toInt))(x, UN))
-
-  // def tcpsrv: ENV = env.vec2: (x, y) =>
-  //   for
-  //     srv <- tcp.asyncServer(x.toString, y.toInt)
-  //     sock <- srv.accept()
-  //     conn <- Task.pure(tcp.readWriteAsync(sock))
-  //     rd <- conn.tcpObservable
-  //     wr <- conn.tcpConsumer
-  //     n <- rd.guarantee(Task(conn.stopWriting())).consumeWith(wr)
-  //   yield (rd., wr.map(NUM(_)))
 
   def btou: ENV = env.str1(Util.bstoab(_).pipe(String(_, "UTF-8")))
   def utob: ENV = env.str1(_.getBytes.pipe(Util.abtobs))
@@ -685,7 +675,8 @@ extension (env: ENV)
     _.toNUM.x.toSafeLong
       .pipe(prime.factor)
       .to(VectorMap)
-      .map { case (x, y) => (NUM(x), NUM(y)) }
+      .map:
+        case (x, y) => (NUM(x), NUM(y))
       .toMAP
       .sortBy((a, _) => a, a => a)
 
@@ -939,7 +930,12 @@ extension (env: ENV)
         x.values
           .map(_.toTASK.x)
           .pipe(f)
-          .map(_.zip(x.keys).map { case (v, k) => (k, v) }.to(VectorMap).toMAP)
+          .map:
+            _.zip(x.keys)
+              .map:
+                case (v, k) => (k, v)
+              .to(VectorMap)
+              .toMAP
           .toTASK
       case Itr(x) =>
         x.toSEQ.x
