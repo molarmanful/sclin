@@ -1,6 +1,5 @@
 package sclin
 
-import scala.util.chaining.*
 import ANY.*
 
 case class Lambda(
