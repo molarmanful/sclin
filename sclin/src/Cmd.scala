@@ -396,92 +396,6 @@ extension (env: ENV)
     case "f>o" => env.outf
 
     /*
-    @s a -> ARR
-    Gets filepath `a` in segments.
-     */
-    case "_/<>" => env.pathARR
-    /*
-    @s a -> STR
-    Gets filepath `a` as a string.
-     */
-    case "_/><" => env.pathSTR
-    /*
-    @s a -> STR
-    Gets the filename of filepath `a`.
-     */
-    case "_/x" => env.pathname
-    /*
-    @s a -> STR
-    Gets the basename of filepath `a`.
-     */
-    case "_/x_" => env.pathbase
-    /*
-    @s a -> STR
-    Gets the file extension of filepath `a`.
-     */
-    case "_/_x" => env.pathext
-
-    /*
-    @s (a >STR) -> STR
-    Converts `a` from UTF-8 to ISO-5589-1.
-     */
-    case "S>b" => env.utob
-    /*
-    @s (a >STR) -> STR
-    Converts `a` from ISO-5589-1 to UTF-8.
-     */
-    case "b>S" => env.btou
-    /*
-    @s (a >STR) -> STR
-    `OBS`-friendly #{S>b}.
-     */
-    case "~S>b" => env.oUtoB
-    /*
-    @s (a >STR) -> STR
-    `OBS`-friendly #{b>S}.
-     */
-    case "~b>S" => env.oBtoU
-
-    // TODO: docs
-    // slowest but works for everything
-    case "fs>" => env.fsread
-    // TODO: docs
-    // fastest but most situational
-    case "fs>b" => env.fsreadb
-    // TODO: docs
-    // decently fast, requires encoding param
-    case "fs>n" => env.fsreadn
-    // TODO: docs
-    case ">fs" => env.fswrite
-    // TODO: docs
-    case "b>fs" => env.fswriteb
-    // TODO: docs
-    case "^>fs" => env.fswriteat
-    // TODO: docs
-    case "b^>fs" => env.fswriteatb
-
-    // TODO: docs
-    case "fs@" => env.fswatch
-    // TODO: docs
-    case "fs:" => env.fsls
-    // TODO: docs
-    case "fs::" => env.fslsr
-    // TODO: docs
-    case "fs*" => env.fsglob
-    // TODO: docs
-    case "fs*?" => env.fsglobR
-
-    // TODO: docs
-    case "tcp>" => env.tcpread
-    // TODO: docs
-    case "tcp>b" => env.tcpreadb
-
-    // TODO: docs
-    case ">tcp" => env.tcpwrite
-    // TODO: docs
-    case "b>tcp" => env.tcpwriteb
-
-    /*
     @s a -> a a
      */
     case "dup" => env.dup
@@ -2585,6 +2499,92 @@ extension (env: ENV)
     Specifies that when the buffer reaches `n`, buffer is cleared.
      */
     case "~^CLR" => env.ostratClr
+
+    /*
+    @s a -> ARR
+    Gets filepath `a` in segments.
+     */
+    case "_/<>" => env.pathARR
+    /*
+    @s a -> STR
+    Gets filepath `a` as a string.
+     */
+    case "_/><" => env.pathSTR
+    /*
+    @s a -> STR
+    Gets the filename of filepath `a`.
+     */
+    case "_/x" => env.pathname
+    /*
+    @s a -> STR
+    Gets the basename of filepath `a`.
+     */
+    case "_/x_" => env.pathbase
+    /*
+    @s a -> STR
+    Gets the file extension of filepath `a`.
+     */
+    case "_/_x" => env.pathext
+
+    /*
+    @s (a >STR) -> STR
+    Converts `a` from UTF-8 to ISO-5589-1.
+     */
+    case "S>b" => env.utob
+    /*
+    @s (a >STR) -> STR
+    Converts `a` from ISO-5589-1 to UTF-8.
+     */
+    case "b>S" => env.btou
+    /*
+    @s (a >STR) -> STR
+    `OBS`-friendly #{S>b}.
+     */
+    case "~S>b" => env.oUtoB
+    /*
+    @s (a >STR) -> STR
+    `OBS`-friendly #{b>S}.
+     */
+    case "~b>S" => env.oBtoU
+
+    // TODO: docs
+    // slowest but works for everything
+    case "fs>" => env.fsread
+    // TODO: docs
+    // fastest but most situational
+    case "fs>b" => env.fsreadb
+    // TODO: docs
+    // decently fast, requires encoding param
+    case "fs>n" => env.fsreadn
+    // TODO: docs
+    case ">fs" => env.fswrite
+    // TODO: docs
+    case "b>fs" => env.fswriteb
+    // TODO: docs
+    case "^>fs" => env.fswriteat
+    // TODO: docs
+    case "b^>fs" => env.fswriteatb
+
+    // TODO: docs
+    case "fs@" => env.fswatch
+    // TODO: docs
+    case "fs:" => env.fsls
+    // TODO: docs
+    case "fs::" => env.fslsr
+    // TODO: docs
+    case "fs*" => env.fsglob
+    // TODO: docs
+    case "fs*?" => env.fsglobR
+
+    // TODO: docs
+    case "tcp>" => env.tcpread
+    // TODO: docs
+    case "tcp>b" => env.tcpreadb
+
+    // TODO: docs
+    case ">tcp" => env.tcpwrite
+    // TODO: docs
+    case "b>tcp" => env.tcpwriteb
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")
 
