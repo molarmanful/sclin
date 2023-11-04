@@ -105,45 +105,42 @@ enum ANY:
     case (TF(x), TF(y)) if x == y => 0
     case (TF(x), _)               => if x then 1 else -1
     case (_, _: TF)               => -t.cmp(this)
-    case (Itr(x), _) if !x.toBool => NUM(0).cmp(t)
-    case (_, Itr(x)) if !x.toBool => cmp(NUM(0))
-    case (Itr(x), _) =>
+    case (NCmy(_), _)             => toTF.cmp(t)
+    case (_, NCmy(_))             => -t.cmp(this)
+    case (Itc(x), _) if !x.toBool => NUM(0).cmp(t)
+    case (_, Itc(x)) if !x.toBool => cmp(NUM(0))
+    case (Itc(x), _) =>
       val x1 = x.toSEQ.x
       val t1 = t.toSEQ.x
       x1.zip(t1)
         .map { case (a, b) => a.cmp(b) }
         .find(_ != 0)
         .getOrElse(x1.sizeCompare(t1))
-    case (_, Itr(_))      => -t.cmp(this)
+    case (_, Itc(_))      => -t.cmp(this)
     case (DBL(x), Nmy(y)) => x.compare(y.toDBL.x)
     case (Nmy(_), _: DBL) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
       x.compare(t.toString.map(_.toInt).applyOrElse(0, _ => 0))
-    case (_, _: NUM)      => -t.cmp(this)
-    case (Sty(x), Sty(y)) => x.compare(y).sign
-    case _                => toSTR.cmp(t.toSTR)
+    case (_, _: NUM) => -t.cmp(this)
 
   def eql(t: ANY): Boolean  = cmp(t) == 0
   def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
 
   def toBool: Boolean = this match
-    case TF(x)                              => x
-    case SEQ(x)                             => x.nonEmpty
-    case ARR(x)                             => x.nonEmpty
-    case MAP(x)                             => x.nonEmpty
-    case STR(x)                             => x.nonEmpty
-    case _: NUM                             => !eql(NUM(0))
-    case _: DBL                             => !eql(DBL(0))
-    case CMD(x)                             => x.nonEmpty
-    case FN(_, x)                           => x.nonEmpty
-    case _: ERR                             => false
-    case TRY(Success(_))                    => true
-    case TRY(Failure(_))                    => false
-    case FUT(x)                             => x.isCompleted && x.value.get.isSuccess
-    case UN                                 => false
-    case OSTRAT(OverflowStrategy.Unbounded) => false
-    case _                                  => true
+    case TF(x)                                            => x
+    case SEQ(x)                                           => x.nonEmpty
+    case ARR(x)                                           => x.nonEmpty
+    case MAP(x)                                           => x.nonEmpty
+    case STR(x)                                           => x.nonEmpty
+    case _: NUM                                           => !eql(NUM(0))
+    case _: DBL                                           => !eql(DBL(0))
+    case CMD(x)                                           => x.nonEmpty
+    case FN(_, x)                                         => x.nonEmpty
+    case TRY(Failure(_)) | _: ERR | _: TASK | _: OBS | UN => false
+    case OSTRAT(OverflowStrategy.Unbounded)               => false
+    case TRY(Success(_)) | _: OSTRAT                      => true
+    case FUT(x)                                           => x.isCompleted && x.value.get.isSuccess
 
   def toTF: TF = this match
     case x: TF => x
@@ -1084,8 +1081,21 @@ object ANY:
   object Its:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case _: OBS | Lsy(_) | _: ARR | Sty(_) | _: FN => Some(a)
-      case _                                         => None
+      case _: OBS | Lsy(_) | _: ARR | Sty(_) => Some(a)
+      case _                                 => None
+
+  /** Pattern for comparable `SEQ`-like. */
+  object Itc:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case Lsy(_) | _: ARR | _: MAP | Sty(_) => Some(a)
+      case _                                 => None
+
+  object NCmy:
+
+    def unapply(a: ANY): Option[ANY] = a match
+      case Itc(_) | Nmy(_) | _: TF | UN => None
+      case _                            => Some(a)
 
   object Lsy:
 
