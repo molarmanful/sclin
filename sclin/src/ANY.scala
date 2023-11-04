@@ -117,12 +117,14 @@ enum ANY:
         .find(_ != 0)
         .getOrElse(x1.sizeCompare(t1))
     case (_, Itc(_))      => -t.cmp(this)
+    case (Sty(x), Sty(y)) => x.compare(y).sign
     case (DBL(x), Nmy(y)) => x.compare(y.toDBL.x)
     case (Nmy(_), _: DBL) => -t.cmp(this)
     case (NUM(x), NUM(y)) => x.compare(y)
     case (NUM(x), _) =>
       x.compare(t.toString.map(_.toInt).applyOrElse(0, _ => 0))
     case (_, _: NUM) => -t.cmp(this)
+    case _           => toSTR.cmp(t.toSTR)
 
   def eql(t: ANY): Boolean  = cmp(t) == 0
   def eqls(t: ANY): Boolean = cmp(t) == 0 && getType == t.getType
@@ -1088,14 +1090,14 @@ object ANY:
   object Itc:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case Lsy(_) | _: ARR | _: MAP | Sty(_) => Some(a)
-      case _                                 => None
+      case Lsy(_) | _: ARR | _: MAP => Some(a)
+      case _                        => None
 
   object NCmy:
 
     def unapply(a: ANY): Option[ANY] = a match
-      case Itc(_) | Nmy(_) | _: TF | UN => None
-      case _                            => Some(a)
+      case Itc(_) | Nmy(_) | Sty(_) | _: TF | UN => None
+      case _                                     => Some(a)
 
   object Lsy:
 
