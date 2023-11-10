@@ -314,6 +314,11 @@ extension (env: ENV)
     Name of current thread.
      */
     case "$THREAD" => env.push(STR(Thread.currentThread.getName))
+    /*
+    @s -> MAP[(STR => _)*]
+    Current scope.
+     */
+    case "$" => env.getscope
 
     /*
     @s (a >FN)' ->
@@ -373,6 +378,21 @@ extension (env: ENV)
     ```
      */
     case "->" => env.lambda
+    /*
+    @s ->
+    Clears local scope.
+     */
+    case "_$" => env.clrscope
+    /*
+    @s (a >MAP[(STR => _)*]) ->
+    Appends `a` to the local scope.
+     */
+    case "+$" => env.setscope
+    /*
+    @s (a >MAP[(STR => _)*]) ->
+    #{_$} and #{+$}.
+     */
+    case ">$" => env.clrscope.setscope
 
     /*
     @s -> STR
@@ -1002,7 +1022,7 @@ extension (env: ENV)
      */
     case "P?" => env.isPrime
     /*
-    @s (a >NUM)' -> MAP[(NUM => env.NUM)*]
+    @s (a >NUM)' -> MAP[(NUM => NUM)*]
     Prime-factorizes `a` into pairs of prime `y` and frequency `z`.
     ```sclin
     340P/
@@ -1234,7 +1254,7 @@ extension (env: ENV)
      */
     case ":%" => env.setmod
     /*
-    @s a (m >MAP[(_ => env.(_ >FN))*]) -> x
+    @s a (m >MAP[(_ => (_ >FN))*]) -> x
     #{:%} with `i` mapped over `a`.
      */
     case ":*%" => env.setmods

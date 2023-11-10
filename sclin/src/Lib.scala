@@ -6,6 +6,7 @@ import monix.eval.Task
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy
 import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
@@ -141,6 +142,13 @@ extension (env: ENV)
     case x :: xs => env.setArr(xs).modStack(_ => x).push(env.stack.toARR)
   def endMAP: ENV = endARR.envMAP
 
+  def getscope: ENV = env.push:
+    env.scope
+      .to(VectorMap)
+      .map:
+        case (k, v) => (k.sSTR: ANY, v)
+      .pipe(MAP(_))
+
   def getType: ENV = env.mod1(_.getType.sSTR)
   def envSEQ: ENV  = env.mod1(_.toSEQ)
   def envARR: ENV  = env.mod1(_.toARR)
@@ -204,6 +212,12 @@ extension (env: ENV)
       x1.lazyZip(cs)
         .foldLeft(env):
           case (env, (k, v)) => env.addLoc(k.toString, v)
+
+  def clrscope: ENV = env.copy(scope = HashMap())
+  def setscope: ENV = env.arg1: (x, env) =>
+    env.copy(scope = env.scope ++ x.toMAP.x.map:
+      case (k, v) => (k.toString, v)
+    )
 
   def getSc: ENV = env.push:
     MAP:
