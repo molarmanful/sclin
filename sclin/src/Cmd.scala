@@ -1353,9 +1353,15 @@ extension (env: ENV)
     Negative `n` takes from the end instead of the start.
      */
     case "tk" => env.tk
-    // TODO: docs
+    /*
+    @s (a >OBS) (n >NUM)' -> OBS
+    Emits `a` for `n` milliseconds.
+     */
     case "~tk" => env.otk
-    // TODO: docs
+    /*
+    @s (a >OBS) (b >OBS) -> OBS
+    Emits `a` until `b` completes.
+     */
     case "~tk`" => env.otko
     /*
     @s a (n >NUM)' -> _
@@ -1363,10 +1369,16 @@ extension (env: ENV)
     Negative `n` drops from the end instead of the start.
      */
     case "dp" => env.dp
-    // TODO: docs
-    case "~dp" => env.otk
-    // TODO: docs
-    case "~dp`" => env.otko
+    /*
+    @s (a >OBS) (b >OBS) -> OBS
+    Discards emissions of `a` for `n` milliseconds.
+     */
+    case "~dp" => env.odp
+    /*
+    @s (a >OBS) (b >OBS) -> OBS
+    Discards emissions of `a` until `b` completes.
+     */
+    case "~dp`" => env.odpo
     /*
     @s a -> _
     Flattens `a` by one depth.
