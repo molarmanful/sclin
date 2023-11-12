@@ -59,6 +59,11 @@ and place it on your `$PATH`. Verify that it works with `sclin --help`.
 Clone this repo, `cd` into it, and run `./mill sclin.assembly` (use `mill.bat`
 instead of `mill` if on Windows). The built JAR is at `out/sclin/assembly.dest/out.jar`.
 
+## Tools
+
+- [tree-sitter-sclin](https://www.npmjs.com/package/tree-sitter-sclin) -
+  tree-sitter grammar for syntax highlighting.
+
 ## Licensing
 
 Made with ♥ by Ben Pang. Released under the MIT License.
