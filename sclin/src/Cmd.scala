@@ -783,12 +783,12 @@ extension (env: ENV)
      */
     case "+`" => env.add$$
     /*
-    @s a b[_*] -> [a, b*]
+    @s a b[_*] -> [a b*]
     Prepends `a` to `b`.
      */
     case "<+" => env.cons
     /*
-    @s a[_*] b -> [a*, b]
+    @s a[_*] b -> [a* b]
     Appends `b` to `a`.
      */
     case "+>" => env.snoc
@@ -2579,43 +2579,94 @@ extension (env: ENV)
      */
     case "~b>S" => env.oBtoU
 
-    // TODO: docs
-    // slowest but works for everything
+    /*
+    @s a -> OBS[STR*]
+    Streams contents of filepath `a` as UTF-8.
+     */
     case "fs>" => env.fsread
-    // TODO: docs
-    // fastest but most situational
+    /*
+    @s a -> OBS[STR*]
+    Streams contents of filepath `a` as bytes.
+    If you know that `a` only contains codepoints 0-255,
+    then this is a faster option than #{fs>}.
+     */
     case "fs>b" => env.fsreadb
-    // TODO: docs
-    // decently fast, requires encoding param
+    /*
+    @s a (b >STR) -> OBS[STR*]
+    Streams lines of filepath `a` with encoding `b`.
+    `b` defaults to UTF-8 when empty.
+     */
     case "fs>n" => env.fsreadn
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) b -> TASK[NUM]
+    Streams UTF-8 `a` to filepath `b`.
+     */
     case ">fs" => env.fswrite
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) b -> TASK[NUM]
+    Streams bytes `a` to filepath `b`.
+     */
     case "b>fs" => env.fswriteb
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) b (n >NUM)' -> TASK[NUM]'
+    Streams UTF-8 `a` to filepath `b` starting at position `n`.
+     */
     case "^>fs" => env.fswriteat
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) b (n >NUM)' -> TASK[NUM]'
+    Streams bytes `a` to filepath `b` starting at position `n`.
+     */
     case "b^>fs" => env.fswriteatb
 
-    // TODO: docs
+    /*
+    @s a -> OBS[MAP["t"=>NUM "f"=>NUM "s"=>STR]]'
+    Watches filepath `a` for changes.
+    - `t` is the type; 1 for create, 2 for modify, and 3 for delete.
+    - `n` is the count; greater than 1 signifies that the event is repeated.
+    - `f` is the context, or the relative filepath that was changed.
+     */
     case "fs@" => env.fswatch
-    // TODO: docs
+    /*
+    @s a -> OBS[STR*]
+    Lists files at path `a`.
+     */
     case "fs:" => env.fsls
-    // TODO: docs
+    /*
+    @s a -> OBS[STR*]
+    Recursively lists files at path `a`.
+     */
     case "fs::" => env.fslsr
-    // TODO: docs
+    /*
+    @s a (b >STR)' -> OBS[STR*]'
+    Lists files at path `a` that match glob pattern `b`.
+     */
     case "fs*" => env.fsglob
-    // TODO: docs
+    /*
+    @s a (b >STR)' -> OBS[STR*]'
+    #{fs*} but with regex `b`.
+     */
     case "fs*?" => env.fsglobR
 
-    // TODO: docs
+    /*
+    @s (a >STR)' (b >NUM)' -> OBS[STR*]'
+    Streams host `a` and port `b` over TCP as UTF-8.
+     */
     case "tcp>" => env.tcpread
-    // TODO: docs
+    /*
+    @s (a >STR)' (b >NUM)' -> OBS[STR*]'
+    Streams host `a` and port `b` over TCP as bytes.
+     */
     case "tcp>b" => env.tcpreadb
 
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) (b >STR)' (c >NUM)' -> OBS[STR*]'
+    Streams UTF-8 `a` over TCP to host `b` and port `c`.
+     */
     case ">tcp" => env.tcpwrite
-    // TODO: docs
+    /*
+    @s (a >OBS[STR*]) (b >STR)' (c >NUM)' -> OBS[STR*]'
+    Streams bytes `a` over TCP to host `b` and port `c`.
+     */
     case "b>tcp" => env.tcpwriteb
 
     case _ => throw LinEx("FN", s"unknown fn \"$x\"")

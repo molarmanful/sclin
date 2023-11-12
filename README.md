@@ -62,7 +62,7 @@ instead of `mill` if on Windows). The built JAR is at `out/sclin/assembly.dest/o
 ## Tools
 
 - [tree-sitter-sclin](https://www.npmjs.com/package/tree-sitter-sclin) -
-  tree-sitter grammar for syntax highlighting.
+  Ultra-primitive tree-sitter grammar for syntax highlighting.
 
 ## Licensing
 
