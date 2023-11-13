@@ -23,6 +23,17 @@ case class Parser(
     t: PT = PT.UN
 ):
 
+  def choice(c: Char): Parser = t match
+    case PT.ESC => pesc(c)
+    case PT.STR => pstr(c)
+    case _ =>
+      c match
+        case '"'                 => clean.sett(PT.STR)
+        case '.'                 => pdot
+        case c if c.isDigit      => pnum(c)
+        case c if c.isWhitespace => clean
+        case _                   => pcmd(c)
+
   def clean: Parser = Parser:
     t match
       case PT.STR => xs :+ STR(x)
@@ -42,18 +53,16 @@ case class Parser(
   def addc(c: String | Char): Parser = copy(x = x + c)
   def sett(t: PT): Parser            = copy(t = t)
 
-  def pstr(c: Char): Parser = t match
-    case PT.ESC =>
-      addc:
-        c match
-          case '"' => "\""
-          case _   => "\\" + c
-      .sett(PT.STR)
-    case _ =>
-      c match
-        case '\\' => sett(PT.ESC)
-        case '"'  => clean
-        case _    => addc(c)
+  def pesc(c: Char): Parser = addc:
+    c match
+      case '"' => "\""
+      case _   => "\\" + c
+  .sett(PT.STR)
+
+  def pstr(c: Char): Parser = c match
+    case '\\' => sett(PT.ESC)
+    case '"'  => clean
+    case _    => addc(c)
 
   def pnum(c: Char): Parser = t match
     case PT.DEC | PT.NUM => addc(c)
@@ -68,21 +77,11 @@ case class Parser(
     case PT.CMD => addc(c)
     case _      => clean.addc(c).sett(PT.CMD)
 
-  def choice(c: Char): Parser = t match
-    case PT.STR | PT.ESC => pstr(c)
-    case _ =>
-      c match
-        case '"'                      => clean.sett(PT.STR)
-        case '.'                      => pdot
-        case c if c.isDigit           => pnum(c)
-        case ' ' | '\t' | '\r' | '\n' => clean
-        case _                        => pcmd(c)
-
 /** Frontend for `Parser`. */
 object Parser:
 
   def pline(s: String): LazyList[ANY] =
-    s.foldLeft(Parser())((st, c) => st.choice(c)).clean.xs
+    s.foldLeft(Parser())(_.choice(_)).clean.xs
 
   def parse(s: String): LazyList[ANY] =
     s.split("\n").headOption.getOrElse("").pipe(pline)
