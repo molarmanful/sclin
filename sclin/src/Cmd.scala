@@ -315,6 +315,11 @@ extension (env: ENV)
      */
     case "$THREAD" => env.push(STR(Thread.currentThread.getName))
     /*
+    @s -> MAP[(STR => STR)*]
+    Environment variables.
+     */
+    case "$ENV" => env.push(sys.env.map(a => (a._1.sSTR, a._2.sSTR)).toMAP)
+    /*
     @s -> MAP[(STR => _)*]
     Current scope.
      */
