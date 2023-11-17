@@ -1,12 +1,13 @@
 package sclin
 
+import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import ANY.*
 
 trait TU extends munit.FunSuite:
 
   def dP(l: Int): PATH     = PATH(None, l)
-  def dFN(l: Int, x: ANY*) = FN(dP(l), LazyList(x*))
+  def dFN(l: Int, x: ANY*) = FN(dP(l), HashMap(), LazyList(x*))
   def dARR(x: ANY*)        = ARR(Vector(x*))
   def dSEQ(x: ANY*)        = SEQ(LazyList(x*))
   def dMAP(x: (ANY, ANY)*) = MAP(VectorMap(x*))
