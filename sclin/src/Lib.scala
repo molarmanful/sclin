@@ -55,11 +55,9 @@ extension (env: ENV)
   def eval: ENV = env.arg1: (x, env) =>
     x match
       case f: FN =>
-        val env1 =
-          env.copy(code = f)
         env.code.x match
-          case LazyList() => env1
-          case _          => env.modStack(_ => env1.addCall().exec.stack)
+          case LazyList() => env.copy(code = f)
+          case _          => evale
       case _ => env.push(x).envFN.eval
   def evale: ENV = env.arg1: (x, env) =>
     x match
