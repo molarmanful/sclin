@@ -110,7 +110,9 @@ case class ENV(
     case Some(x, y) =>
       y match
         case UN => x
-        case _  => y
+        case _ =>
+          y match
+            case f @ FN(p, _, x) => f.copy(s = code.s)
     case _ => UN
 
   def fnLine(i: Int): ENV = getLine(i) match
