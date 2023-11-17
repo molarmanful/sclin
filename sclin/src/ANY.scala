@@ -82,9 +82,7 @@ enum ANY:
             case '\\' => "\\\\"
             case c    => c
           .mkString}\""
-    case FN(PATH(_, l), _, _) =>
-      val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
-      s"(…)$n"
+    case FN(p, _, _)     => s"($p)"
     case ERR(x)          => s"ERR(${x.getMessage})"
     case TRY(Success(x)) => s"YES(${x.toForm})"
     case TRY(Failure(e)) => s"NO(${ERR(e).toForm})"
