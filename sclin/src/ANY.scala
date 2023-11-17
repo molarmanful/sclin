@@ -8,7 +8,6 @@ import monix.execution.*
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.*
 import scala.annotation.tailrec
-import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
