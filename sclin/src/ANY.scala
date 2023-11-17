@@ -8,6 +8,7 @@ import monix.execution.*
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.*
 import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
 import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
@@ -32,7 +33,7 @@ enum ANY:
   case DBL(x: Double)
   case TF(x: Boolean)
   case CMD(x: String)
-  case FN(p: PATH, x: SEQW[ANY])
+  case FN(p: PATH, s: SCOPE, x: SEQW[ANY])
   case ERR(x: Throwable)
   case TASK(x: Task[ANY])
   case FUT(x: FUTW[ANY])
@@ -47,12 +48,12 @@ enum ANY:
     case MAP(x) =>
       x.toSeq.map { case (i, a) => i.toString + " " + a.toString }
         .mkString("\n")
-    case Sty(x)   => x
-    case NUM(x)   => x.toString
-    case DBL(x)   => x.toString
-    case FN(_, x) => x.mkString(" ")
-    case ERR(x)   => x.toString
-    case _: TF    => toNUM.toString
+    case Sty(x)      => x
+    case NUM(x)      => x.toString
+    case DBL(x)      => x.toString
+    case FN(_, _, x) => x.mkString(" ")
+    case ERR(x)      => x.toString
+    case _: TF       => toNUM.toString
     case FUT(x) =>
       x.value.map(_.toTRY.toString).getOrElse("")
     case _: TASK         => toFUT.toString
@@ -81,7 +82,7 @@ enum ANY:
             case '\\' => "\\\\"
             case c    => c
           .mkString}\""
-    case FN(PATH(_, l), _) =>
+    case FN(PATH(_, l), _, _) =>
       val n = l.toString.map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹" (c - '0'))
       s"(…)$n"
     case ERR(x)          => s"ERR(${x.getMessage})"
@@ -138,7 +139,7 @@ enum ANY:
     case _: NUM                                           => !eql(NUM(0))
     case _: DBL                                           => !eql(DBL(0))
     case CMD(x)                                           => x.nonEmpty
-    case FN(_, x)                                         => x.nonEmpty
+    case FN(_, _, x)                                      => x.nonEmpty
     case TRY(Failure(_)) | _: ERR | _: TASK | _: OBS | UN => false
     case OSTRAT(OverflowStrategy.Unbounded)               => false
     case TRY(Success(_)) | _: OSTRAT                      => true
@@ -494,11 +495,11 @@ enum ANY:
     case Sty(x) => Parser.parse(x)
     case _      => toSEQ.xFN
 
-  def toFN(env: ENV): FN = FN(env.code.p, xFN)
+  def toFN(env: ENV): FN = env.code.copy(x = xFN)
 
-  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), xFN)
+  def lFN(l: Int, env: ENV): FN = FN(PATH(env.code.p.f, l), env.code.s, xFN)
 
-  def pFN(p: PATH): FN = FN(p, xFN)
+  def pFN(p: PATH, s: SCOPE): FN = FN(p, s, xFN)
 
   def toTASK: TASK = this match
     case x: TASK => x
@@ -536,22 +537,22 @@ enum ANY:
     case _         => OSTRAT(OverflowStrategy.Unbounded)
 
   def matchType(a: ANY): ANY = a match
-    case FN(p, _)  => pFN(p)
-    case _: SEQ    => toSEQ
-    case _: ARR    => toARR
-    case _: MAP    => toMAP
-    case _: STR    => toSTR
-    case _: NUM    => toNUM
-    case _: DBL    => toDBL
-    case _: TF     => toTF
-    case _: CMD    => toString.pipe(CMD(_))
-    case _: FUT    => toFUT
-    case _: TASK   => toTASK
-    case _: OBS    => toOBS
-    case _: OSTRAT => toOSTRAT
-    case _: TRY    => toTRY
-    case _: ERR    => toERR
-    case UN        => UN
+    case FN(p, s, _) => pFN(p, s)
+    case _: SEQ      => toSEQ
+    case _: ARR      => toARR
+    case _: MAP      => toMAP
+    case _: STR      => toSTR
+    case _: NUM      => toNUM
+    case _: DBL      => toDBL
+    case _: TF       => toTF
+    case _: CMD      => toString.pipe(CMD(_))
+    case _: FUT      => toFUT
+    case _: TASK     => toTASK
+    case _: OBS      => toOBS
+    case _: OSTRAT   => toOSTRAT
+    case _: TRY      => toTRY
+    case _: ERR      => toERR
+    case UN          => UN
 
   def toItr: ANY = this match
     case Lsy(_) | Itr(_) => this
@@ -1102,9 +1103,9 @@ object ANY:
   object Lsy:
 
     def unapply(a: ANY): Option[LazyList[ANY]] = a match
-      case SEQ(x)   => Some(x)
-      case FN(_, x) => Some(x)
-      case _        => None
+      case SEQ(x)      => Some(x)
+      case FN(_, _, x) => Some(x)
+      case _           => None
 
   object Nmy:
 
@@ -1186,8 +1187,8 @@ object ANY:
     def mSEQ(t: ANY): ANY = t match
       case Lsy(_) => toSEQ.matchType(t)
       case _      => toSEQ
-    def toARR: ARR       = ARR(x.toVector)
-    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
+    def toARR: ARR                 = ARR(x.toVector)
+    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Iterator[ANY])
 
@@ -1195,7 +1196,7 @@ object ANY:
     def mSEQ(t: ANY): ANY = t match
       case Lsy(_) => toSEQ.matchType(t)
       case _      => toSEQ
-    def pFN(p: PATH): FN = FN(p, x.to(LazyList))
+    def pFN(p: PATH, s: SCOPE): FN = FN(p, s, x.to(LazyList))
 
   extension (x: Map[ANY, ANY]) def toMAP: MAP = MAP(x.to(VectorMap))
 

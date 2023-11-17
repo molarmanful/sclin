@@ -22,8 +22,6 @@ import ANY.*
   *   current PATH and executing CMD
   * @param calls
   *   current call stack
-  * @param scope
-  *   current scope
   * @param gscope
   *   global scope
   * @param arr
@@ -37,11 +35,10 @@ import ANY.*
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
-    code: FN = FN(PATH(None, 0), LazyList()),
+    code: FN = FN(PATH(None, 0), HashMap(), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
     calls: SEQW[(PATH, ANY)] = LazyList(),
-    scope: SCOPE = HashMap(),
     gscope: GSCOPE = TrieMap(),
     ids: IDS = HashMap(),
     gids: GIDS = TrieMap(),
@@ -77,9 +74,11 @@ case class ENV(
   def trace: ENV = trace1.trace2
 
   def modCode(f: LazyList[ANY] => LazyList[ANY]): ENV =
-    copy(code = FN(code.p, f(code.x)))
+    copy(code = code.copy(x = f(code.x)))
 
   def loadCode(x: LazyList[ANY]): ENV = modCode(x ++ _)
+
+  def modScope(f: SCOPE => SCOPE): ENV = copy(code = code.copy(s = f(code.s)))
 
   def modStack(f: ARRW[ANY] => ARRW[ANY]): ENV =
     copy(stack = f(stack))
@@ -137,21 +136,22 @@ case class ENV(
   def optId(c: String): Option[PATH] = Try(getId(c)).toOption
 
   def addLocId(c: String): ENV =
-    copy(ids = ids + (c -> getId(c)), scope = scope - c)
+    copy(ids = ids + (c -> getId(c))).modScope(_ - c)
 
   def addGlobId(c: String): ENV =
     gids   += c -> getId(c)
     gscope -= c
     this
 
-  def addLoc(k: String, v: ANY): ENV = copy(scope = scope + (k -> v))
+  def addLoc(k: String, v: ANY): ENV =
+    modScope(_ + (k -> v))
 
   def addGlob(k: String, v: ANY): ENV =
     gscope += (k -> v)
     this
 
   def getLoc(k: String): Option[ANY] =
-    if scope.contains(k) then scope.get(k)
+    if code.s.contains(k) then code.s.get(k)
     else if ids.contains(k) then ids.get(k).map(_.l.pipe(getLineS))
     else getGlob(k)
 
@@ -276,7 +276,7 @@ object ENV:
         l.linesIterator.zipWithIndex.map:
           case (x, i) => (PATH(f, i), (STR(x), UN))
       ,
-      FN(PATH(f, 0), LazyList()),
+      FN(PATH(f, 0), HashMap(), LazyList()),
       flags = flags,
       cflag = cflag
     )

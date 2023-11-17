@@ -46,7 +46,7 @@ extension (env: ENV)
         case None    => env.cmd1(x)
         case Some(v) => env.push(v)
     case _ =>
-      if env.scope.contains(x) then env.push(env.scope(x)).eval
+      if env.code.s.contains(x) then env.push(env.code.s(x)).eval
       else if env.ids.contains(x) then env.push(NUM(env.ids(x).l)).evalLine
       else if env.gscope.contains(x) then env.push(env.gscope(x)).eval
       else if env.gids.contains(x) then env.push(NUM(env.gids(x).l)).evalLine
@@ -80,7 +80,7 @@ extension (env: ENV)
     val (cs, c) = l.ys match
       case cs :+ c => (cs, c.toString)
       case _       => (l.ys, ")")
-    env.modCode(_ => l.xs).push(FN(env.code.p, cs)).cmd(c)
+    env.modCode(_ => l.xs).push(env.code.copy(x = cs)).cmd(c)
 
   def evalLine: ENV = env.arg1: (x, env) =>
     val i    = x.toInt
@@ -143,7 +143,7 @@ extension (env: ENV)
   def endMAP: ENV = endARR.envMAP
 
   def getscope: ENV = env.push:
-    env.scope
+    env.code.s
       .to(VectorMap)
       .map:
         case (k, v) => (k.sSTR: ANY, v)
@@ -213,15 +213,15 @@ extension (env: ENV)
         .foldLeft(env):
           case (env, (k, v)) => env.addLoc(k.toString, v)
 
-  def clrscope: ENV = env.copy(scope = HashMap())
+  def clrscope: ENV = env.modScope(_ => HashMap())
   def setscope: ENV = env.arg1: (x, env) =>
-    env.copy(scope = env.scope ++ x.toMAP.x.map:
+    env.modScope(_ ++ x.toMAP.x.map:
       case (k, v) => (k.toString, v)
     )
 
   def getSc: ENV = env.push:
     MAP:
-      env.scope
+      env.code.s
         .map:
           case (k, v) => (k.sSTR, v)
         .to(VectorMap)
