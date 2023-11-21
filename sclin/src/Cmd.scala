@@ -1666,7 +1666,7 @@ extension (env: ENV)
     case "pad`" => env.pad$
     /*
     @s a[_*] (b >NUM)' c -> STR'
-    Pads `a` from the right to length `b` using `c`.
+    Pads `a` from the left to length `b` using `c`.
     ```sclin
     [1 2 3 4] 9 0padl`
     ```
@@ -1680,7 +1680,7 @@ extension (env: ENV)
     case "padl`" => env.padl$
     /*
     @s a[_*] (b >NUM)' c -> STR'
-    Pads `a` from the right to length `b` using `c`.
+    Pads `a` from the outsides to length `b` using `c`.
     ```sclin
     [1 2 3 4] 9 0padc`
     ```
