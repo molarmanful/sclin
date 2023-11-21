@@ -117,6 +117,16 @@ extension (env: ENV)
      */
     case ">!?" => env.envTRY
     /*
+    @s a -> TRY
+    Converts `a` to a `TRY` that succeeds.
+     */
+    case ">!+" => env.envYES
+    /*
+    @s a -> TRY
+    Converts `a` to a `TRY` that fails.
+     */
+    case ">!-" => env.envNO
+    /*
     @s a -> TF
     Converts `a` to `TF`.
      */

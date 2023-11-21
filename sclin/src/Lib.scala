@@ -11,6 +11,8 @@ import scala.collection.immutable.VectorMap
 import scala.concurrent.*
 import scala.concurrent.duration.*
 import scala.util.chaining.*
+import scala.util.Failure
+import scala.util.Success
 import scala.util.Try
 import spire.implicits.*
 import spire.math.*
@@ -160,6 +162,8 @@ extension (env: ENV)
   def envFN: ENV   = env.mod1(_.toFN(env))
   def envTASK: ENV = env.mod1(_.toTASK)
   def envTRY: ENV  = env.mod1(_.toTRY)
+  def envYES: ENV  = env.mod1(Success(_).toTRY)
+  def envNO: ENV   = env.mod1(_.toERR.x.pipe(Failure(_)).toTRY)
   def envERR: ENV  = env.mod2((x, y) => ERR(LinERR(env, y.toString, x.toString)))
   def envTF: ENV   = env.mod1(_.toTF)
   def otoTF: ENV   = env.mod1(_.toOBS.x.nonEmptyL.map(_.boolTF).toTASK)

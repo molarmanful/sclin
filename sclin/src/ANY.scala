@@ -474,7 +474,7 @@ enum ANY:
     case _      => toNUM.x.toDouble.toDBL
 
   def toERR: ERR = this match
-    case x: ERR => x
+    case Ery(x) => ERR(x)
     case x      => LinEx("_", x.toString).pipe(ERR(_))
 
   def toTRY: TRY = this match
@@ -1116,6 +1116,13 @@ object ANY:
       case STR(x) => Some(x)
       case CMD(x) => Some(x)
       case _      => None
+
+  object Ery:
+
+    def unapply(a: ANY): Option[Throwable] = a match
+      case ERR(x)          => Some(x)
+      case TRY(Failure(x)) => Some(x)
+      case _               => None
 
   extension [T](xs: Iterable[T])
 
