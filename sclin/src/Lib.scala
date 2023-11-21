@@ -76,9 +76,9 @@ extension (env: ENV)
   def startFN: ENV =
     val l = Lambda(env.code.x).loop
     val (cs, c) = l.ys match
-      case cs :+ c => (cs, c.toString)
-      case _       => (l.ys, ")")
-    env.modCode(_ => l.xs).push(env.code.copy(x = cs)).cmd(c)
+      case cs :+ c if l.n <= 0 => (cs, c)
+      case _                   => (l.ys, CMD(")"))
+    env.modCode(_ => l.xs).push(env.code.copy(x = cs)).execA(c)
 
   def evalLine: ENV = env.arg1: (x, env) =>
     val i    = x.toInt
