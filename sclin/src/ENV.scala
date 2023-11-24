@@ -170,7 +170,8 @@ case class ENV(
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
 
   def arg(n: Int)(f: (ARRW[ANY], ENV) => ENV): ENV =
-    if stack.length < n then throw LinEx("ST_LEN", s"stack length < $n")
+    if stack.length < n then
+      throw LinEx("ST_LEN", s"stack length ${stack.length} < $n")
     else
       val (xs, ys) = stack.splitAt(stack.length - n)
       f(ys, modStack(_ => xs))
