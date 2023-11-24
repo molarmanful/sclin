@@ -15,7 +15,8 @@ case class Lambda(
         case LazyList() => this
         case c #:: cs =>
           val d = c match
-            case CMD(x) if x.contains('(') => 1
-            case CMD(x) if x.contains(')') => -1
-            case _                         => 0
+            case CMD(x) =>
+              val m = x.groupBy(c => c).view.mapValues(_.length)
+              m.get('(').getOrElse(0) - m.get(')').getOrElse(0)
+            case _ => 0
           Lambda(cs, ys #::: LazyList(c), n + d).loop
