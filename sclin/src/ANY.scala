@@ -633,6 +633,7 @@ enum ANY:
         case TASK(x) => x.foreach(f)
         case Lsy(x)  => x.foreach(f)
         case ARR(x)  => x.foreach(f)
+        case TRY(x)  => x.foreach(f)
         case _       => toARR.foreach(f)
       UN
   def foreach(f: (ANY, ANY) => Unit, g: ANY => Unit): ANY = this match
