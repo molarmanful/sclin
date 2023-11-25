@@ -1,5 +1,6 @@
 package sclin
 
+import better.files.*
 import monix.execution.Scheduler
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -165,6 +166,14 @@ case class ENV(
   def addCall(): ENV = copy(calls = curPC #:: calls)
 
   def setCur(c: ANY): ENV = copy(curPC = (code.p, c))
+
+  def fImport(f: File) =
+    val s =
+      try f.contentAsString
+      catch
+        case _: java.nio.file.NoSuchFileException =>
+          throw LinEx("IMPORT", s"no import $f")
+    ENV.run(s, Some(f), Flags(), cflag)
 
   def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)

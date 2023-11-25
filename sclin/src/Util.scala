@@ -58,3 +58,9 @@ object Util:
 
   def abtobs(s: Array[Byte]): String = s.map(_.&(0xff).toChar).mkString
   def bstoab(s: String): Array[Byte] = s.getBytes("ISO-8859-1")
+
+  def nofs(e: java.nio.file.NoSuchFileException): LinEx =
+    LinEx("FS_R", s"no file ${e.getFile}")
+
+  def notcp(e: java.net.ConnectException): LinEx =
+    LinEx("TCP", e.getMessage.toLowerCase)
