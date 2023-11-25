@@ -1,10 +1,8 @@
+---
 name: release
-
 on:
   push:
-    tags:
-      - '*'
-
+    tags: ["*"]
 jobs:
   maven:
     runs-on: ubuntu-latest
@@ -15,7 +13,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 20
+          java-version: 21
       - uses: coursier/cache-action@v6
       - name: gpg
         uses: crazy-max/ghaction-import-gpg@v5
@@ -34,13 +32,12 @@ jobs:
         run: |
           ./mill mill.scalalib.PublishModule/publishAll \
             __.publishArtifacts \
-            $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
-            --gpgArgs --passphrase=$SONATYPE_GPG_PASSWORD,--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
+            "$SONATYPE_USERNAME:$SONATYPE_PASSWORD" \
+            --gpgArgs --passphrase="$SONATYPE_GPG_PASSWORD",--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
             --sonatypeUri https://s01.oss.sonatype.org/service/local \
             --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
             --awaitTimeout 600000 \
             --release true
-
   github_docker:
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +47,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 20
+          java-version: 21
       - uses: coursier/cache-action@v6
       - name: test
         run: |
@@ -73,7 +70,6 @@ jobs:
           context: .
           push: true
           tags: molarmanful/sclin:latest
-
   sync:
     runs-on: ubuntu-latest
     steps:
