@@ -15,6 +15,8 @@ import ANY.*
   *
   * @param lines
   *   cache of all lines being read
+  * @param imports
+  *   cache of imports
   * @param code
   *   queue of data to evaluate
   * @param stack
@@ -36,6 +38,7 @@ import ANY.*
   */
 case class ENV(
     lines: TrieMap[PATH, (STR, ANY)] = TrieMap(),
+    imports: TrieMap[FILE, ENV] = TrieMap(),
     code: FN = FN(PATH(None, 0), HashMap(), LazyList()),
     stack: ARRW[ANY] = Vector(),
     curPC: (PATH, ANY) = (PATH(None, 0), UN),
@@ -93,12 +96,12 @@ case class ENV(
   def setArr(x: List[ARRW[ANY]]): ENV = copy(arr = x)
 
   def setLine(p: PATH, x: STR, y: ANY): ENV =
-    lines += (p -> (x, y))
+    lines += p -> (x, y)
     this
 
   def setLineF(i: Int, x: ANY): ENV =
     val p = PATH(code.p.f, i)
-    lines += (p -> (lines(p)._1, x))
+    lines += p -> (lines(p)._1, x)
     this
 
   def getLine(i: Int): Option[(ANY, ANY)] = lines.get(PATH(code.p.f, i))
@@ -150,7 +153,7 @@ case class ENV(
     modScope(_ + (k -> v))
 
   def addGlob(k: String, v: ANY): ENV =
-    gscope += (k -> v)
+    gscope += k -> v
     this
 
   def getLoc(k: String): Option[ANY] =
@@ -168,14 +171,16 @@ case class ENV(
   def setCur(c: ANY): ENV = copy(curPC = (code.p, c))
 
   def fImport(f: File): ENV =
-    val s =
-      try f.contentAsString
-      catch
-        case _: java.nio.file.NoSuchFileException =>
-          throw LinEx("IMPORT", s"no import $f")
-    val env1 = ENV.run(s, Some(f), Flags(), cflag)
-    for (k, v) <- env1.lines do lines.getOrElseUpdate(k, v)
-    env1
+    if !imports.contains(Some(f)) then
+      val s =
+        try f.contentAsString
+        catch
+          case _: java.nio.file.NoSuchFileException =>
+            throw LinEx("IMPORT", s"no import $f")
+      val env = ENV.run(s, Some(f), Flags(), cflag, imports)
+      for (k, v) <- env.lines do lines.getOrElseUpdate(k, v)
+      imports += Some(f) -> env
+    imports(Some(f))
 
   def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
@@ -283,17 +288,20 @@ object ENV:
       l: String,
       f: FILE = None,
       flags: Flags = Flags(),
-      cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs()
+      cflag: fansi.Attrs => fansi.Attrs = _ => fansi.Attrs(),
+      imports: TrieMap[FILE, ENV] = TrieMap()
   ): ENV =
     ENV(
       TrieMap.from:
         l.linesIterator.zipWithIndex.map:
           case (x, i) => (PATH(f, i), (STR(x), UN))
       ,
+      imports,
       FN(PATH(f, 0), HashMap(), LazyList()),
       flags = flags,
       cflag = cflag
     )
+      .tap(env => env.imports.getOrElseUpdate(f, env))
       .loadLine(0)
       .exec
       .tap(env => if env.flags.s || env.flags.v || env.flags.i then env.trace)
