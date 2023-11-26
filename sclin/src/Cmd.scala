@@ -336,6 +336,12 @@ extension (env: ENV)
     case "$" => env.getscope
 
     /*
+    @s a -> _
+    Imports top of the stack from another sclin file.
+     */
+    case "@>" => env.importQ
+
+    /*
     @s (a >FN)' ->
     Loads ID `a` into local scope.
     ```sclin

@@ -162,6 +162,8 @@ extension (env: ENV)
         case (k, v) => (k.sSTR: ANY, v)
       .pipe(MAP(_))
 
+  def importQ: ENV = env.mod1(_.toFile.pipe(env.fImport).getStack(0))
+
   def getType: ENV = env.mod1(_.getType.sSTR)
   def envSEQ: ENV  = env.mod1(_.toSEQ)
   def envARR: ENV  = env.mod1(_.toARR)

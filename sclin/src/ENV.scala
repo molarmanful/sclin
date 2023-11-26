@@ -167,13 +167,15 @@ case class ENV(
 
   def setCur(c: ANY): ENV = copy(curPC = (code.p, c))
 
-  def fImport(f: File) =
+  def fImport(f: File): ENV =
     val s =
       try f.contentAsString
       catch
         case _: java.nio.file.NoSuchFileException =>
           throw LinEx("IMPORT", s"no import $f")
-    ENV.run(s, Some(f), Flags(), cflag)
+    val env1 = ENV.run(s, Some(f), Flags(), cflag)
+    for (k, v) <- env1.lines do lines.getOrElseUpdate(k, v)
+    env1
 
   def push(x: ANY): ENV         = modStack(_ :+ x)
   def pushs(xs: ARRW[ANY]): ENV = modStack(_ ++ xs)
