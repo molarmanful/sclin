@@ -301,7 +301,6 @@ object ENV:
       flags = flags,
       cflag = cflag
     )
-      .tap(env => env.imports.getOrElseUpdate(f, env))
       .loadLine(0)
       .exec
       .tap(env => if env.flags.s || env.flags.v || env.flags.i then env.trace)
