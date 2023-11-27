@@ -1,8 +1,12 @@
+<div align="center">
+
 # ![sclin](./logo.svg)
 
 [![maven](https://img.shields.io/maven-central/v/io.github.molarmanful/sclin_3?style=flat-square)](https://central.sonatype.dev/artifact/io.github.molarmanful/sclin_3)
 [![build](https://img.shields.io/github/actions/workflow/status/molarmanful/sclin/release.yml?style=flat-square)](https://github.com/molarmanful/sclin/actions)
 [![license](https://img.shields.io/github/license/molarmanful/sclin?style=flat-square)](./LICENSE)
+
+</div>
 
 ```sclin
 100I-a \; tap
@@ -31,7 +35,7 @@ of its features include:
 - **Type fluidity** - Most (if not all) sclin commands auto-convert types as
   necessary, eschewing type safety for flexibility and expressiveness.
 
-For more info, visit the [wiki](https://github.com/molarmanful/sclin/wiki).
+For more info/docs, please visit the [wiki](https://github.com/molarmanful/sclin/wiki).
 
 ## Installation
 
