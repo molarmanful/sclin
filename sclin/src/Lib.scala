@@ -148,6 +148,8 @@ extension (env: ENV)
   def evalArrSt: ENV = env.arg2: (x, f, env) =>
     env.push(env.push(x).unwrap$.push(f).evale.stack.toARR.matchType(x))
   def evalStArr: ENV = env.arg1((f, env) => env.wrap$$.push(f).quar.unwrap$)
+  def end: ENV       = env.modCode(_ => LazyList())
+  def evalEnd: ENV   = env.end.eval
 
   def startARR: ENV = env.setArr(env.stack :: env.arr).clr
   def endARR: ENV = env.arr match
@@ -293,7 +295,8 @@ extension (env: ENV)
         .modCode(_ => cs)
         .pipe: env =>
           c match
-            case STR(x) => env.push(STR(StringContext.processEscapes(x)))
-            case CMD(x) => env.wrapFN.push(CMD(x)).snoc
-            case _      => env.push(c)
+            case STR(x)   => env.push(STR(StringContext.processEscapes(x)))
+            case CMD(".") => env.end.evalLNext
+            case CMD(x)   => env.wrapFN.push(CMD(x)).snoc
+            case _        => env.push(c)
     case _ => evalLNext

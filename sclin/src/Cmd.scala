@@ -13,23 +13,102 @@ extension (env: ENV)
 
     // CMDOC START
 
-    case "("   => env.startFN
-    case ")"   => env
-    case ")~"  => env.evalTASK
-    case ")!"  => env.evalTRY
-    case ")#"  => env.locId
+    /*
+    @s ->
+    Start `FN`.
+     */
+    case "(" => env.startFN
+    /*
+    @s ->
+    End `FN`.
+     */
+    case ")" => env
+    /*
+    @s ->
+    #{)} #{<+}.
+     */
+    case ")+" => env.cons
+    /*
+    @s ->
+    #{)} #{+`}.
+     */
+    case ")++" => env.add$$
+    /*
+    @s ->
+    #{)} #{~Q}.
+     */
+    case ")~" => env.evalTASK
+    /*
+    @s ->
+    #{)} #{!Q}.
+     */
+    case ")!" => env.evalTRY
+    /*
+    @s ->
+    #{)} #{@$}.
+     */
+    case ")#" => env.locId
+    /*
+    @s ->
+    #{)} #{@$$}.
+     */
     case ")##" => env.globId
-    case ")="  => env.lambda
-    case "["   => env.startARR
-    case "]"   => env.endARR
-    case "]:"  => env.endMAP
-    case "/]"  => env.endARR.getn
+    /*
+    @s ->
+    #{)} #{->}.
+     */
+    case ")=" => env.lambda
+    /*
+    @s ->
+    Start `ARR`/`MAP`.
+     */
+    case "[" => env.startARR
+    /*
+    @s ->
+    End `ARR`.
+     */
+    case "]" => env.endARR
+    /*
+    @s ->
+    End `MAP`.
+     */
+    case "]:" => env.endMAP
+    /*
+    @s ->
+    #{]} #{:/}.
+     */
+    case "/]" => env.endARR.getn
+    /*
+    @s ->
+    #{]} #{:/=}.
+     */
     case "/]=" => env.endARR.setn
+    /*
+    @s ->
+    #{]} #{:/%}.
+     */
     case "/]%" => env.endARR.setmodn
-    case "]*"  => env.endMAP.gets
-    case "]="  => env.endMAP.sets
-    case "]%"  => env.endMAP.setmods
-    case "."   => env.dot
+    /*
+    @s ->
+    #{]:} #{:*}.
+     */
+    case "]*" => env.endMAP.gets
+    /*
+    @s ->
+    #{]:} #{:*=}.
+     */
+    case "]=" => env.endMAP.sets
+    /*
+    @s ->
+    #{]:} #{:*%}.
+     */
+    case "]%" => env.endMAP.setmods
+    // TODO: elaborate
+    /*
+    @s ->
+    Magic dot.
+     */
+    case "." => env.dot
 
     /*
     @s a -> STR
@@ -696,7 +775,12 @@ extension (env: ENV)
     @s ->
     Clears code queue, similar to the "break" keyword in other languages.
      */
-    case "end" => env.modCode(_ => LazyList())
+    case "end" => env.end
+    /*
+    @s a ->
+    Clears code queue and #{#}s top of stack.
+     */
+    case "_#" => env.evalEnd
 
     /*
     @s (a >NUM)' (b >NUM)' -> NUM'
