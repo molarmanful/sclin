@@ -3,7 +3,7 @@
 
 #init =$n.
   $n "queens"@#.
-  (.) $n *` "show"@#
+  \· $n *` "show"@#
 
 #queens =$n.
   $n O>a perm \; fltr
