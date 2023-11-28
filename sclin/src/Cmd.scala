@@ -70,6 +70,11 @@ extension (env: ENV)
     case "]" => env.endARR
     /*
     @s ->
+    #{]} #{>S}.
+     */
+    case "]S" => env.endARR.envSTR
+    /*
+    @s ->
     End `MAP`.
      */
     case "]:" => env.endMAP
