@@ -280,15 +280,6 @@ extension (env: ENV)
 
   def dip: ENV = env.arg2((x, f, env) => env.push(f).evale.push(x))
 
-  def wrap$ : ENV   = env.modx(2)(_.toARR)
-  def wrap: ENV     = env.modx(1)(_.toARR)
-  def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
-  def wrapv$ : ENV  = env.vec2(Vector(_, _).toARR)
-  def wrapv: ENV    = env.vec1(Vector(_).toARR)
-  def unwrap: ENV   = env.mods1(_.toARR.x)
-  def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
-  def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
-
   def dot: ENV = env.code.x match
     case c #:: cs =>
       env

@@ -19,92 +19,135 @@ extension (env: ENV)
      */
     case "(" => env.startFN
     /*
-    @s ->
+    @s -> FN
     End `FN`.
      */
     case ")" => env
     /*
-    @s ->
-    #{)} #{<+}.
+    @s -> FN
+    Empty `FN`.
      */
-    case ")+" => env.cons
+    case "()" => env.push(UN.toFN(env))
     /*
-    @s ->
-    #{)} #{+`}.
+    @s -> FN
+    #{)} #{,+}.
      */
-    case ")++" => env.add$$
+    case ")+" => env.consFN
     /*
-    @s ->
+    @s a -> FN
+    #{()} #{,+}.
+     */
+    case "()+" => env.push(UN.toFN(env)).consFN
+    /*
+    @s -> FN
+    #{)} #{,+`}.
+     */
+    case ")++" => env.concatFN
+    /*
+    @s a -> FN
+    #{()} #{,+`}.
+     */
+    case "()++" => env.push(UN.toFN(env)).concatFN
+    /*
+    @s -> TASK
     #{)} #{~Q}.
      */
     case ")~" => env.evalTASK
+    /*
+    @s -> TASK
+    Empty `TASK`.
+     */
+    case "()~" => env.push(UN.toTASK)
     /*
     @s ->
     #{)} #{!Q}.
      */
     case ")!" => env.evalTRY
     /*
+    @s -> TRY
+    Empty `TRY`.
+     */
+    case "()!" => env.push(UN.toTRY)
+    /*
     @s ->
     #{)} #{@$}.
      */
-    case ")#" => env.locId
+    case ")#"  => env.locId
+    case "()#" => env
     /*
     @s ->
     #{)} #{@$$}.
      */
-    case ")##" => env.globId
+    case ")##"  => env.globId
+    case "()##" => env
     /*
     @s ->
     #{)} #{->}.
      */
-    case ")=" => env.lambda
+    case ")="  => env.lambda
+    case "()=" => env
     /*
     @s ->
     Start `ARR`/`MAP`.
      */
     case "[" => env.startARR
     /*
-    @s ->
+    @s -> ARR
     End `ARR`.
      */
     case "]" => env.endARR
     /*
-    @s ->
+    @s -> ARR
+    Empty `ARR`.
+     */
+    case "[]" => env.push(UN.toARR)
+    /*
+    @s -> STR
     #{]} #{>S}.
      */
     case "]S" => env.endARR.envSTR
     /*
-    @s ->
+    @s -> STR
+    Empty `STR`.
+     */
+    case "[]S" => env.push(UN.toSTR)
+    /*
+    @s -> MAP
     End `MAP`.
      */
     case "]:" => env.endMAP
     /*
-    @s ->
+    @s -> MAP
+    Empty `MAP`.
+     */
+    case "[]:" => env.push(UN.toMAP)
+    /*
+    @s -> _
     #{]} #{:/}.
      */
     case "/]" => env.endARR.getn
     /*
-    @s ->
+    @s -> _
     #{]} #{:/=}.
      */
     case "/]=" => env.endARR.setn
     /*
-    @s ->
+    @s -> _
     #{]} #{:/%}.
      */
     case "/]%" => env.endARR.setmodn
     /*
-    @s ->
+    @s -> _
     #{]:} #{:*}.
      */
     case "]*" => env.endMAP.gets
     /*
-    @s ->
+    @s -> _
     #{]:} #{:*=}.
      */
     case "]=" => env.endMAP.sets
     /*
-    @s ->
+    @s -> _
     #{]:} #{:*%}.
      */
     case "]%" => env.endMAP.setmods
@@ -277,31 +320,6 @@ extension (env: ENV)
     False.
      */
     case "$F" => env.push(TF(false))
-    /*
-    @s -> FN
-    Empty `FN`.
-     */
-    case "()" => env.push(UN.toFN(env))
-    /*
-    @s -> ARR
-    Empty `ARR`.
-     */
-    case "[]" => env.push(UN.toARR)
-    /*
-    @s -> MAP
-    Empty `MAP`.
-     */
-    case "[]:" => env.push(UN.toMAP)
-    /*
-    @s -> TASK
-    Empty `TASK`.
-     */
-    case "()~" => env.push(UN.toTASK)
-    /*
-    @s -> TRY
-    Empty `TRY`.
-     */
-    case "()!" => env.push(UN.toTRY)
     /*
     @s -> NUM
     π (Pi).
@@ -913,6 +931,18 @@ extension (env: ENV)
      */
     case ">+" => env.unsnoc
     /*
+    @s a (b >FN) -> FN
+    `FN`-specific #{<+}.
+    Wraps `a` in `ARR` and uses #{,_} to preserve `a`'s value.'
+     */
+    case ",+" => env.consFN
+    /*
+    @s a (b >FN) -> FN
+    `FN`-specific #{+`}.
+    Uses #{,_} to preserve the values of `a`'s elements.'
+     */
+    case ",+`" => env.concatFN
+    /*
     @s (a >NUM)' (b >NUM)' -> NUM'
     `a - b`
      */
@@ -1334,47 +1364,47 @@ extension (env: ENV)
      */
     case ":`" => env.get$$
     /*
-    @s a (i >MAP) -> x
+    @s a (i >MAP) -> _
     #{:`} with `i` mapped over `a`.
      */
     case ":*" => env.gets
     /*
-    @s a b (i >SEQ) -> x
+    @s a b (i >SEQ) -> _
     #{:`} with `i` folded over `a`.
      */
     case ":/" => env.getn
     /*
-    @s a b i -> x
+    @s a b i -> _
     Sets value at index `i` in `a` to `b`.
      */
     case ":=" => env.set
     /*
-    @s a (m >MAP) -> x
+    @s a (m >MAP) -> _
     #{:=} with `i` mapped over `a`.
      */
     case ":*=" => env.sets
     /*
-    @s a b (i >SEQ) -> x
+    @s a b (i >SEQ) -> _
     #{:=} with `i` folded over `a`.
      */
     case ":/=" => env.setn
     /*
-    @s a (f >FN) i -> x
+    @s a (f >FN) i -> _
     Modifies value at index `i` using `f`.
      */
     case ":%" => env.setmod
     /*
-    @s a (m >MAP[(_ => (_ >FN))*]) -> x
+    @s a (m >MAP[(_ => (_ >FN))*]) -> _
     #{:%} with `i` mapped over `a`.
      */
     case ":*%" => env.setmods
     /*
-    @s a (f >FN) (i >SEQ) -> x
+    @s a (f >FN) (i >SEQ) -> _
     #{:%} with `i` folded over `a`.
      */
     case ":/%" => env.setmodn
     /*
-    @s a i -> x
+    @s a i -> _
     Removes index `i` from `a`.
      */
     case ":-" => env.idel

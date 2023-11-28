@@ -43,6 +43,19 @@ extension (env: ENV)
   def rank: ENV    = env.mod1(_.rank.pipe(NUM(_)))
   def depth: ENV   = env.mod1(_.depth.pipe(NUM(_)))
 
+  def wrap$ : ENV   = env.modx(2)(_.toARR)
+  def wrap: ENV     = env.modx(1)(_.toARR)
+  def wrap$$ : ENV  = env.modStack(x => Vector(x.toARR))
+  def wrapv$ : ENV  = env.vec2(Vector(_, _).toARR)
+  def wrapv: ENV    = env.vec1(Vector(_).toARR)
+  def unwrap: ENV   = env.mods1(_.toARR.x)
+  def unwrap$ : ENV = env.arg1((x, env) => env.modStack(_ => x.toARR.x))
+  def wrapFN: ENV   = env.wrap.mod1(_.toFN(env))
+
+  def consFN: ENV =
+    env.mod2((x, y) => Vector(x).toARR.cons(CMD(",_").cons(y.toFN(env))))
+  def concatFN: ENV = env.mod2((x, y) => x.cons(CMD(",_").cons(y.toFN(env))))
+
   def rep: ENV  = env.mod1(LazyList.continually(_).toSEQ)
   def orep: ENV = env.mod1(Observable.repeat(_).toOBS)
   def cyc: ENV  = env.mod1(x => LazyList.continually(x).mSEQ(x).flat)
