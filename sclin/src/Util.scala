@@ -64,3 +64,5 @@ object Util:
 
   def notcp(e: java.net.ConnectException): LinEx =
     LinEx("TCP", e.getMessage.toLowerCase)
+
+  def wlvl(s: String): Int = s.takeWhile(_.isWhitespace).length

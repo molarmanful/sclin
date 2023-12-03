@@ -708,6 +708,16 @@ extension (env: ENV)
      */
     case ";;" => env.evalLPrev
     /*
+    @s a* -> _*
+    #{#}s first subsequent line whose leading whitespace count <= current line's leading whitespace count.
+     */
+    case ";>" => env.evalLNextInd
+    /*
+    @s a* -> _*
+    #{#}s first preceding line whose leading whitespace count <= current line's leading whitespace count.
+     */
+    case ";;>" => env.evalLPrevInd
+    /*
     @s (n >NUM) -> STR | UN
     `n`th line.
      */

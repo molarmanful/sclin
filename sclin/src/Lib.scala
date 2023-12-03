@@ -8,7 +8,6 @@ import scala.util.chaining.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import spire.implicits.*
 import spire.math.*
 import upickle.default.*
 import ANY.*
@@ -95,25 +94,40 @@ extension (env: ENV)
       case _                   => (l.ys, CMD(")"))
     env.modCode(_ => l.xs).push(env.code.copy(x = cs)).execA(c)
 
-  def evalLine: ENV = env.arg1: (x, env) =>
-    val i    = x.toInt
-    val env1 = env.fnLine(i)
-    env1.push(env1.getLineF(i)).eval
   def getLNum: ENV = env.push(NUM(env.code.p.l))
   def getLFile: ENV = env.push:
     env.code.p.f match
       case Some(x) => STR(x.toString)
       case _       => UN
-  def getLns: ENV    = env.push(env.lines.toSeq.sortBy(_._1._2).map(_._2._1).toARR)
+  def getLns: ENV   = env.push(env.lines.toSeq.sortBy(_._1._2).map(_._2._1).toARR)
+  def getLn: ENV    = env.mod1(n => env.getLineS(n.toNUM.x.intValue))
+  def getLRel: ENV  = getLNum.add.getLn
+  def getLHere: ENV = env.push(NUM(0)).getLRel
+  def getLNext: ENV = env.push(NUM(1)).getLRel
+  def getLPrev: ENV = env.push(NUM(-1)).getLRel
+
+  def evalLine: ENV = env.arg1: (x, env) =>
+    val i    = x.toInt
+    val env1 = env.fnLine(i)
+    env1.push(env1.getLineF(i)).eval
   def evalLRel: ENV  = getLNum.add.evalLine
   def evalLHere: ENV = env.push(NUM(0)).evalLRel
   def evalLNext: ENV = env.push(NUM(1)).evalLRel
   def evalLPrev: ENV = env.push(NUM(-1)).evalLRel
-  def getLn: ENV     = env.mod1(n => env.getLineS(n.toNUM.x.intValue))
-  def getLRel: ENV   = getLNum.add.getLn
-  def getLHere: ENV  = env.push(NUM(0)).getLRel
-  def getLNext: ENV  = env.push(NUM(1)).getLRel
-  def getLPrev: ENV  = env.push(NUM(-1)).getLRel
+
+  def evalLIndH(n: Int = 1): Int =
+    val l   = env.code.p.l
+    val lvl = env.getLineS(l).toSTR.x.pipe(Util.wlvl)
+    def loop(l: Int): Int =
+      val (s, f) = env.getLine(l).getOrElse((STR(""), UN))
+      if Util.wlvl(s.toSTR.x) <= lvl then l else loop(l + n)
+    loop(l + n)
+
+  def evalLNextInd: ENV =
+    env.push(NUM(evalLIndH())).evalLine
+  def evalLPrevInd: ENV =
+    env.push(NUM(evalLIndH(-1))).evalLine
+
   def evalAnd: ENV =
     env.arg2((x, f, env) => if x.toBool then env.push(f).eval else env)
   def evalAnd$ : ENV = env.arg2: (x, f, env) =>
