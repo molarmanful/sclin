@@ -1,15 +1,10 @@
 package sclin
 
-import better.files.*
 import monix.reactive.Observable
-import scala.concurrent.*
-import scala.concurrent.duration.*
 import scala.util.chaining.*
 import spire.implicits.*
 import spire.math.*
-import upickle.default.*
 import ANY.*
-import Lambda.*
 
 extension (env: ENV)
 
@@ -27,7 +22,7 @@ extension (env: ENV)
   def setmods: ENV = env.mod2: (x, y) =>
     x.setmods:
       y.toMAP.x.map:
-        case (k, v) => (k, env.SIG_1f1(_: ANY)(v))
+        case (k, f) => (k, env.SIG_1f1(f))
   def setmodn: ENV = env.mod3((x, f, i) => x.setmodn(i.toSEQ.x, env.SIG_1f1(f)))
 
   def idel: ENV = env.mod2(_.remove(_))
