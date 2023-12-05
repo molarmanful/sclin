@@ -191,38 +191,26 @@ extension (env: ENV)
   def tblf: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.flatTable(y, env.SIG_2f1(f))))
 
-  def fold: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.foldLeft(y)(env.SIG_1y2f1(f), env.SIG_2f1(f)))
-    )
+  def fold: ENV = env.mod3: (x, y, z) =>
+    z.vec1(f => x.foldLeft(y)(env.SIG_1y2f1(f), env.SIG_2f1(f)))
   def ofold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.ofoldLeft(y)(env.SIG_2f1(f)).toTASK))
-  def foldR: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.foldRight(y)(env.SIG_2y1f1(f), env.SIG_2f1(f)))
-    )
+  def foldR: ENV = env.mod3: (x, y, z) =>
+    z.vec1(f => x.foldRight(y)(env.SIG_2y1f1(f), env.SIG_2f1(f)))
   def rfold: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldLeft(y)(env.SIG_2f1(f))))
   def rfoldR: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.rfoldRight(y)(env.SIG_2f1(f))))
-  def reduce: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.reduceLeft(env.SIG_1y2f1(f), env.SIG_2f1(f)))
-    )
-  def reduceR: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.reduceRight(env.SIG_1y2f1(f), env.SIG_2f1(f)))
-    )
-  def scan: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.scanLeft(y)(env.SIG_1y2f1(f), env.SIG_2f1(f)))
-    )
+  def reduce: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.reduceLeft(env.SIG_1y2f1(f), env.SIG_2f1(f)))
+  def reduceR: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.reduceRight(env.SIG_1y2f1(f), env.SIG_2f1(f)))
+  def scan: ENV = env.mod3: (x, y, z) =>
+    z.vec1(f => x.scanLeft(y)(env.SIG_1y2f1(f), env.SIG_2f1(f)))
   def scanEval: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.scanEval(y)(env.SIG_2f1(f)).toOBS))
-  def scanR: ENV =
-    env.mod3((x, y, z) =>
-      z.vec1(f => x.scanRight(y)(env.SIG_2y1f1(f), env.SIG_2f1(f)))
-    )
+  def scanR: ENV = env.mod3: (x, y, z) =>
+    z.vec1(f => x.scanRight(y)(env.SIG_2y1f1(f), env.SIG_2f1(f)))
 
   def walk: ENV = env.mod2: (x, y) =>
     y.vec1: f =>
@@ -256,16 +244,12 @@ extension (env: ENV)
   def ofltr: ENV =
     env.mod2((x, y) => y.vec1(f => x.filterEval(env.SIG_1f1(f)).toOBS))
 
-  def any: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.any(env.SIG_2fb(f), env.SIG_1fb(f)).boolTF)
-    )
+  def any: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.any(env.SIG_2fb(f), env.SIG_1fb(f)).boolTF)
   def oany: ENV =
     env.mod2((x, y) => y.vec1(f => x.oany(env.SIG_1fb(f)).map(_.boolTF).toTASK))
-  def all: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.all(env.SIG_2fb(f), env.SIG_1fb(f)).boolTF)
-    )
+  def all: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.all(env.SIG_2fb(f), env.SIG_1fb(f)).boolTF)
   def oall: ENV =
     env.mod2((x, y) => y.vec1(f => x.oall(env.SIG_1fb(f)).map(_.boolTF).toTASK))
 
@@ -291,27 +275,21 @@ extension (env: ENV)
 
   def uniq: ENV =
     env.mod2((x, y) => y.vec1(f => x.uniqBy(env.SIG_2f1(f), env.SIG_1f1(f))))
-  def uniq$ : ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.uniqWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
-    )
+  def uniq$ : ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.uniqWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
 
   def sort: ENV =
     env.mod2((x, y) => y.vec1(f => x.sortBy(env.SIG_2f1(f), env.SIG_1f1(f))))
-  def sort$ : ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.sortWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
-    )
+  def sort$ : ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.sortWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
 
   def part: ENV = env.mod2: (x, y) =>
     y.vec1: f =>
       val (a, b) = x.partition(env.SIG_2fb(f), env.SIG_1fb(f))
       Vector(a, b).toARR
 
-  def group: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.groupBy(env.SIG_2f1(f), env.SIG_1f1(f)).toMAP)
-    )
+  def group: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.groupBy(env.SIG_2f1(f), env.SIG_1f1(f)).toMAP)
   def ogroup: ENV =
     env.mod2((x, y) => y.vec1(f => x.ogroupBy(env.SIG_1f1(f)).toOBS))
 
@@ -320,10 +298,8 @@ extension (env: ENV)
       val (a, b) = x.span(env.SIG_2fb(f), env.SIG_1fb(f))
       Vector(a, b).toARR
 
-  def pack: ENV =
-    env.mod2((x, y) =>
-      y.vec1(f => x.packWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
-    )
+  def pack: ENV = env.mod2: (x, y) =>
+    y.vec1(f => x.packWith(env.SIG_2x2fb(f), env.SIG_2fb(f)))
 
   def union: ENV =
     env.mod3((x, y, z) => z.vec1(f => x.unionWith(y, env.SIG_2fb(f))))

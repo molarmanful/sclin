@@ -743,7 +743,7 @@ enum ANY:
 
   def reduceLeft(f: (ANY, ANY) => ANY): ANY = reduceH:
     this match
-      case Lsy(x) => x.reduceLeft(f).matchType(this)
+      case Lsy(x) => x.reduceLeft(f)
       case ARR(x) => x.reduceLeft(f)
       case _      => toARR.reduceLeft(f)
   def reduceLeft(f: (ANY, (ANY, ANY)) => ANY, g: (ANY, ANY) => ANY): ANY =

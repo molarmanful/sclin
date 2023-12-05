@@ -1451,6 +1451,7 @@ extension (env: ENV)
     the first element.
      */
     case "shape^" => env.dshape
+    // TODO: docs
     case "shape=" => env.reshape
     /*
     @s a -> NUM
