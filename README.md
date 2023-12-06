@@ -15,7 +15,7 @@ sclin 100I-a \; tap "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o
 [Try it on
 scline!](https://scline.fly.dev/##H4sIAAY3AWUCAzM0MPS0S1SIsVYoSSzgUlBQcsusqlJScioFkjoK.WWpRQrGCqY6CqoKigpaCQoppQUKMQX5BQo1ygp5dvkAKdsWfD4AAAA#)
 
-> A concatenative cyborg chimera.
+> _A concatenative cyborg chimera._
 
 **sclin** is a programming language that leans heavily into its weirdness. Some
 of its features include:
