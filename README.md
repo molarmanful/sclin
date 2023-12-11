@@ -68,10 +68,12 @@ Clone this repo, `cd` into it, and run `./mill sclin.assembly` (use `mill.bat`
 instead of `mill` if on Windows). The built JAR is at
 `out/sclin/assembly.dest/out.jar`.
 
-## Tools
+## Tooling/Projects
 
 - [tree-sitter-sclin](https://www.npmjs.com/package/tree-sitter-sclin) -
   Ultra-primitive tree-sitter grammar for syntax highlighting.
+- [Advent of Code 2023](https://github.com/molarmanful/aoc-2023) -
+  Solutions written in sclin.
 
 ## Licensing
 
