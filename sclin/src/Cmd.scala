@@ -1374,12 +1374,12 @@ extension (env: ENV)
      */
     case ":`" => env.get$$
     /*
-    @s a (i >MAP) -> _
+    @s a (i >SEQ) -> _
     #{:`} with `i` mapped over `a`.
      */
     case ":*" => env.gets
     /*
-    @s a b (i >SEQ) -> _
+    @s a (i >SEQ) -> _
     #{:`} with `i` folded over `a`.
      */
     case ":/" => env.getn
