@@ -118,9 +118,19 @@ extension (env: ENV)
     case "]:" => env.endMAP
     /*
     @s -> MAP
+    #{]} #{,>M}.
+     */
+    case "];" => env.endARR.pairMAP
+    /*
+    @s -> MAP
     Empty `MAP`.
      */
     case "[]:" => env.push(UN.toMAP)
+    /*
+    @s -> MAP
+    #{[]:}.
+     */
+    case "[];" => env.push(UN.toMAP)
     /*
     @s -> _
     #{]} #{:/}.
@@ -274,7 +284,7 @@ extension (env: ENV)
      */
     case ">TT" => env.matchType
     /*
-    @s (a >STR)' -> MAP
+    @s (a >STR)' -> MAP'
     #{>M} using a multiline string.
     Each line of `a` is #{#}ed, and the resulting top 2 stack items form each
     key-value pair.
@@ -288,7 +298,12 @@ extension (env: ENV)
      */
     case ">>M" => env.lineMAP
     /*
-    @s (a >STR)' -> _
+    @s a -> MAP
+    #{>M} that first pairs elements of `a`.
+     */
+    case ",>M" => env.pairMAP
+    /*
+    @s (a >STR)' -> _'
     Converts `a` from JSON to `ANY`.
     ```sclin
     g; js>

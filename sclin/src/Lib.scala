@@ -209,6 +209,7 @@ extension (env: ENV)
       .map(s => env.evalA2(Vector(), STR(s)))
       .to(VectorMap)
       .toMAP
+  def pairMAP: ENV  = env.mod1(_.div$$(2).toMAP)
   def fromJSON: ENV = env.vec1(_.toString.pipe(read(_)))
   def toJSON: ENV   = env.mod1(write(_).sSTR)
 
