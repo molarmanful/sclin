@@ -55,8 +55,9 @@ case class Parser(
 
   def pesc(c: Char): Parser = addc:
     c match
-      case '"' => "\""
-      case _   => "\\" + c
+      case '"'  => "\""
+      case '\\' => "\\"
+      case _    => "\\" + c
   .sett(PT.STR)
 
   def pstr(c: Char): Parser = c match

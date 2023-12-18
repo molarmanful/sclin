@@ -118,18 +118,14 @@ extension (env: ENV)
     case "]:" => env.endMAP
     /*
     @s -> MAP
-    #{]} #{,>M}.
-     */
-    case "];" => env.endARR.pairMAP
-    /*
-    @s -> MAP
     Empty `MAP`.
      */
     case "[]:" => env.push(UN.toMAP)
     /*
     @s -> MAP
-    #{[]:}.
+    #{]} #{,>M}.
      */
+    case "];"  => env.endARR.pairMAP
     case "[];" => env.push(UN.toMAP)
     /*
     @s -> _
@@ -2205,7 +2201,7 @@ extension (env: ENV)
     @s a b f' -> _'
     #{scan} from the right.
      */
-    case "scanR" => env.scanR
+    case "scanr" => env.scanR
     /*
     @s a -> NUM
     Sum of `a`. Equivalent to `0 \+ rfold`.
