@@ -555,7 +555,7 @@ extension (env: ENV)
     case "f>o" => env.outf
     /*
     @s a ->
-    #{form}s and #{n>o}s `a`.
+    #{tform}s and #{n>o}s `a`.
      */
     case "tf>o" => env.outtf
 
