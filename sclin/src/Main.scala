@@ -16,6 +16,7 @@ object Main:
       @arg(short = 's', doc = "Step mode.") step: Flag,
       @arg(short = 'v', doc = "Verbose mode.") verb: Flag,
       @arg(short = 'i', doc = "Implicit mode.") impl: Flag,
+      @arg(doc = "Disable nested pretty-print.") noindent: Flag,
       @arg(doc = "Enable/disable ANSI in debug messages.") nocolor: Flag
   ): Unit =
 
@@ -38,6 +39,7 @@ object Main:
           s = step.value,
           v = verb.value,
           i = impl.value,
+          ni = noindent.value,
           nc = nocolor.value
         )
         file match

@@ -72,7 +72,9 @@ case class ENV(
 
   def trace2: ENV =
     println(cflag(fansi.Color.DarkGray)("———>"))
-    println(stack.map(_.toForm).mkString("\n"))
+    println(
+      stack.map(if flags.ni then _.toForm else _.toFormInd()).mkString("\n")
+    )
     this
 
   def trace: ENV = trace1.trace2

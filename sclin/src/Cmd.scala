@@ -176,6 +176,11 @@ extension (env: ENV)
     case "form" => env.form
     /*
     @s a -> STR
+    #{form} with nested indentation.
+     */
+    case "tform" => env.tform
+    /*
+    @s a -> STR
     Converts `a` to `SEQ`.
      */
     case ">Q" => env.envSEQ
@@ -548,6 +553,11 @@ extension (env: ENV)
     #{form}s and #{n>o}s `a`.
      */
     case "f>o" => env.outf
+    /*
+    @s a ->
+    #{form}s and #{n>o}s `a`.
+     */
+    case "tf>o" => env.outtf
 
     /*
     @s a -> a a

@@ -19,8 +19,10 @@ extension (env: ENV)
   def out: ENV  = env.arg1((x, env) => env.tap(_ => print(x)))
   def outn: ENV = env.arg1((x, env) => env.tap(_ => println(x)))
 
-  def form: ENV = env.mod1(_.toForm.sSTR)
-  def outf: ENV = env.form.outn
+  def form: ENV  = env.mod1(_.toForm.sSTR)
+  def tform: ENV = env.mod1(_.toFormInd().sSTR)
+  def outf: ENV  = env.form.outn
+  def outtf: ENV = env.tform.outn
 
   def pathARR: ENV = env.mod1:
     _.toFile.toString

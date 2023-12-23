@@ -47,5 +47,6 @@ case class Flags(
     s: Boolean = false,
     v: Boolean = false,
     i: Boolean = false,
+    ni: Boolean = false,
     nc: Boolean = false
 )

@@ -63,11 +63,15 @@ enum ANY:
     case OSTRAT(x)       => x.toString
     case _               => join("")
 
-  def toForm: String = this match
+  def toForm: String = toFormB(_.toForm)
+
+  def toFormB(form: ANY => String): String = this match
     case _: SEQ => s"[…]"
-    case ARR(x) => s"[${x.map(_.toForm).mkString(" ")}]"
+    case ARR(x) => s"[${x.map(form).mkString(" ")}]"
     case MAP(x) =>
-      s"[${x.toSeq.map { case (i, a) => i.toForm + "=>" + a.toForm }
+      s"[${x.toSeq
+          .map:
+            case (i, a) => form(i) + "=>" + form(a)
           .mkString(" ")}]:"
     case STR(x) =>
       s"\"${x
@@ -83,18 +87,36 @@ enum ANY:
           .mkString}\""
     case FN(p, _, _)     => s"($p)"
     case ERR(x)          => s"ERR(${x.getMessage})"
-    case TRY(Success(x)) => s"YES(${x.toForm})"
-    case TRY(Failure(e)) => s"NO(${ERR(e).toForm})"
+    case TRY(Success(x)) => s"YES(${form(x)})"
+    case TRY(Failure(e)) => s"NO(${ERR(e).pipe(form)})"
     case TF(x)           => if x then "$T" else "$F"
     case _: TASK         => "(…)~"
     case _: OBS          => "[…]~"
     case FUT(x) =>
       s"(${x.value match
-          case Some(t) => t.toTRY.toForm
+          case Some(t) => t.toTRY.pipe(form)
           case _       => "…"
         })~>"
     case UN => "UN"
     case _  => toString
+
+  def toFormInd(n: Int = 0): String =
+    val n1 = n + 1
+    this match
+      case ARR(x)
+          if x
+            .exists:
+              case _: ARR | _: MAP => true
+              case _               => false
+          =>
+        s"[\n${x.map("\t" * n1 + _.toFormInd(n1)).mkString("\n")}\n${"\t" * n}]"
+      case MAP(x) =>
+        s"[\n${x.toSeq
+            .map:
+              case (i, a) =>
+                "\t" * n1 + s"${i.toFormInd(n1)} => ${a.toFormInd(n1)}"
+            .mkString("\n")}\n${"\t" * n}]:"
+      case _ => toFormB(_.toFormInd(n))
 
   def cmp(t: ANY): Int = (this, t) match
     case (UN, UN)                 => 0
