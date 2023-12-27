@@ -9,7 +9,8 @@
 </div>
 
 ```sclin
-sclin 100I-a \; tap "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o
+sclin 100I-a \; tap
+  "Fizz""Buzz", over 3 5, % ! *` \pop ||# n>o
 ```
 
 [Try it on
