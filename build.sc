@@ -35,7 +35,7 @@ object sclin
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.5.4",
     ivy"com.lihaoyi::fansi:0.4.0",
-    ivy"com.lihaoyi::upickle:3.1.3",
+    ivy"com.lihaoyi::upickle:3.1.4",
     ivy"com.lihaoyi::os-lib:0.9.2",
     ivy"io.monix::monix:3.4.1",
     ivy"io.monix::monix-nio:0.1.0",
