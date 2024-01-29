@@ -1,5 +1,5 @@
 import $file.docp
-import $ivy.`com.goyeau::mill-scalafix::0.3.1`
+import $ivy.`com.goyeau::mill-scalafix::0.3.2`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 import com.goyeau.mill.scalafix.ScalafixModule
@@ -33,9 +33,9 @@ object sclin
   def scalacOptions = Seq("-deprecation", "-feature", "-Wunused:all")
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
-    ivy"com.lihaoyi::mainargs:0.5.4",
+    ivy"com.lihaoyi::mainargs:0.6.1",
     ivy"com.lihaoyi::fansi:0.4.0",
-    ivy"com.lihaoyi::upickle:3.1.3",
+    ivy"com.lihaoyi::upickle:3.1.4",
     ivy"com.lihaoyi::os-lib:0.9.3",
     ivy"io.monix::monix:3.4.1",
     ivy"io.monix::monix-nio:0.1.0",
