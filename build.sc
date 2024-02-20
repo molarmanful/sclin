@@ -56,7 +56,7 @@ object sclin
 
   object test extends ScoverageTests with TestModule.Munit with ScalafmtModule {
 
-    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M10")
+    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M11")
 
   }
 
