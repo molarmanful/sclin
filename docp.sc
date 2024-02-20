@@ -50,8 +50,8 @@ case class DocParser(
       val nid = "cmd-" + name.toLowerCase.replaceAll(raw"[^\w -]", "")
       def loop(id: String, n: Int = 0): String = {
         val id1 = id + s"-$n"
-        if (n > 0) if (cs contains id1) loop(id, n + 1) else id1
-        else if (cs contains id) loop(id, 1)
+        if (n > 0) if (cs.contains(id1)) loop(id, n + 1) else id1
+        else if (cs.contains(id)) loop(id, 1)
         else id
       }
       DocParser(xs :+ x.copy(name = name), cs = cs + (loop(nid) -> name))
