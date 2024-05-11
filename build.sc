@@ -17,7 +17,7 @@ object sclin
     with ScalafmtModule
     with ScalafixModule {
 
-  def scalaVersion              = "3.3.1"
+  def scalaVersion              = "3.3.3"
   def scoverageVersion          = "2.0.11"
   def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
@@ -33,10 +33,10 @@ object sclin
   def scalacOptions = Seq("-deprecation", "-feature", "-Wunused:all")
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
-    ivy"com.lihaoyi::mainargs:0.6.1",
+    ivy"com.lihaoyi::mainargs:0.6.3",
     ivy"com.lihaoyi::fansi:0.4.0",
     ivy"com.lihaoyi::upickle:3.3.0",
-    ivy"com.lihaoyi::os-lib:0.9.3",
+    ivy"com.lihaoyi::os-lib:0.10.0",
     ivy"io.monix::monix:3.4.1",
     ivy"io.monix::monix-nio:0.1.0",
     ivy"com.github.pathikrit::better-files:3.9.2"
@@ -56,7 +56,7 @@ object sclin
 
   object test extends ScoverageTests with TestModule.Munit with ScalafmtModule {
 
-    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-M10")
+    def ivyDeps = Agg(ivy"org.scalameta::munit::1.0.0-RC1")
 
   }
 
