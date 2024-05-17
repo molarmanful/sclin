@@ -1,5 +1,5 @@
 import $file.docp
-import $ivy.`com.goyeau::mill-scalafix::0.3.2`
+import $ivy.`com.goyeau::mill-scalafix::0.4.0`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 import com.goyeau.mill.scalafix.ScalafixModule
