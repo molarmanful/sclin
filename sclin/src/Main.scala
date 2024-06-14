@@ -36,10 +36,7 @@ object Main:
       case Some(s) => ENV.docRun(s)
       case _ =>
         val flags = Flags(
-          s = step.value,
-          v = verb.value,
-          i = impl.value,
-          ni = noindent.value,
+          s = step.value, v = verb.value, i = impl.value, ni = noindent.value,
           nc = nocolor.value
         )
         file match
