@@ -32,12 +32,7 @@ class ConcatSuite extends TU:
   "UN ++ UN" |? "UN UN +`" ==> UN
   "UN ++ _" |? "UN [1 2 3] +`" ==> dARR(NUM(1), NUM(2), NUM(3))
   "ARR ++ ARR" |? "[1 2 3] [4 5 6] +`" ==> dARR(
-    NUM(1),
-    NUM(2),
-    NUM(3),
-    NUM(4),
-    NUM(5),
-    NUM(6)
+    NUM(1), NUM(2), NUM(3), NUM(4), NUM(5), NUM(6)
   )
   "MAP ++ MAP" |? "[\"a\" 1, \"b\" 2, ]: [\"c\" 3, \"d\" 4, ]: +`" ==> dMAP(
     STR("a") -> NUM(1),
@@ -47,13 +42,7 @@ class ConcatSuite extends TU:
   )
   "STR ++ STR" |? "\"abc\" \"def\"+`" ==> STR("abcdef")
   "itr ++ itr" |? "(1 2 3) [4 5 6] +`" ==> dFN(
-    0,
-    NUM(1),
-    NUM(2),
-    NUM(3),
-    NUM(4),
-    NUM(5),
-    NUM(6)
+    0, NUM(1), NUM(2), NUM(3), NUM(4), NUM(5), NUM(6)
   )
   "_ ++ _" |? "1 2+`" ==> dARR(NUM(1), NUM(2))
 
