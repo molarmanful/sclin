@@ -26,13 +26,12 @@ class PDotSuite extends TU:
 
   "basic" |? (Parser.parse("."), LazyList(CMD(".")))
   "post-num independence" |? (Parser.parse("1."), LazyList(NUM(1), CMD(".")))
-  "independence" |? (Parser.parse("1 .as.df"), LazyList(
-    NUM(1),
-    CMD("."),
-    CMD("as"),
-    CMD("."),
-    CMD("df")
-  ))
+  "independence" |? (
+    Parser.parse("1 .as.df"),
+    LazyList(
+      NUM(1), CMD("."), CMD("as"), CMD("."), CMD("df")
+    )
+  )
 
 class ParseSuite extends TU:
 
