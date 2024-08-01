@@ -54,7 +54,7 @@ sclin.
 ### Installation with [Coursier](https://get-coursier.io)
 
 ```sh
-sh cs install --contrib sclin
+cs install --contrib sclin
 ```
 
 ### Prebuilt Executable
