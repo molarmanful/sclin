@@ -17,7 +17,7 @@ object sclin
     with ScalafmtModule
     with ScalafixModule {
 
-  def scalaVersion              = "3.4.3"
+  def scalaVersion              = "3.5.1"
   def scoverageVersion          = "2.0.11"
   def publishVersion: T[String] = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
