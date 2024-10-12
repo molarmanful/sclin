@@ -33,7 +33,7 @@ object sclin
   def scalacOptions = Seq("-deprecation", "-feature", "-Wunused:all")
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
-    ivy"com.lihaoyi::mainargs:0.7.5",
+    ivy"com.lihaoyi::mainargs:0.7.6",
     ivy"com.lihaoyi::fansi:0.5.0",
     ivy"com.lihaoyi::upickle:4.0.1",
     ivy"com.lihaoyi::os-lib:0.10.7",
