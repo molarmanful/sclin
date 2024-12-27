@@ -35,8 +35,8 @@ extension (env: ENV)
       .toBool
 
   def cmd(x: String): ENV = x match
-    case s"#$k" if k != "" => env
-    case s"\$k" if k != "" => env.push(CMD(k).toFN(env))
+    case s"#$k" if k != ""  => env
+    case s"\\$k" if k != "" => env.push(CMD(k).toFN(env))
     case s"`$k" if k != "" =>
       @tailrec def loop(
           n: Int = env.code.p.l + 1,
