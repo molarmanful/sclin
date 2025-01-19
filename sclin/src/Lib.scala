@@ -250,8 +250,7 @@ extension (env: ENV)
   def clrscope: ENV = env.modScope(_ => HashMap())
   def setscope: ENV = env.arg1: (x, env) =>
     env.modScope(_ ++ x.toMAP.x.map:
-      case (k, v) => (k.toString, v)
-    )
+      case (k, v) => (k.toString, v))
 
   def getSc: ENV = env.push:
     MAP:
