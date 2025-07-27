@@ -34,7 +34,7 @@ object sclin
   def ivyDeps = Agg(
     ivy"org.typelevel::spire:0.18.0",
     ivy"com.lihaoyi::mainargs:0.7.5",
-    ivy"com.lihaoyi::fansi:0.5.0",
+    ivy"com.lihaoyi::fansi:0.5.1",
     ivy"com.lihaoyi::upickle:4.0.1",
     ivy"com.lihaoyi::os-lib:0.10.7",
     ivy"io.monix::monix:3.4.1",
