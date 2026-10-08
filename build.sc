@@ -37,7 +37,7 @@ object sclin
     ivy"com.lihaoyi::fansi:0.5.0",
     ivy"com.lihaoyi::upickle:4.0.1",
     ivy"com.lihaoyi::os-lib:0.10.7",
-    ivy"io.monix::monix:3.4.1",
+    ivy"io.monix::monix:3.5.2",
     ivy"io.monix::monix-nio:0.1.0",
     ivy"com.github.pathikrit::better-files:3.9.2"
   )
